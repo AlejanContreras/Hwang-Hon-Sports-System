@@ -13,4 +13,16 @@ recursos/archivos_originales/FORMULARIO DE INSCRIPCION.pdf
 recursos/archivos_originales/PLAN DE ACCIÓN HWANGHON  2026.pdf
 recursos/archivos_originales/PLAN METODOLOGICO HAPKIDO.xlsx
 recursos/archivos_originales/PLANILLA MENSUALIDAD 2025.pdf
+recursos/archivos_originales/PLANILLA MENSUALIDAD 2025__2.pdf
+recursos/archivos_originales/PLANILLA ASISTENCIA USUARIOS.xlsx
 recursos/archivos_originales/PRESCRIPCION FUERZA 1 ISABELLA GONZALEZ CORREDORxls.pdf
+
+# Bitácora académica de trabajo (notas de sesión, no evidencia formal)
+# Carpeta: recursos/academico
+# Generado: 2026-09-20
+# Ya existe un .gitignore propio dentro de esa carpeta (recursos/academico/.gitignore,
+# con "*" y "!.gitignore") que la excluye por completo salvo a sí mismo. Esta regla
+# a nivel raíz es una segunda capa de seguridad, para que quede excluida aunque
+# ese archivo local se borre o se edite por error.
+recursos/academico/*
+!recursos/academico/.gitignore
