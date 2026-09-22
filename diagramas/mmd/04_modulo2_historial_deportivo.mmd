@@ -1,0 +1,28 @@
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f2f2f2','primaryTextColor':'#1a1a1a','primaryBorderColor':'#2c2c2c','lineColor':'#2c2c2c','fontFamily':'Arial, Helvetica, sans-serif','fontSize':'15px'}}}%%
+flowchart TD
+    classDef inicio fill:#8b1e1e,stroke:#2c2c2c,stroke-width:2px,color:#ffffff,font-weight:bold
+    classDef admin fill:#2c2c2c,stroke:#8b1e1e,stroke-width:2px,color:#ffffff
+    classDef publico fill:#5c5c5c,stroke:#8b1e1e,stroke-width:2px,color:#ffffff
+    classDef sistema fill:#f2f2f2,stroke:#2c2c2c,stroke-width:1.5px,color:#1a1a1a
+    classDef decision fill:#ffffff,stroke:#8b1e1e,stroke-width:2px,color:#1a1a1a
+    classDef adminAsync fill:#2c2c2c,stroke:#8b1e1e,stroke-width:3px,stroke-dasharray: 5 5,color:#ffffff
+    classDef publicoAsync fill:#5c5c5c,stroke:#8b1e1e,stroke-width:3px,stroke-dasharray: 5 5,color:#ffffff
+    classDef sistemaAsync fill:#f2f2f2,stroke:#8b1e1e,stroke-width:3px,stroke-dasharray: 5 5,color:#1a1a1a
+    classDef pendiente fill:#ffffff,stroke:#999999,stroke-width:1.5px,stroke-dasharray: 3 3,color:#555555
+    Start([Acceso al módulo Historial deportivo]):::inicio --> Select[Se selecciona un deportista, desde el buscador transversal]:::sistema
+    Select --> View{¿Qué se consulta?}:::decision
+
+    View -->|Permanencia| Perm[Sistema calcula permanencia a partir del historial de pagos de mensualidad — meses efectivamente pagados]:::sistema
+    View -->|Historial de grados| Grades[Historial de ascensos de cinturón]:::sistema
+    View -->|Competencias| Comp[Historial de participación en competencias y resultados]:::sistema
+    View -->|Evolución| Evo[Gráficas de evolución: posición por torneo y progreso en pruebas físicas en el tiempo]:::sistema
+
+    Grades --> SepNote[Ascensos y torneos se mantienen completamente separados — no se mezclan en una sola vista]:::sistema
+    Comp --> SepNote
+
+    Perm --> Consolidate[Vista consolidada del historial deportivo]:::sistema
+    SepNote --> Consolidate
+    Evo --> Consolidate
+
+    Consolidate --> MoodNote[Campo de estado anímico autorreportado: estructura confirmada en BD, no visible en interfaz todavía]:::pendiente
+    Consolidate --> End([Fin de la consulta]):::inicio

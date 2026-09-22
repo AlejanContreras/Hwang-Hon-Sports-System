@@ -1,0 +1,38 @@
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f2f2f2','primaryTextColor':'#1a1a1a','primaryBorderColor':'#2c2c2c','lineColor':'#2c2c2c','fontFamily':'Arial, Helvetica, sans-serif','fontSize':'15px'}}}%%
+flowchart TD
+    classDef inicio fill:#8b1e1e,stroke:#2c2c2c,stroke-width:2px,color:#ffffff,font-weight:bold
+    classDef admin fill:#2c2c2c,stroke:#8b1e1e,stroke-width:2px,color:#ffffff
+    classDef publico fill:#5c5c5c,stroke:#8b1e1e,stroke-width:2px,color:#ffffff
+    classDef sistema fill:#f2f2f2,stroke:#2c2c2c,stroke-width:1.5px,color:#1a1a1a
+    classDef decision fill:#ffffff,stroke:#8b1e1e,stroke-width:2px,color:#1a1a1a
+    classDef adminAsync fill:#2c2c2c,stroke:#8b1e1e,stroke-width:3px,stroke-dasharray: 5 5,color:#ffffff
+    classDef publicoAsync fill:#5c5c5c,stroke:#8b1e1e,stroke-width:3px,stroke-dasharray: 5 5,color:#ffffff
+    classDef sistemaAsync fill:#f2f2f2,stroke:#8b1e1e,stroke-width:3px,stroke-dasharray: 5 5,color:#1a1a1a
+    classDef pendiente fill:#ffffff,stroke:#999999,stroke-width:1.5px,stroke-dasharray: 3 3,color:#555555
+    Start([Usuario abre el sistema]):::inicio --> Default[Entrada por defecto: Vista Administrativa — login por documento o correo]:::admin
+    Default --> SwitchBtn[Botón 'Cambiar a vista deportista/tutor']:::admin
+    SwitchBtn --> PubLogin[Vista pública: login por documento de identidad, sin contraseña]:::publico
+    PubLogin --> PubDecision{¿El documento ya está registrado en el club?}:::decision
+    PubDecision -->|Sí| PubAccess[Acceso a los datos propios del deportista/tutor]:::publico
+    PubDecision -->|No| RegLink["Enlace 'Registrarse al club' — URL/QR permanente y separada"]:::publico
+    RegLink --> RegForm[Formulario de registro = mismo formulario de inscripción usado por administrativo]:::publico
+    RegForm --> PendingState[Registro queda en estado PENDIENTE de validación]:::sistema
+
+    PendingState --> AdminQueue[Administrativo revisa la lista de registros pendientes de validación]:::admin
+    AdminQueue --> AdminCheck{¿Administrativo valida que la persona es parte del club?}:::decision
+    AdminCheck -->|No| Rejected[Registro queda en espera de corrección / no se activa]:::admin
+    AdminCheck -->|Sí| DocsRequest[Sistema solicita documentos de soporte]:::sistema
+
+    DocsRequest --> DocsChannel{¿Canal de entrega de documentos?}:::decision
+    DocsChannel -->|WhatsApp u otro canal| DocsExternal[Documento se recibe por WhatsApp u otro canal]:::admin
+    DocsExternal --> AdminUpload[Administrativo carga el documento al sistema]:::admin
+
+    DocsChannel -->|Directo desde el sistema| TempSpace[Espacio temporal de documentos del deportista/tutor]:::publico
+    TempSpace --> AutoSave["⚡ Guardado en tiempo real de datos y documentos, sin recargar la página"]:::publicoAsync
+    AutoSave --> ConfirmBtn[Deportista/tutor hace clic en 'Guardar cambios']:::publico
+    ConfirmBtn --> Lock[Bloqueo definitivo del espacio temporal de documentos]:::sistema
+
+    AdminUpload --> FinalAccess[Deportista/tutor queda con acceso restringido estándar: solo edición de peso y discapacidad]:::publico
+    Lock --> FinalAccess
+    PubAccess --> End([Fin: acceso operativo a la vista pública]):::inicio
+    FinalAccess --> End

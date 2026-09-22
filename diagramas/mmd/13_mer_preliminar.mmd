@@ -1,0 +1,126 @@
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f2f2f2','primaryTextColor':'#1a1a1a','primaryBorderColor':'#2c2c2c','lineColor':'#2c2c2c','fontFamily':'Arial, Helvetica, sans-serif','fontSize':'14px'}}}%%
+erDiagram
+    DEPORTISTA {
+        string documento PK
+        string nombre
+        date fecha_nacimiento
+        float estatura
+        float peso
+        string categoria "PROPUESTA: calculada — depende de la tabla oficial de categorías (RN-1.3, RN-3.8)"
+        int edad "PROPUESTA: calculada desde fecha_nacimiento (RN-1.3)"
+        string discapacidad "editable también en vista pública (RN-1.5)"
+        date fecha_ingreso
+        string estado "activo / inactivo"
+        string estado_registro "pendiente_validacion / validado — solo autorregistrados"
+        string acudiente_documento FK "nulo si el deportista es mayor de edad"
+        string validado_por_correo FK "auditoria de autorregistro — nulo si no aplica"
+    }
+
+    ACUDIENTE_TUTOR {
+        string documento PK
+        string nombre
+        string relacion
+    }
+
+    USUARIO_ADMINISTRATIVO {
+        string correo PK
+        string contrasena
+        string nombre
+        boolean es_administrador_principal "true solo para Aldrin"
+        string creado_por_correo FK "reflexiva — nulo para la cuenta fundadora"
+    }
+
+    DOCUMENTO {
+        int id PK
+        string deportista_documento FK
+        string tipo_documento
+        string archivo
+        date fecha_carga
+        string estado "cargado / pendiente"
+    }
+
+    ASISTENCIA {
+        string deportista_documento PK "tambien FK a Deportista"
+        date fecha PK
+        boolean asistio
+    }
+
+    PAGO {
+        int id PK
+        string deportista_documento FK
+        string periodo "semana del mes, o mes/año"
+        string tipo "mensualidad / matricula"
+        string estado "pagado / pendiente"
+        string consecuencia_mora "PENDIENTE DE ALDRIN: consecuencia tras mora prolongada (RN-8.7)"
+    }
+
+    EVENTO_CALENDARIO {
+        int id PK
+        string tipo "competencia / evaluacion / reunion_administrativa / evento_extra"
+        date fecha
+        string lugar
+        string visibilidad "administrativa / publica"
+    }
+
+    COMPETENCIA {
+        int evento_id PK "tambien FK a Evento_Calendario — 1 a 1 cuando tipo = competencia"
+        string modalidad "PROPUESTA: una modalidad por Competencia — RN-3.1 tambien la ubica a nivel de participacion"
+        string categoria_edad_peso "PENDIENTE DE ALDRIN: tabla oficial de categorias (RN-3.8)"
+    }
+
+    PARTICIPACION_COMPETENCIA {
+        string deportista_documento PK "tambien FK a Deportista"
+        int competencia_evento_id PK "tambien FK a Competencia"
+        string resultado
+        string notas_oponente "texto libre, uso interno del staff"
+    }
+
+    SESION_EXAMEN {
+        int id PK
+        date fecha "fechas 2026 candidatas: 26 abr, 26 jul, 13 dic — PENDIENTE DE VERIFICACION (RN-5.4)"
+        string lugar
+    }
+
+    DETALLE_EVALUACION {
+        int sesion_examen_id PK "tambien FK a Sesion_Examen"
+        string deportista_documento PK "tambien FK a Deportista"
+        string modalidad PK "teorico / fisico / combate / rompimiento / formas / llaves"
+        string estado "pendiente / completado"
+        string resultado "PENDIENTE DE ALDRIN: plantilla oficial con criterios y puntajes (RN-5.3)"
+        boolean aprobado "si / no — tiempos minimos entre ascensos aun PENDIENTE DE ALDRIN (RN-2.5)"
+    }
+
+    LEYENDA_NOTACION {
+        string entidad_nucleo "Borde rojo grueso solido = entidad confirmada (Reglas de Negocio v0.1)"
+        string entidad_asociativa "Borde gris fino solido = entidad de relacion N a N (tabla asociativa)"
+        string dato_pendiente "Comentario PROPUESTA o PENDIENTE DE ALDRIN/VERIFICACION junto al atributo = dato o regla aun no confirmada; no construir como definitivo"
+    }
+
+    ACUDIENTE_TUTOR ||--o{ DEPORTISTA : "es responsable de"
+    USUARIO_ADMINISTRATIVO ||--o{ DEPORTISTA : "valida (registro pendiente)"
+    USUARIO_ADMINISTRATIVO ||--o{ USUARIO_ADMINISTRATIVO : "da de alta / gestiona"
+    DEPORTISTA ||--o{ DOCUMENTO : "tiene"
+    DEPORTISTA ||--o{ ASISTENCIA : "registra"
+    DEPORTISTA ||--o{ PAGO : "realiza"
+    EVENTO_CALENDARIO ||--o| COMPETENCIA : "se especializa en"
+    DEPORTISTA ||--o{ PARTICIPACION_COMPETENCIA : "participa en"
+    COMPETENCIA ||--o{ PARTICIPACION_COMPETENCIA : "recibe"
+    DEPORTISTA ||--o{ DETALLE_EVALUACION : "es evaluado en"
+    SESION_EXAMEN ||--o{ DETALLE_EVALUACION : "agrupa"
+
+    DEPORTISTA:::confirmado
+    ACUDIENTE_TUTOR:::confirmado
+    USUARIO_ADMINISTRATIVO:::confirmado
+    DOCUMENTO:::confirmado
+    ASISTENCIA:::confirmado
+    PAGO:::confirmado
+    EVENTO_CALENDARIO:::confirmado
+    COMPETENCIA:::confirmado
+    SESION_EXAMEN:::confirmado
+    PARTICIPACION_COMPETENCIA:::asociativa
+    DETALLE_EVALUACION:::asociativa
+    LEYENDA_NOTACION:::leyenda
+
+    classDef confirmado fill:#f2f2f2,stroke:#8b1e1e,stroke-width:3px
+    classDef asociativa fill:#ffffff,stroke:#2c2c2c,stroke-width:1px
+    classDef leyenda fill:#fbf6ea,stroke:#b08d2a,stroke-width:2px,stroke-dasharray:5 4

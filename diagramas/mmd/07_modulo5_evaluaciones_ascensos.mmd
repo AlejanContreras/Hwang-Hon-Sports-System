@@ -1,0 +1,27 @@
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f2f2f2','primaryTextColor':'#1a1a1a','primaryBorderColor':'#2c2c2c','lineColor':'#2c2c2c','fontFamily':'Arial, Helvetica, sans-serif','fontSize':'15px'}}}%%
+flowchart TD
+    classDef inicio fill:#8b1e1e,stroke:#2c2c2c,stroke-width:2px,color:#ffffff,font-weight:bold
+    classDef admin fill:#2c2c2c,stroke:#8b1e1e,stroke-width:2px,color:#ffffff
+    classDef publico fill:#5c5c5c,stroke:#8b1e1e,stroke-width:2px,color:#ffffff
+    classDef sistema fill:#f2f2f2,stroke:#2c2c2c,stroke-width:1.5px,color:#1a1a1a
+    classDef decision fill:#ffffff,stroke:#8b1e1e,stroke-width:2px,color:#1a1a1a
+    classDef adminAsync fill:#2c2c2c,stroke:#8b1e1e,stroke-width:3px,stroke-dasharray: 5 5,color:#ffffff
+    classDef publicoAsync fill:#5c5c5c,stroke:#8b1e1e,stroke-width:3px,stroke-dasharray: 5 5,color:#ffffff
+    classDef sistemaAsync fill:#f2f2f2,stroke:#8b1e1e,stroke-width:3px,stroke-dasharray: 5 5,color:#1a1a1a
+    classDef pendiente fill:#ffffff,stroke:#999999,stroke-width:1.5px,stroke-dasharray: 3 3,color:#555555
+    Start([Acceso al módulo Evaluaciones y ascensos]):::inicio --> CheckAttendance{¿Inasistencia supera el umbral? — más de 30% si 5-16 años, más de 40% si 17+, evaluado en el ciclo de examen ~cada 3 meses}:::decision
+    CheckAttendance -->|Sí| Warn[Sistema muestra mensaje recomendado de NO presentar examen — no es un bloqueo automático]:::sistema
+    CheckAttendance -->|No| Proceed[Deportista presenta el examen de ascenso]:::admin
+    Warn --> Proceed
+
+    Proceed --> Matrix["⚡ Administrativo diligencia la matriz de examen por modalidad: físico, combate, rompimiento, formas, llaves, teoría"]:::adminAsync
+    Matrix --> AutoSave["⚡ Guardado en tiempo real del estado pendiente/completado por deportista y modalidad"]:::adminAsync
+    AutoSave --> Fields[Transcripción literal de la plantilla oficial: criterios, puntajes, aspectos fallidos, observaciones, recomendaciones]:::admin
+
+    Fields --> Result{¿Aprobado?}:::decision
+    Result -->|Sí| Approved[Se registra el ascenso de grado]:::sistema
+    Result -->|No| NotApproved[Se registran observaciones y recomendaciones]:::sistema
+    Approved --> End([Fin del examen]):::inicio
+    NotApproved --> End
+
+    Fields --> TemplatePend[PENDIENTE DE ALDRIN: plantilla oficial de examen con criterios y puntajes definitivos por grado]:::pendiente

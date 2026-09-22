@@ -1,0 +1,24 @@
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f2f2f2','primaryTextColor':'#1a1a1a','primaryBorderColor':'#2c2c2c','lineColor':'#2c2c2c','fontFamily':'Arial, Helvetica, sans-serif','fontSize':'15px'}}}%%
+flowchart TD
+    classDef inicio fill:#8b1e1e,stroke:#2c2c2c,stroke-width:2px,color:#ffffff,font-weight:bold
+    classDef admin fill:#2c2c2c,stroke:#8b1e1e,stroke-width:2px,color:#ffffff
+    classDef publico fill:#5c5c5c,stroke:#8b1e1e,stroke-width:2px,color:#ffffff
+    classDef sistema fill:#f2f2f2,stroke:#2c2c2c,stroke-width:1.5px,color:#1a1a1a
+    classDef decision fill:#ffffff,stroke:#8b1e1e,stroke-width:2px,color:#1a1a1a
+    classDef adminAsync fill:#2c2c2c,stroke:#8b1e1e,stroke-width:3px,stroke-dasharray: 5 5,color:#ffffff
+    classDef publicoAsync fill:#5c5c5c,stroke:#8b1e1e,stroke-width:3px,stroke-dasharray: 5 5,color:#ffffff
+    classDef sistemaAsync fill:#f2f2f2,stroke:#8b1e1e,stroke-width:3px,stroke-dasharray: 5 5,color:#1a1a1a
+    classDef pendiente fill:#ffffff,stroke:#999999,stroke-width:1.5px,stroke-dasharray: 3 3,color:#555555
+    Start([Acceso al módulo Reportes y exportación]):::inicio --> ReportType{¿Qué se exporta?}:::decision
+
+    ReportType -->|Ficha individual| Card[Ficha consolidada del deportista: datos personales, nivel deportivo/aptitud, qué necesita mejorar]:::sistema
+    ReportType -->|Datos agregados del club| Agg[Consulta agregada de todo el club]:::sistema
+
+    Card --> Format{¿Formato de exportación?}:::decision
+    Agg --> Format
+    Format -->|PDF| PDFGen["⚡ Indicador 'generando reporte' mientras el sistema recorre el histórico acumulado"]:::sistemaAsync
+    Format -->|Excel| XLSGen["⚡ Indicador 'generando reporte' — datos/estadísticas en Excel"]:::sistemaAsync
+
+    PDFGen --> Download[Descarga del archivo]:::sistema
+    XLSGen --> Download
+    Download --> End([Fin de la exportación]):::inicio

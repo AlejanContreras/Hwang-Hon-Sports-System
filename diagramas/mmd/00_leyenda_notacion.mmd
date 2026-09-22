@@ -1,0 +1,26 @@
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f2f2f2','primaryTextColor':'#1a1a1a','primaryBorderColor':'#2c2c2c','lineColor':'#2c2c2c','fontFamily':'Arial, Helvetica, sans-serif','fontSize':'16px'}}}%%
+flowchart TD
+    classDef inicio fill:#8b1e1e,stroke:#2c2c2c,stroke-width:2px,color:#ffffff,font-weight:bold
+    classDef admin fill:#2c2c2c,stroke:#8b1e1e,stroke-width:2px,color:#ffffff
+    classDef publico fill:#5c5c5c,stroke:#8b1e1e,stroke-width:2px,color:#ffffff
+    classDef sistema fill:#f2f2f2,stroke:#2c2c2c,stroke-width:1.5px,color:#1a1a1a
+    classDef decision fill:#ffffff,stroke:#8b1e1e,stroke-width:2px,color:#1a1a1a
+    classDef adminAsync fill:#2c2c2c,stroke:#8b1e1e,stroke-width:3px,stroke-dasharray: 5 5,color:#ffffff
+    classDef publicoAsync fill:#5c5c5c,stroke:#8b1e1e,stroke-width:3px,stroke-dasharray: 5 5,color:#ffffff
+    classDef sistemaAsync fill:#f2f2f2,stroke:#8b1e1e,stroke-width:3px,stroke-dasharray: 5 5,color:#1a1a1a
+    classDef pendiente fill:#ffffff,stroke:#999999,stroke-width:1.5px,stroke-dasharray: 3 3,color:#555555
+
+    T["LEYENDA / NOTACIÓN COMÚN\nDiagramas de flujo v1 — HwangHon-Sports-System"]:::inicio
+    A["Acción — Vista Administrativa\n(Aldrin, Tesorero, Contador/a, Secretaria)"]:::admin
+    P["Acción — Vista Pública\n(deportista / acudiente)"]:::publico
+    S["Proceso automático del sistema\n(backend / validación)"]:::sistema
+    D{"Punto de decisión\n/ regla de negocio"}:::decision
+    AA["⚡ Acción admin con JavaScript asíncrono\n(sin recargar página)"]:::adminAsync
+    PA["⚡ Acción pública con JavaScript asíncrono\n(sin recargar página)"]:::publicoAsync
+    SA["⚡ Proceso de sistema asíncrono"]:::sistemaAsync
+    PEND["Paso marcado PROPUESTA o\nPENDIENTE DE ALDRIN / VERIFICACIÓN\n(no construir como definitivo aún)"]:::pendiente
+
+    T --> A --> P --> S --> D --> AA --> PA --> SA --> PEND
+
+    N1["Nota: el rayo ⚡ + borde discontinuo grueso marca\ncada punto donde el encargo pide JavaScript asíncrono.\nEl borde discontinuo fino sin color de actor marca\npasos PROPUESTA o PENDIENTE (según Reglas de Negocio v0.1)."]
+    PEND -.-> N1

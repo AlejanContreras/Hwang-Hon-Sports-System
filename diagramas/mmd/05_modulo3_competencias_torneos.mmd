@@ -1,0 +1,22 @@
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f2f2f2','primaryTextColor':'#1a1a1a','primaryBorderColor':'#2c2c2c','lineColor':'#2c2c2c','fontFamily':'Arial, Helvetica, sans-serif','fontSize':'15px'}}}%%
+flowchart TD
+    classDef inicio fill:#8b1e1e,stroke:#2c2c2c,stroke-width:2px,color:#ffffff,font-weight:bold
+    classDef admin fill:#2c2c2c,stroke:#8b1e1e,stroke-width:2px,color:#ffffff
+    classDef publico fill:#5c5c5c,stroke:#8b1e1e,stroke-width:2px,color:#ffffff
+    classDef sistema fill:#f2f2f2,stroke:#2c2c2c,stroke-width:1.5px,color:#1a1a1a
+    classDef decision fill:#ffffff,stroke:#8b1e1e,stroke-width:2px,color:#1a1a1a
+    classDef adminAsync fill:#2c2c2c,stroke:#8b1e1e,stroke-width:3px,stroke-dasharray: 5 5,color:#ffffff
+    classDef publicoAsync fill:#5c5c5c,stroke:#8b1e1e,stroke-width:3px,stroke-dasharray: 5 5,color:#ffffff
+    classDef sistemaAsync fill:#f2f2f2,stroke:#8b1e1e,stroke-width:3px,stroke-dasharray: 5 5,color:#1a1a1a
+    classDef pendiente fill:#ffffff,stroke:#999999,stroke-width:1.5px,stroke-dasharray: 3 3,color:#555555
+    Start([Acceso al módulo Competencias y torneos]):::inicio --> RegTorneo[Administrativo registra el torneo: nombre, fecha, lugar, tipo de evento, plataforma en texto libre, observaciones]:::admin
+    RegTorneo --> RegPart[Registrar participación de deportista]:::admin
+    RegPart --> Search["⚡ Buscador con autocompletado — compartido con módulo 1 — para asociar deportistas activos e inactivos"]:::adminAsync
+    Search --> Modalidad{Seleccionar modalidad — 1 de 6}:::decision
+    Modalidad --> Fields[Registrar: categoría edad/peso, resultado/medallería, combates ganados/perdidos, oponentes, observaciones]:::admin
+    Fields --> OppNotes[Notas de oponentes en texto libre, para preparación táctica]:::admin
+    OppNotes --> NoRanking[Sistema guarda el registro — sin campo de ranking independiente]:::sistema
+    NoRanking --> FilterHist["⚡ Filtrar historial por nombre, documento o lugar, sin escribir el término completo"]:::adminAsync
+    FilterHist --> End([Fin del registro]):::inicio
+
+    NoRanking --> CatPend[PENDIENTE DE ALDRIN: categorías oficiales de edad/peso, incl. posible categoría Infantil]:::pendiente
