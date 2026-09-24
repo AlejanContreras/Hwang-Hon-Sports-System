@@ -1,0 +1,152 @@
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f2f2f2','primaryTextColor':'#1a1a1a','primaryBorderColor':'#2c2c2c','lineColor':'#2c2c2c','fontFamily':'Arial, Helvetica, sans-serif','fontSize':'14px'}}}%%
+erDiagram
+    deportista {
+        VARCHAR(20) documento PK "NOT NULL"
+        VARCHAR(150) nombre "NOT NULL"
+        DATE fecha_nacimiento "NOT NULL"
+        DECIMAL(4_2) estatura "NOT NULL — metros, ej. 1.75"
+        DECIMAL(5_2) peso "NOT NULL — kilogramos"
+        CALCULADO categoria "No es columna fisica — PROPUESTA: se calcula en consulta/aplicacion, depende de la tabla oficial de categorias (RN-1.3, RN-3.8)"
+        CALCULADO edad "No es columna fisica — PROPUESTA: se calcula en consulta desde fecha_nacimiento; no puede ser columna generada de MySQL porque depende de la fecha actual (RN-1.3)"
+        VARCHAR(255) discapacidad "NULL — condicion de salud relevante, editable tambien en vista publica (RN-1.5)"
+        VARCHAR(100) estado_animico "NULL — CONFIRMADO en BD, no visible en interfaz (RN-2.4), reserva a futuro"
+        VARCHAR(100) sede_entrenamiento "NULL — Club Hwang Hon / Escuela IMRDS (RN-T.8)"
+        TINYINT(1) autorizacion_datos "NOT NULL — checkbox de autorizacion si el registro es virtual (RN-1.8/RN-T.9)"
+        VARCHAR(30) grado_actual "NULL — PROPUESTA: nulo hasta el primer examen aprobado (RN-10.3)"
+        DATE fecha_ingreso "NOT NULL"
+        ENUM estado "NOT NULL — valores: activo, inactivo"
+        ENUM estado_registro "NOT NULL — valores: pendiente_validacion, validado (solo autorregistrados)"
+        VARCHAR(20) acudiente_documento FK "NULL — nulo si el deportista es mayor de edad · INDICE FK: ON DELETE SET NULL, ON UPDATE CASCADE"
+        VARCHAR(150) validado_por_correo FK "NULL — auditoria de autorregistro, nulo si no aplica · INDICE FK: ON DELETE SET NULL, ON UPDATE CASCADE"
+    }
+
+    acudiente_tutor {
+        VARCHAR(20) documento PK "NOT NULL"
+        VARCHAR(150) nombre "NOT NULL"
+        VARCHAR(50) relacion "NOT NULL — ej. padre, madre, tutor legal; PROPUESTA dejar abierto en VARCHAR"
+    }
+
+    usuario_administrativo {
+        VARCHAR(150) correo PK "NOT NULL"
+        VARCHAR(255) contrasena "NOT NULL — almacenar como hash (bcrypt/argon2), nunca texto plano"
+        VARCHAR(150) nombre "NOT NULL"
+        VARCHAR(30) rol "NULL — PROPUESTA opcional: Aldrin/Tesorero/Contador/Secretaria, solo identificacion (RN-T.2)"
+        TINYINT(1) es_administrador_principal "NOT NULL — true solo para Aldrin"
+        VARCHAR(150) creado_por_correo FK "NULL — reflexiva, nulo para la cuenta fundadora · INDICE FK: ON DELETE SET NULL, ON UPDATE CASCADE"
+    }
+
+    documento {
+        INT id PK "NOT NULL — AUTO_INCREMENT"
+        VARCHAR(20) deportista_documento FK "NOT NULL · INDICE FK: ON DELETE RESTRICT, ON UPDATE CASCADE"
+        VARCHAR(30) tipo_documento "NOT NULL — PROPUESTA dejar abierto en VARCHAR por el valor otro (RN-6.1): inscripcion, identidad, acudiente, foto, consentimiento, certificado_ascenso, competencia, otro"
+        VARCHAR(255) archivo "NOT NULL — ruta o nombre del archivo almacenado"
+        DATE fecha_carga "NOT NULL"
+        ENUM estado "NOT NULL — valores: cargado, pendiente"
+    }
+
+    asistencia {
+        VARCHAR(20) deportista_documento PK "NOT NULL — tambien FK a deportista · INDICE FK: ON DELETE RESTRICT, ON UPDATE CASCADE"
+        DATE fecha PK "NOT NULL"
+        TINYINT(1) asistio "NOT NULL"
+    }
+
+    pago {
+        INT id PK "NOT NULL — AUTO_INCREMENT"
+        VARCHAR(20) deportista_documento FK "NOT NULL · INDICE FK: ON DELETE RESTRICT, ON UPDATE CASCADE"
+        ENUM tipo "NOT NULL — valores: mensualidad, matricula"
+        SMALLINT anio "NOT NULL — ej. 2026"
+        TINYINT mes "NULL — 1 a 12, aplica solo a mensualidad"
+        TINYINT semana "NULL — 1 a 4, semana del mes en que se pago (RN-8.1), aplica solo a mensualidad"
+        ENUM estado "NOT NULL — valores: pagado, pendiente"
+        VARCHAR(255) consecuencia_mora "NULL — PENDIENTE DE ALDRIN: consecuencia tras mora prolongada (RN-8.7)"
+    }
+
+    evento_calendario {
+        INT id PK "NOT NULL — AUTO_INCREMENT"
+        VARCHAR(150) nombre "NOT NULL"
+        ENUM tipo "NOT NULL — valores: competencia, evaluacion, reunion_administrativa, evento_extra"
+        DATE fecha "NOT NULL"
+        VARCHAR(150) lugar "NOT NULL"
+        ENUM visibilidad "NOT NULL — valores: administrativa, publica"
+        TEXT observaciones "NULL — notas generales del evento (RN-3.1)"
+    }
+
+    competencia {
+        INT evento_id PK "NOT NULL — tambien FK a evento_calendario · INDICE FK: ON DELETE CASCADE, ON UPDATE CASCADE"
+        VARCHAR(50) plataforma "NULL — Fitofan u otra, texto libre, sin integracion (RN-3.4)"
+        ENUM tipo_torneo "NOT NULL — valores: nacional, internacional, departamental"
+    }
+
+    participacion_competencia {
+        VARCHAR(20) deportista_documento PK "NOT NULL — tambien FK a deportista · INDICE FK: ON DELETE RESTRICT, ON UPDATE CASCADE"
+        INT competencia_evento_id PK "NOT NULL — tambien FK a competencia · INDICE FK: ON DELETE RESTRICT, ON UPDATE CASCADE"
+        ENUM modalidad PK "NOT NULL — CORREGIDO al pasar a modelo relacional: se agrega a la llave compuesta porque un deportista puede tener una participacion por modalidad dentro del mismo torneo (RN-3.1/RN-3.2). Valores: combate_individual, combate_equipos, defensa_personal, salto_alto, salto_largo, formas — verificar contra Reglas de Negocio v0.3"
+        ENUM categoria_edad "NOT NULL — valores: infantil, junior, juvenil, mayores, senior, master (RN-3.1/RN-3.8)"
+        VARCHAR(30) categoria_peso "NULL — PENDIENTE DE VALIDACION: pesos por edad para categorias menores (RN-3.1/RN-3.8)"
+        VARCHAR(255) resultado "NULL — resultado general, texto libre (RN-3.1)"
+        ENUM medalla "NULL — valores: oro, plata, bronce, ninguna"
+        TINYINT combates_ganados "NULL — aplica a modalidades de combate"
+        TINYINT combates_perdidos "NULL — aplica a modalidades de combate"
+        TEXT notas_oponente "NULL — texto libre, uso interno del staff"
+    }
+
+    sesion_examen {
+        INT id PK "NOT NULL — AUTO_INCREMENT"
+        DATE fecha "NOT NULL — CONFIRMADO: 26 abr, 26 jul, 13 dic 2026 (RN-5.4)"
+        VARCHAR(150) lugar "NOT NULL"
+    }
+
+    detalle_evaluacion {
+        INT sesion_examen_id PK "NOT NULL — tambien FK a sesion_examen · INDICE FK: ON DELETE RESTRICT, ON UPDATE CASCADE"
+        VARCHAR(20) deportista_documento PK "NOT NULL — tambien FK a deportista · INDICE FK: ON DELETE RESTRICT, ON UPDATE CASCADE"
+        VARCHAR(30) modalidad PK "NOT NULL — CORREGIDO: cambia de ENUM a VARCHAR porque RN-5.5 deja la lista abierta ('...teorico, fisico, combate, rompimiento, formas, llaves, entre otras'), a diferencia de RN-3.2 que si es un conjunto cerrado; Contexto Base §12 ya menciona 'armas segun grado' como modalidad adicional posible — mismo criterio que documento.tipo_documento. Valores conocidos, no lista cerrada: teorico, fisico, combate, rompimiento, formas, llaves"
+        VARCHAR(30) grado_evaluado "NOT NULL — grado al que aspira (RN-5.1)"
+        ENUM estado "NOT NULL — valores: pendiente, completado"
+        DATE fecha_completado "NULL — cada modalidad puede completarse en fecha distinta al resto del grupo (RN-5.5)"
+        TEXT criterios_evaluados "NULL — PENDIENTE DE ALDRIN: estructura confirmada por RN-5.1, valores desde la plantilla oficial"
+        TEXT puntajes "NULL — PENDIENTE DE ALDRIN: escala desde la plantilla oficial (RN-5.1)"
+        DECIMAL(6_2) valor_medible "NULL — PROPUESTA: valor numerico de prueba fisica, aplica cuando modalidad = fisico (RN-2.3)"
+        TEXT aspectos_fallidos "NULL — PENDIENTE DE ALDRIN (RN-5.1)"
+        TEXT observaciones "NULL — PENDIENTE DE ALDRIN (RN-5.1)"
+        TEXT recomendaciones "NULL — PENDIENTE DE ALDRIN (RN-5.1)"
+        TINYINT(1) aprobado "NULL — desconocido hasta completar la evaluacion; si es verdadero, actualiza deportista.grado_actual (RN-2.5)"
+    }
+
+    leyenda_notacion {
+        VARCHAR entidad_nucleo "Borde rojo grueso solido = entidad confirmada (Reglas de Negocio v0.3)"
+        VARCHAR entidad_asociativa "Borde gris fino solido = entidad de relacion N a N (tabla asociativa)"
+        VARCHAR dato_pendiente "Comentario con PENDIENTE DE ALDRIN o PENDIENTE DE VALIDACION = tipo ya asignado, valor/formato exacto aun no confirmado"
+        VARCHAR notacion_decimal "DECIMAL(m_d) representa DECIMAL(m,d) — se usa guion bajo porque la coma no es valida dentro del tipo en este renderizador"
+        VARCHAR indice_pk "Cada llave marcada PK (simple o compuesta) es la definicion de indice PRIMARY KEY lista para DDL; en las compuestas, el orden de las filas mostradas en la tabla es el orden de columnas de la llave"
+        VARCHAR indice_fk "Comportamiento ON DELETE / ON UPDATE de cada llave foranea (paquete 2), anotado en el comentario de la columna FK correspondiente con el prefijo INDICE FK"
+        VARCHAR alcance_paquete "Paquete 1 (24/09/2026): nombre de tabla/columna, tipo MySQL 8 y nulidad. Paquete 2 (24/09/2026): llaves primarias confirmadas como indice PRIMARY KEY y comportamiento ON DELETE/ON UPDATE de cada llave foranea — mismo diagrama, sin version nueva"
+    }
+
+    acudiente_tutor ||--o{ deportista : "es responsable de"
+    usuario_administrativo ||--o{ deportista : "valida (registro pendiente)"
+    usuario_administrativo ||--o{ usuario_administrativo : "da de alta / gestiona"
+    deportista ||--o{ documento : "tiene"
+    deportista ||--o{ asistencia : "registra"
+    deportista ||--o{ pago : "realiza"
+    evento_calendario ||--o| competencia : "se especializa en"
+    deportista ||--o{ participacion_competencia : "participa en"
+    competencia ||--o{ participacion_competencia : "recibe"
+    deportista ||--o{ detalle_evaluacion : "es evaluado en"
+    sesion_examen ||--o{ detalle_evaluacion : "agrupa"
+
+    deportista:::confirmado
+    acudiente_tutor:::confirmado
+    usuario_administrativo:::confirmado
+    documento:::confirmado
+    asistencia:::confirmado
+    pago:::confirmado
+    evento_calendario:::confirmado
+    competencia:::confirmado
+    sesion_examen:::confirmado
+    participacion_competencia:::asociativa
+    detalle_evaluacion:::asociativa
+    leyenda_notacion:::leyenda
+
+    classDef confirmado fill:#f2f2f2,stroke:#8b1e1e,stroke-width:3px
+    classDef asociativa fill:#ffffff,stroke:#2c2c2c,stroke-width:1px
+    classDef leyenda fill:#fbf6ea,stroke:#b08d2a,stroke-width:2px,stroke-dasharray:5 4
