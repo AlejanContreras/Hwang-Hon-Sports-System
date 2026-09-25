@@ -32,7 +32,7 @@ erDiagram
         VARCHAR(150) nombre "NOT NULL"
         VARCHAR(30) rol "NULL — PROPUESTA opcional: Aldrin/Tesorero/Contador/Secretaria, solo identificacion (RN-T.2)"
         TINYINT(1) es_administrador_principal "NOT NULL — true solo para Aldrin"
-        VARCHAR(150) creado_por_correo FK "NULL — reflexiva, nulo para la cuenta fundadora · INDICE FK: ON DELETE SET NULL, ON UPDATE CASCADE"
+        VARCHAR(150) creado_por_correo FK "NULL — reflexiva, nulo para la cuenta fundadora · INDICE FK: ON DELETE SET NULL, ON UPDATE RESTRICT — CORREGIDO 25/09/2026: verificado empiricamente que InnoDB/MariaDB no ejecuta CASCADE en llave reflexiva al actualizar la fila padre (error 1451); se documenta el comportamiento real. El correo de un administrador que ya dio de alta otras cuentas no se puede cambiar directamente"
     }
 
     documento {
@@ -80,7 +80,7 @@ erDiagram
     participacion_competencia {
         VARCHAR(20) deportista_documento PK "NOT NULL — tambien FK a deportista · INDICE FK: ON DELETE RESTRICT, ON UPDATE CASCADE"
         INT competencia_evento_id PK "NOT NULL — tambien FK a competencia · INDICE FK: ON DELETE RESTRICT, ON UPDATE CASCADE"
-        ENUM modalidad PK "NOT NULL — CORREGIDO al pasar a modelo relacional: se agrega a la llave compuesta porque un deportista puede tener una participacion por modalidad dentro del mismo torneo (RN-3.1/RN-3.2). Valores: combate_individual, combate_equipos, defensa_personal, salto_alto, salto_largo, formas — verificar contra Reglas de Negocio v0.3"
+        ENUM modalidad PK "NOT NULL — CORREGIDO al pasar a modelo relacional: se agrega a la llave compuesta porque un deportista puede tener una participacion por modalidad dentro del mismo torneo (RN-3.1/RN-3.2). Valores: combate_individual, combate_equipos, defensa_personal, salto_alto, salto_largo, formas — verificado contra RN-3.2 el 25/09/2026, coincide exactamente"
         ENUM categoria_edad "NOT NULL — valores: infantil, junior, juvenil, mayores, senior, master (RN-3.1/RN-3.8)"
         VARCHAR(30) categoria_peso "NULL — PENDIENTE DE VALIDACION: pesos por edad para categorias menores (RN-3.1/RN-3.8)"
         VARCHAR(255) resultado "NULL — resultado general, texto libre (RN-3.1)"
