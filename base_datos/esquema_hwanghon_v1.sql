@@ -206,7 +206,7 @@ CREATE TABLE detalle_evaluacion (
     aspectos_fallidos     TEXT          NULL     COMMENT 'PENDIENTE DE ALDRIN (RN-5.1)',
     observaciones         TEXT          NULL     COMMENT 'PENDIENTE DE ALDRIN (RN-5.1)',
     recomendaciones       TEXT          NULL     COMMENT 'PENDIENTE DE ALDRIN (RN-5.1)',
-    aprobado              TINYINT(1)    NULL     COMMENT 'Nulo hasta completar; si es verdadero actualiza deportista.grado_actual (RN-2.5)',
+    aprobado              TINYINT(1)    NULL     COMMENT 'Nulo hasta completar; si es verdadero actualiza deportista.grado_actual (RN-10.3)',
 
     PRIMARY KEY (sesion_examen_id, deportista_documento, modalidad),
 
