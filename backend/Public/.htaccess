@@ -1,0 +1,10 @@
+RewriteEngine On
+
+# Punto de entrada unico: toda solicitud que no sea un archivo o carpeta
+# existente se redirige al front controller (api.php).
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ api.php [QSA,L]
+
+# Evita listar el contenido de la carpeta si no hay api.php
+Options -Indexes
