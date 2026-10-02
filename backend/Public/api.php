@@ -5,27 +5,24 @@ declare(strict_types=1);
 /**
  * Punto de entrada unico (front controller) de la API de HwangHon-Sports-System.
  *
- * Patron adaptado de AttendQR (ver Public/api.php): una tabla de rutas
- * ($rutas) que asocia cada recurso con su Controller, y una tabla de
- * politicas de acceso ($politicasAcceso) que decide que middleware aplica
- * antes de despachar la solicitud.
+ * Usa una tabla de rutas ($rutas) que asocia cada recurso con su
+ * Controller, y una tabla de politicas de acceso ($politicasAcceso) que
+ * decide que middleware aplica antes de despachar la solicitud.
  *
- * A diferencia de AttendQR (5 politicas basadas en rol), HwangHon usa el
- * modelo simplificado de 2 ambitos acordado para este proyecto (RN-T.1/
+ * El acceso se basa en el modelo simplificado de 2 ambitos (RN-T.1/
  * RN-T.2/RN-T.3): 'publica' (sin autenticacion), 'autenticada' (cualquier
  * sesion activa, administrativa o publica — el Service filtra que se
  * expone) y 'solo_administrativa' (unicamente sesion del ambito
  * administrativo). No existe 'solo_publica': el ambito administrativo
  * siempre tiene acceso completo (RN-T.2).
  *
- * Las politicas asignadas aqui son un punto de partida para la fase
- * "Enrutamiento y politica de acceso" (Etapa 4, fase 20.2) — se revisan y
- * ajustan en esa fase, no son definitivas todavia.
+ * Las politicas asignadas por recurso son un punto de partida razonable,
+ * no definitivo -- se revisan si la Etapa 5 revela una necesidad distinta
+ * (p. ej. una accion de un recurso "autenticada" que en realidad deba
+ * restringirse a "solo_administrativa").
  *
  * Solicitudes esperadas: /api.php?recurso=<recurso>&accion=<accion>[&...parametros]
  * con el cuerpo (si aplica) en JSON.
- *
- * Ubicacion: backend/Public/api.php
  */
 
 date_default_timezone_set('America/Bogota');
@@ -33,22 +30,22 @@ date_default_timezone_set('America/Bogota');
 define('RUTA_RAIZ', dirname(__DIR__));
 define('RUTA_SRC', RUTA_RAIZ . '/Src');
 
-function respuestaJson(array $payload, int $codigoHttp = 200): never
-{
-    http_response_code($codigoHttp);
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode($payload, JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-function respuestaError(int $codigoHttp, string $mensaje): never
-{
-    respuestaJson(['exito' => false, 'mensaje' => $mensaje], $codigoHttp);
-}
-
-// Bootstrap: orden importa (BaseRepository depende de Database, los
-// Repositories dependen de BaseRepository, los Controllers dependen de los
-// Services que dependen de los Repositories)
+/*
+ * Carga de archivos (bootstrap). El orden importa, porque cada capa
+ * necesita que la anterior ya este cargada:
+ *   1. Utilidades compartidas: Respuesta (respuestas JSON) y
+ *      ExcepcionNegocio (errores esperados), que usan las demas capas.
+ *   2. Configuracion de la base de datos (database.php).
+ *   3. Los Middleware (se usan mas abajo, segun la politica de acceso).
+ *   4. BaseRepository, que usa la conexion a la base de datos.
+ *   5. Los Models (estructuras de datos que usan los Repositories).
+ *   6. Los Repositories, que extienden BaseRepository.
+ *   7. Los Services, que usan los Repositories.
+ *   8. El Controller del recurso solicitado, que usa su Service
+ *      (se carga mas abajo, solo el que se necesita).
+ */
+require_once RUTA_SRC . '/Utils/Respuesta.php';
+require_once RUTA_SRC . '/Utils/ExcepcionNegocio.php';
 require_once RUTA_SRC . '/Config/database.php';
 require_once RUTA_SRC . '/Middleware/AuthMiddleware.php';
 require_once RUTA_SRC . '/Middleware/AmbitoMiddleware.php';
@@ -71,11 +68,11 @@ $recurso = $_GET['recurso'] ?? null;
 $accion = $_GET['accion'] ?? null;
 
 if ($recurso === null) {
-    respuestaJson(['exito' => true, 'mensaje' => 'HwangHon-Sports-System API activa.']);
+    Respuesta::exito(['mensaje' => 'HwangHon-Sports-System API activa.']);
 }
 
 if ($accion === null) {
-    respuestaError(400, 'Falta el parametro "accion".');
+    Respuesta::error(400, 'Falta el parametro "accion".');
 }
 
 // Tabla de rutas: recurso => [archivo del Controller, nombre de la clase]
@@ -111,14 +108,14 @@ $politicasAcceso = [
 ];
 
 if (!array_key_exists($recurso, $rutas)) {
-    respuestaError(404, "Recurso no reconocido: {$recurso}");
+    Respuesta::error(404, "Recurso no reconocido: {$recurso}");
 }
 
 [$archivoControlador, $nombreClaseControlador] = $rutas[$recurso];
 require_once RUTA_SRC . '/Controllers/' . $archivoControlador;
 
 if (!class_exists($nombreClaseControlador)) {
-    respuestaError(500, "Controller no encontrado para el recurso: {$recurso}");
+    Respuesta::error(500, "Controller no encontrado para el recurso: {$recurso}");
 }
 
 // Middleware segun la politica de acceso del recurso
@@ -135,14 +132,40 @@ switch ($politica) {
         AmbitoMiddleware::verificarAdministrativa();
         break;
     default:
-        respuestaError(500, "Politica de acceso no reconocida: {$politica}");
+        Respuesta::error(500, "Politica de acceso no reconocida: {$politica}");
 }
 
-// Parametros: el resto de la query string, sin recurso/accion
+/*
+ * Parametros de la solicitud. La "query string" es la parte de la URL que
+ * va despues del signo "?", con forma clave=valor separada por "&".
+ * Ejemplo: api.php?recurso=deportistas&accion=consultar&documento=1001
+ * PHP la entrega ya separada en el arreglo $_GET. Se copian todos los
+ * valores y se quitan "recurso" y "accion" (ya se usaron arriba para
+ * elegir el Controller); lo que queda (ej. documento=1001) se pasa al
+ * Controller como $parametros.
+ */
 $parametros = $_GET;
 unset($parametros['recurso'], $parametros['accion']);
 
 $metodo = $_SERVER['REQUEST_METHOD'];
 
-$controlador = new $nombreClaseControlador();
-$controlador->manejar($metodo, $accion, $parametros);
+/*
+ * Manejo de errores centralizado. Cualquier error que ocurra dentro del
+ * Controller (o del Service y Repository que este llama) se atrapa aqui y
+ * se responde siempre en el formato JSON estandar:
+ *   - ExcepcionNegocio: error esperado (dato invalido, no encontrado...),
+ *     se responde con su propio codigo HTTP y mensaje.
+ *   - Cualquier otro error (Throwable: fallo de la base de datos, error de
+ *     programacion): se guarda el detalle en el log del servidor y al
+ *     cliente solo se le responde un 500 generico, sin exponer detalles
+ *     tecnicos.
+ */
+try {
+    $controlador = new $nombreClaseControlador();
+    $controlador->manejar($metodo, $accion, $parametros);
+} catch (ExcepcionNegocio $excepcion) {
+    Respuesta::error($excepcion->obtenerCodigoHttp(), $excepcion->getMessage());
+} catch (Throwable $excepcion) {
+    error_log((string) $excepcion);
+    Respuesta::error(500, 'Error interno del servidor.');
+}
