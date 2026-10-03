@@ -7,8 +7,6 @@ declare(strict_types=1);
  * Datos específicos de un evento de tipo competencia (RN-3.x).
  * CRUD genérico únicamente — sin reglas de negocio (esas se implementan en Etapa 5,
  * en la capa de Services, según la Especificación de Lógica de Negocio).
- *
- * Ubicación: backend/Src/Repositories/CompetenciaRepository.php
  */
 class CompetenciaRepository extends BaseRepository
 {

@@ -9,17 +9,10 @@ declare(strict_types=1);
  * Compatible con Microsoft Excel, LibreOffice Calc y Google Sheets.
  * Requisitos de PHP: solo extensiones estandar (ninguna adicional).
  *
- * Adaptado de AttendQR (ver Src/Utils/XlsxWriter.php): motor de generacion
- * identico -- mismo formato de salida, misma logica de construccion de ZIP y
- * de XML --, con nomenclatura en espanol (regla 22) y con los estilos
- * renombrados de forma neutral (antes describian columnas y celdas propias
- * del reporte de asistencia de AttendQR: "S_CELL_A", "S_NAME_IDX", etc.).
- * Los 12 estilos y sus colores/formatos no cambiaron, solo su nombre, para
- * que sirvan para cualquier reporte de HwangHon (RN-10.x), no solo uno de
- * asistencia. Que reportes concretos usa cada estilo es decision de la
- * Etapa 5, cuando se implemente el modulo Reporte.
- *
- * Ubicacion: backend/Src/Utils/GeneradorXlsx.php
+ * Los 16 estilos (constantes ESTILO_*) tienen nombres neutrales para que
+ * sirvan a cualquier reporte de HwangHon (RN-10.x). Que reportes concretos
+ * usa cada estilo es decision de la Etapa 5, cuando se implemente el modulo
+ * Reporte.
  */
 class GeneradorXlsx
 {
@@ -396,9 +389,6 @@ class GeneradorXlsx
  * Construccion de un ZIP en PHP puro (PKZip 2.0, entradas almacenadas sin
  * compresion). No requiere la extension ext-zip. Suficiente para un .xlsx,
  * cuyo contenido ya es XML (texto).
- *
- * Adaptado de AttendQR (ver Src/Utils/XlsxWriter.php, clase XlsxZipBuilder):
- * misma logica de formato binario, solo con nomenclatura en espanol.
  */
 class ConstructorZipXlsx
 {

@@ -7,8 +7,6 @@ declare(strict_types=1);
  * Evento general del calendario del club: competencia, evaluación, reunión administrativa o evento extra (RN-3.1/RN-9.x).
  * CRUD genérico únicamente — sin reglas de negocio (esas se implementan en Etapa 5,
  * en la capa de Services, según la Especificación de Lógica de Negocio).
- *
- * Ubicación: backend/Src/Repositories/EventoCalendarioRepository.php
  */
 class EventoCalendarioRepository extends BaseRepository
 {

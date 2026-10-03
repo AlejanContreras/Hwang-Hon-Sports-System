@@ -10,8 +10,6 @@ declare(strict_types=1);
  * (Diseno de arquitectura backend, fase "Contratos por modulo"); la
  * implementacion real de las reglas de negocio corresponde a la Etapa 5
  * (Desarrollo backend), segun la Especificacion de Logica de Negocio.
- *
- * Ubicacion: backend/Src/Services/PagoService.php
  */
 class PagoService
 {

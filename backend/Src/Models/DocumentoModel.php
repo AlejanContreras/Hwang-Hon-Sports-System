@@ -6,8 +6,6 @@ declare(strict_types=1);
  * Modelo de la tabla `documento`.
  * Documento cargado en el expediente de un deportista (RN-6.1).
  * Llave primaria: id.
- *
- * Ubicación: backend/Src/Models/DocumentoModel.php
  */
 class DocumentoModel
 {

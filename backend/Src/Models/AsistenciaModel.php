@@ -6,8 +6,6 @@ declare(strict_types=1);
  * Modelo de la tabla `asistencia`.
  * Registro de asistencia de un deportista a una fecha de entrenamiento (RN-7.x).
  * Llave primaria: deportista_documento, fecha.
- *
- * Ubicación: backend/Src/Models/AsistenciaModel.php
  */
 class AsistenciaModel
 {

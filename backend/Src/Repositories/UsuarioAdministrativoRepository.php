@@ -7,8 +7,6 @@ declare(strict_types=1);
  * Usuario con acceso al ámbito administrativo del sistema (RN-T.10/RN-T.11).
  * CRUD genérico únicamente — sin reglas de negocio (esas se implementan en Etapa 5,
  * en la capa de Services, según la Especificación de Lógica de Negocio).
- *
- * Ubicación: backend/Src/Repositories/UsuarioAdministrativoRepository.php
  */
 class UsuarioAdministrativoRepository extends BaseRepository
 {

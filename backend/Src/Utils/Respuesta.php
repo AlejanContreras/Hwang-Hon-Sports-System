@@ -8,8 +8,10 @@ declare(strict_types=1);
  * Formato de exito: {"exito": true, "datos": ...}
  * Formato de error: {"exito": false, "mensaje": "..."}
  *
- * Ambos metodos envian la respuesta y terminan la ejecucion (exit), por eso
- * devuelven "never". Si el formato cambia, se cambia solo aqui.
+ * archivo() envia una descarga (no JSON) para Reportes y Documentos.
+ *
+ * Todos los metodos envian la respuesta y terminan la ejecucion (exit), por
+ * eso devuelven "never". Si el formato cambia, se cambia solo aqui.
  */
 class Respuesta
 {
@@ -27,6 +29,27 @@ class Respuesta
     public static function error(int $codigoHttp, string $mensaje): never
     {
         self::enviar(['exito' => false, 'mensaje' => $mensaje], $codigoHttp);
+    }
+
+    /**
+     * Envia un archivo para descargar (ej. un .xlsx de Reportes o un PDF de
+     * Documentos) y termina. El nombre se limpia antes de ponerlo en la
+     * cabecera: solo letras, numeros, punto, guion y guion bajo, para que un
+     * nombre malicioso no pueda alterar la respuesta.
+     */
+    public static function archivo(string $contenido, string $nombreArchivo, string $tipoMime): never
+    {
+        $nombreLimpio = preg_replace('/[^A-Za-z0-9._-]/', '_', $nombreArchivo);
+        if ($nombreLimpio === null || trim($nombreLimpio, '._') === '') {
+            $nombreLimpio = 'archivo';
+        }
+
+        http_response_code(200);
+        header('Content-Type: ' . $tipoMime);
+        header('Content-Disposition: attachment; filename="' . $nombreLimpio . '"');
+        header('Content-Length: ' . strlen($contenido));
+        echo $contenido;
+        exit;
     }
 
     /**

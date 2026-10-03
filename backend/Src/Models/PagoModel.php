@@ -6,8 +6,6 @@ declare(strict_types=1);
  * Modelo de la tabla `pago`.
  * Registro de pago (mensualidad o matrícula) de un deportista (RN-8.x).
  * Llave primaria: id.
- *
- * Ubicación: backend/Src/Models/PagoModel.php
  */
 class PagoModel
 {

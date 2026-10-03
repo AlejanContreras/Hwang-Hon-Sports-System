@@ -6,8 +6,6 @@ declare(strict_types=1);
  * Modelo de la tabla `entrega_cinturon`.
  * Confirmación de entrega física del cinturón tras aprobar un examen (RN-5.7).
  * Llave primaria: sesion_examen_id, deportista_documento.
- *
- * Ubicación: backend/Src/Models/EntregaCinturonModel.php
  */
 class EntregaCinturonModel
 {

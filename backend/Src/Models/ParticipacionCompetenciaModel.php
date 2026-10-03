@@ -6,8 +6,6 @@ declare(strict_types=1);
  * Modelo de la tabla `participacion_competencia`.
  * Participación de un deportista en una modalidad de una competencia (RN-3.x).
  * Llave primaria: deportista_documento, competencia_evento_id, modalidad.
- *
- * Ubicación: backend/Src/Models/ParticipacionCompetenciaModel.php
  */
 class ParticipacionCompetenciaModel
 {

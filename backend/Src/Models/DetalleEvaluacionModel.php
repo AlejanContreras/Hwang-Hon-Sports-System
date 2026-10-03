@@ -6,8 +6,6 @@ declare(strict_types=1);
  * Modelo de la tabla `detalle_evaluacion`.
  * Evaluación de un deportista en una modalidad dentro de una sesión de examen (RN-5.x).
  * Llave primaria: sesion_examen_id, deportista_documento, modalidad.
- *
- * Ubicación: backend/Src/Models/DetalleEvaluacionModel.php
  */
 class DetalleEvaluacionModel
 {

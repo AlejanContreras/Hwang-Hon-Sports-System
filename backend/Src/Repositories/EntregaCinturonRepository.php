@@ -7,8 +7,6 @@ declare(strict_types=1);
  * Confirmación de entrega física del cinturón tras aprobar un examen (RN-5.7).
  * CRUD genérico únicamente — sin reglas de negocio (esas se implementan en Etapa 5,
  * en la capa de Services, según la Especificación de Lógica de Negocio).
- *
- * Ubicación: backend/Src/Repositories/EntregaCinturonRepository.php
  */
 class EntregaCinturonRepository extends BaseRepository
 {

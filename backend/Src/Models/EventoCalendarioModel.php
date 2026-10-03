@@ -6,8 +6,6 @@ declare(strict_types=1);
  * Modelo de la tabla `evento_calendario`.
  * Evento general del calendario del club: competencia, evaluación, reunión administrativa o evento extra (RN-3.1/RN-9.x).
  * Llave primaria: id.
- *
- * Ubicación: backend/Src/Models/EventoCalendarioModel.php
  */
 class EventoCalendarioModel
 {

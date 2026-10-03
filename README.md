@@ -27,9 +27,9 @@ Se contempla que la arquitectura pueda permitir futuras ampliaciones o integraci
 
 ## Estado del proyecto
 
-🚧 **En desarrollo — Fase de investigación y análisis.**
+🚧 **En desarrollo — Etapa 5 (Desarrollo backend).**
 
-Actualmente se encuentra en proceso de recopilación, análisis y documentación de los procesos reales del club. Los requerimientos y funcionalidades definitivas serán establecidos antes de iniciar la implementación.
+Análisis y documentación, diseño de base de datos, definición de lógica de negocio, y arquitectura backend (estructura de carpetas y contratos entre capas) ya están cerrados. Actualmente se está implementando la lógica real de los servicios del backend, módulo por módulo.
 
 ## Metodología
 
@@ -46,11 +46,11 @@ El proyecto sigue una metodología de desarrollo por etapas:
 9. Pruebas.
 10. Despliegue.
 
-No se inicia la implementación hasta contar con una definición suficientemente clara de los procesos y requerimientos correspondientes.
-
 ## Tecnologías
 
-Las tecnologías definitivas serán seleccionadas durante la fase de diseño técnico, de acuerdo con las necesidades reales del proyecto.
+- **Backend:** PHP 8, sin framework.
+- **Base de datos:** MySQL.
+- **Frontend:** JavaScript, HTML5, CSS3.
 
 ## Estructura del proyecto
 
@@ -64,27 +64,8 @@ HwangHon-Sports-System/
 ├── recursos/
 ├── pruebas/
 └── README.md
+```
 
 Nota
 
 Este repositorio se encuentra en una etapa inicial. La estructura, funcionalidades y decisiones técnicas pueden cambiar durante las fases de análisis y diseño.
-
-
-
-### Una cosa importante
-
-
-**No pondría todavía** tecnologías como PHP, MySQL, JavaScript, etc. aunque probablemente terminemos usándolas.
-
-
-Primero definimos el sistema → después arquitectura → **después tecnología**.
-
-
-Y tampoco pondría todavía una descripción exageradamente completa. Este README es el **punto de partida del repositorio**, no la documentación oficial del sistema.
-
-
-Con esto ya puedes hacer el primer commit:
-
-
-```text
-docs: crear README inicial del proyecto

@@ -6,8 +6,6 @@ declare(strict_types=1);
  * Modelo de la tabla `deportista`.
  * Deportista inscrito en el club, con sus datos personales, deportivos y de estado (RN-1.x).
  * Llave primaria: documento.
- *
- * Ubicación: backend/Src/Models/DeportistaModel.php
  */
 class DeportistaModel
 {

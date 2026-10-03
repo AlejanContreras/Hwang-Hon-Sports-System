@@ -7,8 +7,6 @@ declare(strict_types=1);
  * Deportista inscrito en el club, con sus datos personales, deportivos y de estado (RN-1.x).
  * CRUD genérico únicamente — sin reglas de negocio (esas se implementan en Etapa 5,
  * en la capa de Services, según la Especificación de Lógica de Negocio).
- *
- * Ubicación: backend/Src/Repositories/DeportistaRepository.php
  */
 class DeportistaRepository extends BaseRepository
 {

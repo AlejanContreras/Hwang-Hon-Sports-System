@@ -6,11 +6,6 @@ declare(strict_types=1);
  * Conexión a la base de datos (patrón singleton sobre PDO).
  * Lee la configuración de variables de entorno; con valores por defecto
  * razonables para desarrollo local (XAMPP/MariaDB).
- *
- * Patrón adaptado de AttendQR (ver Src/Config/database.php), con nomenclatura
- * de variables en español (regla 22 del proyecto).
- *
- * Ubicación: backend/Src/Config/database.php
  */
 class Database
 {

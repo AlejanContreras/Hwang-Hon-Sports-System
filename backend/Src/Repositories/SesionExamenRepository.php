@@ -7,8 +7,6 @@ declare(strict_types=1);
  * Sesión de examen de ascenso de grado (RN-5.x).
  * CRUD genérico únicamente — sin reglas de negocio (esas se implementan en Etapa 5,
  * en la capa de Services, según la Especificación de Lógica de Negocio).
- *
- * Ubicación: backend/Src/Repositories/SesionExamenRepository.php
  */
 class SesionExamenRepository extends BaseRepository
 {

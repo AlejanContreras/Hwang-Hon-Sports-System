@@ -6,8 +6,6 @@ declare(strict_types=1);
  * Modelo de la tabla `usuario_administrativo`.
  * Usuario con acceso al ámbito administrativo del sistema (RN-T.10/RN-T.11).
  * Llave primaria: correo.
- *
- * Ubicación: backend/Src/Models/UsuarioAdministrativoModel.php
  */
 class UsuarioAdministrativoModel
 {

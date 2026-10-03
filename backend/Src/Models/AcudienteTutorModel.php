@@ -6,8 +6,6 @@ declare(strict_types=1);
  * Modelo de la tabla `acudiente_tutor`.
  * Acudiente o tutor legal de un deportista menor de edad.
  * Llave primaria: documento.
- *
- * Ubicación: backend/Src/Models/AcudienteTutorModel.php
  */
 class AcudienteTutorModel
 {

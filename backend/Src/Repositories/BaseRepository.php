@@ -6,11 +6,6 @@ declare(strict_types=1);
  * Clase base abstracta para todos los repositorios del sistema.
  * Provee acceso a la conexión PDO y helpers genéricos de consulta,
  * todos usando sentencias preparadas (sin concatenar valores en SQL).
- *
- * Patrón adaptado de AttendQR (ver backend/Src/Repositories/*Repository.php)
- * con nomenclatura en español (regla 22 del proyecto).
- *
- * Ubicación: backend/Src/Repositories/BaseRepository.php
  */
 abstract class BaseRepository
 {

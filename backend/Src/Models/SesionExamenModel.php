@@ -6,8 +6,6 @@ declare(strict_types=1);
  * Modelo de la tabla `sesion_examen`.
  * Sesión de examen de ascenso de grado (RN-5.x).
  * Llave primaria: id.
- *
- * Ubicación: backend/Src/Models/SesionExamenModel.php
  */
 class SesionExamenModel
 {

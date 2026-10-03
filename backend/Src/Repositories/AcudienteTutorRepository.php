@@ -7,8 +7,6 @@ declare(strict_types=1);
  * Acudiente o tutor legal de un deportista menor de edad.
  * CRUD genérico únicamente — sin reglas de negocio (esas se implementan en Etapa 5,
  * en la capa de Services, según la Especificación de Lógica de Negocio).
- *
- * Ubicación: backend/Src/Repositories/AcudienteTutorRepository.php
  */
 class AcudienteTutorRepository extends BaseRepository
 {

@@ -7,8 +7,6 @@ declare(strict_types=1);
  * Evaluación de un deportista en una modalidad dentro de una sesión de examen (RN-5.x).
  * CRUD genérico únicamente — sin reglas de negocio (esas se implementan en Etapa 5,
  * en la capa de Services, según la Especificación de Lógica de Negocio).
- *
- * Ubicación: backend/Src/Repositories/DetalleEvaluacionRepository.php
  */
 class DetalleEvaluacionRepository extends BaseRepository
 {

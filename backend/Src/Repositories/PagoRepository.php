@@ -7,8 +7,6 @@ declare(strict_types=1);
  * Registro de pago (mensualidad o matrícula) de un deportista (RN-8.x).
  * CRUD genérico únicamente — sin reglas de negocio (esas se implementan en Etapa 5,
  * en la capa de Services, según la Especificación de Lógica de Negocio).
- *
- * Ubicación: backend/Src/Repositories/PagoRepository.php
  */
 class PagoRepository extends BaseRepository
 {

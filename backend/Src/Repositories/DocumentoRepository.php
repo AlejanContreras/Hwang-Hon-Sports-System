@@ -7,8 +7,6 @@ declare(strict_types=1);
  * Documento cargado en el expediente de un deportista (RN-6.1).
  * CRUD genérico únicamente — sin reglas de negocio (esas se implementan en Etapa 5,
  * en la capa de Services, según la Especificación de Lógica de Negocio).
- *
- * Ubicación: backend/Src/Repositories/DocumentoRepository.php
  */
 class DocumentoRepository extends BaseRepository
 {

@@ -6,8 +6,6 @@ declare(strict_types=1);
  * Modelo de la tabla `competencia`.
  * Datos específicos de un evento de tipo competencia (RN-3.x).
  * Llave primaria: evento_id.
- *
- * Ubicación: backend/Src/Models/CompetenciaModel.php
  */
 class CompetenciaModel
 {
