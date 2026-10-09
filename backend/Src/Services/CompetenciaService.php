@@ -67,7 +67,7 @@ class CompetenciaService
     /**
      * TODO: implementar en Etapa 5 segun la Especificacion de Logica de Negocio.
      */
-    public function eliminar(array $identificador): bool
+    public function eliminar(array $identificador): void
     {
         throw new RuntimeException(
             'CompetenciaService::eliminar() pendiente de implementar en Etapa 5.'

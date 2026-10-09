@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 /**
  * Capa de logica de negocio del modulo Evaluacion.
- * Examenes de ascenso de grado (RN-5.x). La regla exacta de aprobacion general (RN-5.3) sigue PENDIENTE DE RESPUESTA (RN-10.3/RN-5.7) y no se implementa en esta etapa.
+ * Examenes de ascenso de grado (RN-5.x). La regla exacta de aprobacion
+ * general del examen sigue PENDIENTE DE RESPUESTA: depende de los criterios y
+ * puntajes de la plantilla oficial, aun no entregada por Aldrin (RN-5.1/RN-5.3,
+ * Especificacion B.1), y no se implementa hasta recibirla. La actualizacion de
+ * grado_actual exige ademas la entrega fisica del cinturon (RN-5.7).
  *
  * Los metodos de este archivo son firmas (contratos) definidas en la Etapa 4
  * (Diseno de arquitectura backend, fase "Contratos por modulo"); la
@@ -69,7 +73,7 @@ class EvaluacionService
     /**
      * TODO: implementar en Etapa 5 segun la Especificacion de Logica de Negocio.
      */
-    public function eliminar(array $identificador): bool
+    public function eliminar(array $identificador): void
     {
         throw new RuntimeException(
             'EvaluacionService::eliminar() pendiente de implementar en Etapa 5.'

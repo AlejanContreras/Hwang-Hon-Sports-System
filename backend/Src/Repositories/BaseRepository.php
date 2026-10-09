@@ -17,6 +17,27 @@ abstract class BaseRepository
     }
 
     /**
+     * Ejecuta $operacion dentro de una transaccion: si todo sale bien confirma
+     * (commit); si algo lanza una excepcion, deshace todo (rollBack) y la vuelve
+     * a lanzar. Como todos los Repositories comparten la misma conexion
+     * (Database es singleton), la transaccion cubre las operaciones de varios
+     * Repositories a la vez (ej. deportista + acudiente). Asi el Service agrupa
+     * operaciones sin tocar PDO.
+     */
+    public function enTransaccion(callable $operacion): mixed
+    {
+        $this->bd->beginTransaction();
+        try {
+            $resultado = $operacion();
+            $this->bd->commit();
+            return $resultado;
+        } catch (Throwable $error) {
+            $this->bd->rollBack();
+            throw $error;
+        }
+    }
+
+    /**
      * Ejecuta una consulta SELECT y devuelve todas las filas.
      *
      * @param array<string, mixed> $parametros

@@ -1,3 +1,5 @@
+SET NAMES utf8mb4;
+
 INSERT INTO acudiente_tutor (documento, nombre, relacion) VALUES
 ('1000000001', 'Marcela Reyes Ortiz', 'madre');
 
@@ -5,10 +7,10 @@ INSERT INTO usuario_administrativo (correo, contrasena, nombre, rol, es_administ
 ('admin.fundador@hwanghonficticio.test', '$2y$10$EJEMPLODEHASHFICTICIOPARAPRUEBASNOUSAR0000000000000', 'Carlos Andrés Gómez Ruiz', 'administrador', 1, NULL),
 ('staff.instructor@hwanghonficticio.test', '$2y$10$OTROHASHFICTICIODEPRUEBASOLONOPRODUCCION000000000000', 'Diana Patricia Lozano Salas', 'instructor', 0, 'admin.fundador@hwanghonficticio.test');
 
-INSERT INTO deportista (documento, nombre, fecha_nacimiento, estatura, peso, discapacidad, estado_animico, sede_entrenamiento, autorizacion_datos, grado_actual, fecha_ingreso, estado, estado_registro, acudiente_documento, validado_por_correo) VALUES
-('1000000101', 'Samuel Reyes Ortiz', '2014-03-12', 1.55, 45.30, NULL, NULL, 'Club Hwang Hon', 1, NULL, '2025-02-01', 'activo', 'validado', '1000000001', NULL),
-('1000000102', 'Juliana Andrea Castillo Vargas', '2005-07-20', 1.68, 60.00, NULL, NULL, 'Escuela IMRDS', 1, NULL, '2026-01-15', 'activo', 'pendiente_validacion', NULL, NULL),
-('1000000103', 'Fabián Esteban Rincón Peña', '1998-11-05', 1.75, 78.50, NULL, NULL, 'Club Hwang Hon', 1, 'amarillo', '2023-06-10', 'inactivo', 'validado', NULL, 'staff.instructor@hwanghonficticio.test');
+INSERT INTO deportista (documento, nombre, fecha_nacimiento, sexo, estatura, peso, discapacidad, estado_animico, sede_entrenamiento, autorizacion_datos, grado_actual, fecha_ingreso, estado, estado_registro, acudiente_documento, validado_por_correo) VALUES
+('1000000101', 'Samuel Reyes Ortiz', '2014-03-12', 'masculino', 1.55, 45.30, NULL, NULL, 'Club Hwang Hon', 1, NULL, '2025-02-01', 'activo', 'validado', '1000000001', NULL),
+('1000000102', 'Juliana Andrea Castillo Vargas', '2005-07-20', 'femenino', 1.68, 60.00, NULL, NULL, 'Escuela IMRDS', 1, NULL, '2026-01-15', 'activo', 'pendiente_validacion', NULL, NULL),
+('1000000103', 'Fabián Esteban Rincón Peña', '1998-11-05', 'masculino', 1.75, 78.50, NULL, NULL, 'Club Hwang Hon', 1, 'amarillo', '2023-06-10', 'inactivo', 'validado', NULL, 'staff.instructor@hwanghonficticio.test');
 
 INSERT INTO documento (id, deportista_documento, tipo_documento, archivo, fecha_carga, estado) VALUES
 (1, '1000000101', 'registro_civil', 'registro_civil_samuel.pdf', '2025-02-01', 'cargado'),

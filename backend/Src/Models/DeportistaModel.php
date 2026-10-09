@@ -12,6 +12,7 @@ class DeportistaModel
     private string $documento;
     private string $nombre;
     private string $fechaNacimiento;
+    private string $sexo;
     private float $estatura;
     private float $peso;
     private ?string $discapacidad;
@@ -29,6 +30,7 @@ class DeportistaModel
         string $documento = '',
         string $nombre = '',
         string $fechaNacimiento = '',
+        string $sexo = '',
         float $estatura = 0.0,
         float $peso = 0.0,
         ?string $discapacidad = null,
@@ -45,6 +47,7 @@ class DeportistaModel
         $this->documento = $documento;
         $this->nombre = $nombre;
         $this->fechaNacimiento = $fechaNacimiento;
+        $this->sexo = $sexo;
         $this->estatura = $estatura;
         $this->peso = $peso;
         $this->discapacidad = $discapacidad;
@@ -87,6 +90,16 @@ class DeportistaModel
     public function establecerFechaNacimiento(string $fechaNacimiento): void
     {
         $this->fechaNacimiento = $fechaNacimiento;
+    }
+
+    public function obtenerSexo(): string
+    {
+        return $this->sexo;
+    }
+
+    public function establecerSexo(string $sexo): void
+    {
+        $this->sexo = $sexo;
     }
 
     public function obtenerEstatura(): float
@@ -218,6 +231,7 @@ class DeportistaModel
             'documento' => $this->documento,
             'nombre' => $this->nombre,
             'fecha_nacimiento' => $this->fechaNacimiento,
+            'sexo' => $this->sexo,
             'estatura' => $this->estatura,
             'peso' => $this->peso,
             'discapacidad' => $this->discapacidad,
@@ -235,25 +249,38 @@ class DeportistaModel
 
     /**
      * Construye el modelo a partir de un arreglo asociativo (por ejemplo, una fila de la base de datos).
+     *
+     * Convierte los tipos de forma explícita porque PDO entrega los DECIMAL como
+     * texto ("1.55") y los TINYINT como entero (1); con strict_types, pasarlos
+     * sin convertir al constructor lanzaría TypeError.
      */
     public static function fromArray(array $datos): self
     {
         return new self(
-            documento: $datos['documento'] ?? '',
-            nombre: $datos['nombre'] ?? '',
-            fechaNacimiento: $datos['fecha_nacimiento'] ?? '',
-            estatura: $datos['estatura'] ?? 0.0,
-            peso: $datos['peso'] ?? 0.0,
-            discapacidad: $datos['discapacidad'] ?? null,
-            estadoAnimico: $datos['estado_animico'] ?? null,
-            sedeEntrenamiento: $datos['sede_entrenamiento'] ?? null,
-            autorizacionDatos: $datos['autorizacion_datos'] ?? false,
-            gradoActual: $datos['grado_actual'] ?? null,
-            fechaIngreso: $datos['fecha_ingreso'] ?? '',
-            estado: $datos['estado'] ?? '',
-            estadoRegistro: $datos['estado_registro'] ?? '',
-            acudienteDocumento: $datos['acudiente_documento'] ?? null,
-            validadoPorCorreo: $datos['validado_por_correo'] ?? null,
+            documento: (string) ($datos['documento'] ?? ''),
+            nombre: (string) ($datos['nombre'] ?? ''),
+            fechaNacimiento: (string) ($datos['fecha_nacimiento'] ?? ''),
+            sexo: (string) ($datos['sexo'] ?? ''),
+            estatura: (float) ($datos['estatura'] ?? 0.0),
+            peso: (float) ($datos['peso'] ?? 0.0),
+            discapacidad: self::textoONulo($datos['discapacidad'] ?? null),
+            estadoAnimico: self::textoONulo($datos['estado_animico'] ?? null),
+            sedeEntrenamiento: self::textoONulo($datos['sede_entrenamiento'] ?? null),
+            autorizacionDatos: (bool) ($datos['autorizacion_datos'] ?? false),
+            gradoActual: self::textoONulo($datos['grado_actual'] ?? null),
+            fechaIngreso: (string) ($datos['fecha_ingreso'] ?? ''),
+            estado: (string) ($datos['estado'] ?? ''),
+            estadoRegistro: (string) ($datos['estado_registro'] ?? ''),
+            acudienteDocumento: self::textoONulo($datos['acudiente_documento'] ?? null),
+            validadoPorCorreo: self::textoONulo($datos['validado_por_correo'] ?? null),
         );
+    }
+
+    /**
+     * Convierte un valor a texto, conservando null.
+     */
+    private static function textoONulo(mixed $valor): ?string
+    {
+        return $valor === null ? null : (string) $valor;
     }
 }

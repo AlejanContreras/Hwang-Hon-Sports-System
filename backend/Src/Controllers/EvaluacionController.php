@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 /**
  * Controller HTTP del modulo Evaluacion.
- * Examenes de ascenso de grado (RN-5.x). La regla exacta de aprobacion general (RN-5.3) sigue PENDIENTE DE RESPUESTA (RN-10.3/RN-5.7) y no se implementa en esta etapa.
+ * Examenes de ascenso de grado (RN-5.x). La regla exacta de aprobacion
+ * general del examen sigue PENDIENTE DE RESPUESTA: depende de los criterios y
+ * puntajes de la plantilla oficial, aun no entregada por Aldrin (RN-5.1/RN-5.3,
+ * Especificacion B.1), y no se implementa hasta recibirla. La actualizacion de
+ * grado_actual exige ademas la entrega fisica del cinturon (RN-5.7).
  *
  * Recibe la solicitud ya autenticada (segun la politica de acceso de
  * Public/api.php), despacha segun la accion solicitada y delega toda
