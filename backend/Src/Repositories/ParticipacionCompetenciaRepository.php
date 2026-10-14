@@ -10,6 +10,19 @@ declare(strict_types=1);
  */
 class ParticipacionCompetenciaRepository extends BaseRepository
 {
+    protected const TABLA = 'participacion_competencia';
+
+    /**
+     * Columnas por las que listar()/contar() pueden filtrar (BaseRepository).
+     */
+    protected const COLUMNAS = [
+        'deportista_documento', 'competencia_evento_id', 'modalidad', 'categoria_edad',
+        'categoria_peso', 'resultado', 'medalla', 'combates_ganados',
+        'combates_perdidos', 'notas_oponente',
+    ];
+
+    protected const ORDEN = 'competencia_evento_id, deportista_documento, modalidad';
+
     /**
      * Obtiene una fila de `participacion_competencia` por su llave primaria compuesta (deportista_documento, competencia_evento_id, modalidad).
      */
@@ -23,31 +36,6 @@ class ParticipacionCompetenciaRepository extends BaseRepository
                 'modalidad' => $modalidad,
             ]
         );
-    }
-
-    /**
-     * Lista filas de `participacion_competencia`. Filtro genérico por columna=valor (sin lógica de negocio).
-     *
-     * @param array<string, mixed> $filtros
-     */
-    public function listar(array $filtros = [], int $limite = 100, int $desplazamiento = 0): array
-    {
-        $condiciones = [];
-        $parametros = [];
-        foreach ($filtros as $columna => $valor) {
-            $condiciones[] = "{$columna} = :{$columna}";
-            $parametros[$columna] = $valor;
-        }
-
-        $sql = 'SELECT * FROM participacion_competencia';
-        if ($condiciones !== []) {
-            $sql .= ' WHERE ' . implode(' AND ', $condiciones);
-        }
-        $sql .= ' LIMIT :limite OFFSET :desplazamiento';
-        $parametros['limite'] = $limite;
-        $parametros['desplazamiento'] = $desplazamiento;
-
-        return $this->consultar($sql, $parametros);
     }
 
     /**

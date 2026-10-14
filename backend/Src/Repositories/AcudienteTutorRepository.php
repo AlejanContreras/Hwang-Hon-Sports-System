@@ -10,6 +10,17 @@ declare(strict_types=1);
  */
 class AcudienteTutorRepository extends BaseRepository
 {
+    protected const TABLA = 'acudiente_tutor';
+
+    /**
+     * Columnas por las que listar()/contar() pueden filtrar (BaseRepository).
+     */
+    protected const COLUMNAS = [
+        'documento', 'nombre', 'relacion',
+    ];
+
+    protected const ORDEN = 'nombre';
+
     /**
      * Obtiene una fila de `acudiente_tutor` por su llave primaria `documento`.
      */
@@ -19,31 +30,6 @@ class AcudienteTutorRepository extends BaseRepository
             'SELECT * FROM acudiente_tutor WHERE documento = :documento',
             ['documento' => $documento]
         );
-    }
-
-    /**
-     * Lista filas de `acudiente_tutor`. Filtro genérico por columna=valor (sin lógica de negocio).
-     *
-     * @param array<string, mixed> $filtros
-     */
-    public function listar(array $filtros = [], int $limite = 100, int $desplazamiento = 0): array
-    {
-        $condiciones = [];
-        $parametros = [];
-        foreach ($filtros as $columna => $valor) {
-            $condiciones[] = "{$columna} = :{$columna}";
-            $parametros[$columna] = $valor;
-        }
-
-        $sql = 'SELECT * FROM acudiente_tutor';
-        if ($condiciones !== []) {
-            $sql .= ' WHERE ' . implode(' AND ', $condiciones);
-        }
-        $sql .= ' LIMIT :limite OFFSET :desplazamiento';
-        $parametros['limite'] = $limite;
-        $parametros['desplazamiento'] = $desplazamiento;
-
-        return $this->consultar($sql, $parametros);
     }
 
     /**

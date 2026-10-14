@@ -10,6 +10,17 @@ declare(strict_types=1);
  */
 class CompetenciaRepository extends BaseRepository
 {
+    protected const TABLA = 'competencia';
+
+    /**
+     * Columnas por las que listar()/contar() pueden filtrar (BaseRepository).
+     */
+    protected const COLUMNAS = [
+        'evento_id', 'plataforma', 'tipo_torneo',
+    ];
+
+    protected const ORDEN = 'evento_id';
+
     /**
      * Obtiene una fila de `competencia` por su llave primaria `evento_id`.
      */
@@ -19,31 +30,6 @@ class CompetenciaRepository extends BaseRepository
             'SELECT * FROM competencia WHERE evento_id = :evento_id',
             ['evento_id' => $eventoId]
         );
-    }
-
-    /**
-     * Lista filas de `competencia`. Filtro genérico por columna=valor (sin lógica de negocio).
-     *
-     * @param array<string, mixed> $filtros
-     */
-    public function listar(array $filtros = [], int $limite = 100, int $desplazamiento = 0): array
-    {
-        $condiciones = [];
-        $parametros = [];
-        foreach ($filtros as $columna => $valor) {
-            $condiciones[] = "{$columna} = :{$columna}";
-            $parametros[$columna] = $valor;
-        }
-
-        $sql = 'SELECT * FROM competencia';
-        if ($condiciones !== []) {
-            $sql .= ' WHERE ' . implode(' AND ', $condiciones);
-        }
-        $sql .= ' LIMIT :limite OFFSET :desplazamiento';
-        $parametros['limite'] = $limite;
-        $parametros['desplazamiento'] = $desplazamiento;
-
-        return $this->consultar($sql, $parametros);
     }
 
     /**

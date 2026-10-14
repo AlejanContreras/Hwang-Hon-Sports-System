@@ -10,6 +10,18 @@ declare(strict_types=1);
  */
 class UsuarioAdministrativoRepository extends BaseRepository
 {
+    protected const TABLA = 'usuario_administrativo';
+
+    /**
+     * Columnas por las que listar()/contar() pueden filtrar (BaseRepository).
+     * Sin contrasena ni token_recuperacion: no se filtra por credenciales.
+     */
+    protected const COLUMNAS = [
+        'correo', 'nombre', 'rol', 'es_administrador_principal', 'creado_por_correo',
+    ];
+
+    protected const ORDEN = 'nombre';
+
     /**
      * Obtiene una fila de `usuario_administrativo` por su llave primaria `correo`.
      */
@@ -19,31 +31,6 @@ class UsuarioAdministrativoRepository extends BaseRepository
             'SELECT * FROM usuario_administrativo WHERE correo = :correo',
             ['correo' => $correo]
         );
-    }
-
-    /**
-     * Lista filas de `usuario_administrativo`. Filtro genérico por columna=valor (sin lógica de negocio).
-     *
-     * @param array<string, mixed> $filtros
-     */
-    public function listar(array $filtros = [], int $limite = 100, int $desplazamiento = 0): array
-    {
-        $condiciones = [];
-        $parametros = [];
-        foreach ($filtros as $columna => $valor) {
-            $condiciones[] = "{$columna} = :{$columna}";
-            $parametros[$columna] = $valor;
-        }
-
-        $sql = 'SELECT * FROM usuario_administrativo';
-        if ($condiciones !== []) {
-            $sql .= ' WHERE ' . implode(' AND ', $condiciones);
-        }
-        $sql .= ' LIMIT :limite OFFSET :desplazamiento';
-        $parametros['limite'] = $limite;
-        $parametros['desplazamiento'] = $desplazamiento;
-
-        return $this->consultar($sql, $parametros);
     }
 
     /**

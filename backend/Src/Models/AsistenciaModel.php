@@ -67,13 +67,16 @@ class AsistenciaModel
 
     /**
      * Construye el modelo a partir de un arreglo asociativo (por ejemplo, una fila de la base de datos).
+     * Los TINYINT(1) llegan de PDO como entero y los DECIMAL como texto: se
+     * convierten explicitamente porque, con strict_types, el constructor
+     * lanzaria TypeError.
      */
     public static function fromArray(array $datos): self
     {
         return new self(
             deportistaDocumento: $datos['deportista_documento'] ?? '',
             fecha: $datos['fecha'] ?? '',
-            asistio: $datos['asistio'] ?? false,
+            asistio: (bool) ($datos['asistio'] ?? false),
         );
     }
 }

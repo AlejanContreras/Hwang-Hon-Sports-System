@@ -207,6 +207,9 @@ class DetalleEvaluacionModel
 
     /**
      * Construye el modelo a partir de un arreglo asociativo (por ejemplo, una fila de la base de datos).
+     * Los TINYINT(1) llegan de PDO como entero y los DECIMAL como texto: se
+     * convierten explicitamente porque, con strict_types, el constructor
+     * lanzaria TypeError.
      */
     public static function fromArray(array $datos): self
     {
@@ -219,11 +222,11 @@ class DetalleEvaluacionModel
             fechaCompletado: $datos['fecha_completado'] ?? null,
             criteriosEvaluados: $datos['criterios_evaluados'] ?? null,
             puntajes: $datos['puntajes'] ?? null,
-            valorMedible: $datos['valor_medible'] ?? null,
+            valorMedible: isset($datos['valor_medible']) ? (float) $datos['valor_medible'] : null,
             aspectosFallidos: $datos['aspectos_fallidos'] ?? null,
             observaciones: $datos['observaciones'] ?? null,
             recomendaciones: $datos['recomendaciones'] ?? null,
-            aprobado: $datos['aprobado'] ?? null,
+            aprobado: isset($datos['aprobado']) ? (bool) $datos['aprobado'] : null,
         );
     }
 }

@@ -10,6 +10,17 @@ declare(strict_types=1);
  */
 class AsistenciaRepository extends BaseRepository
 {
+    protected const TABLA = 'asistencia';
+
+    /**
+     * Columnas por las que listar()/contar() pueden filtrar (BaseRepository).
+     */
+    protected const COLUMNAS = [
+        'deportista_documento', 'fecha', 'asistio',
+    ];
+
+    protected const ORDEN = 'fecha, deportista_documento';
+
     /**
      * Obtiene una fila de `asistencia` por su llave primaria compuesta (deportista_documento, fecha).
      */
@@ -22,31 +33,6 @@ class AsistenciaRepository extends BaseRepository
                 'fecha' => $fecha,
             ]
         );
-    }
-
-    /**
-     * Lista filas de `asistencia`. Filtro genérico por columna=valor (sin lógica de negocio).
-     *
-     * @param array<string, mixed> $filtros
-     */
-    public function listar(array $filtros = [], int $limite = 100, int $desplazamiento = 0): array
-    {
-        $condiciones = [];
-        $parametros = [];
-        foreach ($filtros as $columna => $valor) {
-            $condiciones[] = "{$columna} = :{$columna}";
-            $parametros[$columna] = $valor;
-        }
-
-        $sql = 'SELECT * FROM asistencia';
-        if ($condiciones !== []) {
-            $sql .= ' WHERE ' . implode(' AND ', $condiciones);
-        }
-        $sql .= ' LIMIT :limite OFFSET :desplazamiento';
-        $parametros['limite'] = $limite;
-        $parametros['desplazamiento'] = $desplazamiento;
-
-        return $this->consultar($sql, $parametros);
     }
 
     /**

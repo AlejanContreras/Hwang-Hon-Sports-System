@@ -10,6 +10,18 @@ declare(strict_types=1);
  */
 class DocumentoRepository extends BaseRepository
 {
+    protected const TABLA = 'documento';
+
+    /**
+     * Columnas por las que listar()/contar() pueden filtrar (BaseRepository).
+     */
+    protected const COLUMNAS = [
+        'id', 'deportista_documento', 'tipo_documento', 'archivo', 'fecha_carga',
+        'estado',
+    ];
+
+    protected const ORDEN = 'id';
+
     /**
      * Obtiene una fila de `documento` por su llave primaria `id`.
      */
@@ -22,38 +34,16 @@ class DocumentoRepository extends BaseRepository
     }
 
     /**
-     * Lista filas de `documento`. Filtro genérico por columna=valor (sin lógica de negocio).
-     *
-     * @param array<string, mixed> $filtros
+     * Inserta una nueva fila en `documento` a partir de un DocumentoModel y devuelve el id
+     * generado (columna AUTO_INCREMENT). El id del modelo no se envia: lo
+     * asigna la base de datos.
      */
-    public function listar(array $filtros = [], int $limite = 100, int $desplazamiento = 0): array
-    {
-        $condiciones = [];
-        $parametros = [];
-        foreach ($filtros as $columna => $valor) {
-            $condiciones[] = "{$columna} = :{$columna}";
-            $parametros[$columna] = $valor;
-        }
-
-        $sql = 'SELECT * FROM documento';
-        if ($condiciones !== []) {
-            $sql .= ' WHERE ' . implode(' AND ', $condiciones);
-        }
-        $sql .= ' LIMIT :limite OFFSET :desplazamiento';
-        $parametros['limite'] = $limite;
-        $parametros['desplazamiento'] = $desplazamiento;
-
-        return $this->consultar($sql, $parametros);
-    }
-
-    /**
-     * Inserta una nueva fila en `documento` a partir de un DocumentoModel.
-     */
-    public function crear(DocumentoModel $modelo): bool
+    public function crear(DocumentoModel $modelo): int
     {
         $datos = $modelo->toArray();
-        return $this->insertar(
-            'INSERT INTO documento (id, deportista_documento, tipo_documento, archivo, fecha_carga, estado) VALUES (:id, :deportista_documento, :tipo_documento, :archivo, :fecha_carga, :estado)',
+        unset($datos['id']);
+        return $this->insertarYObtenerId(
+            'INSERT INTO documento (deportista_documento, tipo_documento, archivo, fecha_carga, estado) VALUES (:deportista_documento, :tipo_documento, :archivo, :fecha_carga, :estado)',
             $datos
         );
     }

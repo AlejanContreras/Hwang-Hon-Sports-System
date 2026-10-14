@@ -10,6 +10,18 @@ declare(strict_types=1);
  */
 class EntregaCinturonRepository extends BaseRepository
 {
+    protected const TABLA = 'entrega_cinturon';
+
+    /**
+     * Columnas por las que listar()/contar() pueden filtrar (BaseRepository).
+     */
+    protected const COLUMNAS = [
+        'sesion_examen_id', 'deportista_documento', 'cinturon_entregado',
+        'fecha_entrega',
+    ];
+
+    protected const ORDEN = 'sesion_examen_id, deportista_documento';
+
     /**
      * Obtiene una fila de `entrega_cinturon` por su llave primaria compuesta (sesion_examen_id, deportista_documento).
      */
@@ -22,31 +34,6 @@ class EntregaCinturonRepository extends BaseRepository
                 'deportista_documento' => $deportistaDocumento,
             ]
         );
-    }
-
-    /**
-     * Lista filas de `entrega_cinturon`. Filtro genérico por columna=valor (sin lógica de negocio).
-     *
-     * @param array<string, mixed> $filtros
-     */
-    public function listar(array $filtros = [], int $limite = 100, int $desplazamiento = 0): array
-    {
-        $condiciones = [];
-        $parametros = [];
-        foreach ($filtros as $columna => $valor) {
-            $condiciones[] = "{$columna} = :{$columna}";
-            $parametros[$columna] = $valor;
-        }
-
-        $sql = 'SELECT * FROM entrega_cinturon';
-        if ($condiciones !== []) {
-            $sql .= ' WHERE ' . implode(' AND ', $condiciones);
-        }
-        $sql .= ' LIMIT :limite OFFSET :desplazamiento';
-        $parametros['limite'] = $limite;
-        $parametros['desplazamiento'] = $desplazamiento;
-
-        return $this->consultar($sql, $parametros);
     }
 
     /**

@@ -10,6 +10,17 @@ declare(strict_types=1);
  */
 class EventoCalendarioRepository extends BaseRepository
 {
+    protected const TABLA = 'evento_calendario';
+
+    /**
+     * Columnas por las que listar()/contar() pueden filtrar (BaseRepository).
+     */
+    protected const COLUMNAS = [
+        'id', 'nombre', 'tipo', 'fecha', 'lugar', 'visibilidad', 'observaciones',
+    ];
+
+    protected const ORDEN = 'fecha, id';
+
     /**
      * Obtiene una fila de `evento_calendario` por su llave primaria `id`.
      */
@@ -22,38 +33,16 @@ class EventoCalendarioRepository extends BaseRepository
     }
 
     /**
-     * Lista filas de `evento_calendario`. Filtro genérico por columna=valor (sin lógica de negocio).
-     *
-     * @param array<string, mixed> $filtros
+     * Inserta una nueva fila en `evento_calendario` a partir de un EventoCalendarioModel y devuelve el id
+     * generado (columna AUTO_INCREMENT). El id del modelo no se envia: lo
+     * asigna la base de datos.
      */
-    public function listar(array $filtros = [], int $limite = 100, int $desplazamiento = 0): array
-    {
-        $condiciones = [];
-        $parametros = [];
-        foreach ($filtros as $columna => $valor) {
-            $condiciones[] = "{$columna} = :{$columna}";
-            $parametros[$columna] = $valor;
-        }
-
-        $sql = 'SELECT * FROM evento_calendario';
-        if ($condiciones !== []) {
-            $sql .= ' WHERE ' . implode(' AND ', $condiciones);
-        }
-        $sql .= ' LIMIT :limite OFFSET :desplazamiento';
-        $parametros['limite'] = $limite;
-        $parametros['desplazamiento'] = $desplazamiento;
-
-        return $this->consultar($sql, $parametros);
-    }
-
-    /**
-     * Inserta una nueva fila en `evento_calendario` a partir de un EventoCalendarioModel.
-     */
-    public function crear(EventoCalendarioModel $modelo): bool
+    public function crear(EventoCalendarioModel $modelo): int
     {
         $datos = $modelo->toArray();
-        return $this->insertar(
-            'INSERT INTO evento_calendario (id, nombre, tipo, fecha, lugar, visibilidad, observaciones) VALUES (:id, :nombre, :tipo, :fecha, :lugar, :visibilidad, :observaciones)',
+        unset($datos['id']);
+        return $this->insertarYObtenerId(
+            'INSERT INTO evento_calendario (nombre, tipo, fecha, lugar, visibilidad, observaciones) VALUES (:nombre, :tipo, :fecha, :lugar, :visibilidad, :observaciones)',
             $datos
         );
     }

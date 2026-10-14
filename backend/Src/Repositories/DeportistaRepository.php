@@ -9,17 +9,19 @@ declare(strict_types=1);
  */
 class DeportistaRepository extends BaseRepository
 {
+    protected const TABLA = 'deportista';
+
     /**
-     * Columnas reales de la tabla. listar() solo acepta filtros por estas
-     * columnas: el nombre de columna se escribe dentro del SQL, asi que nunca
-     * puede venir libre desde la peticion (evita inyeccion SQL).
+     * Columnas por las que listar()/contar() pueden filtrar (BaseRepository).
      */
-    private const COLUMNAS = [
+    protected const COLUMNAS = [
         'documento', 'nombre', 'fecha_nacimiento', 'sexo', 'estatura', 'peso',
         'discapacidad', 'estado_animico', 'sede_entrenamiento', 'autorizacion_datos',
         'grado_actual', 'fecha_ingreso', 'estado', 'estado_registro',
         'acudiente_documento', 'validado_por_correo',
     ];
+
+    protected const ORDEN = 'nombre';
 
     /**
      * Obtiene una fila de `deportista` por su llave primaria `documento`.
@@ -33,39 +35,6 @@ class DeportistaRepository extends BaseRepository
     }
 
     /**
-     * Lista filas de `deportista`, con filtro columna = valor (sin logica de negocio).
-     * Lanza LogicException si un filtro no es una columna de la tabla.
-     * $limite null = sin limite (todas las filas).
-     *
-     * @param array<string, mixed> $filtros
-     */
-    public function listar(array $filtros = [], ?int $limite = 100, int $desplazamiento = 0): array
-    {
-        $condiciones = [];
-        $parametros = [];
-        foreach ($filtros as $columna => $valor) {
-            if (!in_array($columna, self::COLUMNAS, true)) {
-                throw new LogicException("Columna no valida para filtrar deportista: {$columna}");
-            }
-            $condiciones[] = "{$columna} = :{$columna}";
-            $parametros[$columna] = $valor;
-        }
-
-        $sql = 'SELECT * FROM deportista';
-        if ($condiciones !== []) {
-            $sql .= ' WHERE ' . implode(' AND ', $condiciones);
-        }
-        $sql .= ' ORDER BY nombre';
-        if ($limite !== null) {
-            $sql .= ' LIMIT :limite OFFSET :desplazamiento';
-            $parametros['limite'] = $limite;
-            $parametros['desplazamiento'] = $desplazamiento;
-        }
-
-        return $this->consultar($sql, $parametros);
-    }
-
-    /**
      * Inserta una nueva fila en `deportista` a partir de un DeportistaModel.
      * Envia siempre todas las columnas, incluidos sexo, estado y
      * estado_registro: son ENUM NOT NULL y, si se omiten, MySQL los completaria
@@ -75,7 +44,7 @@ class DeportistaRepository extends BaseRepository
     {
         return $this->insertar(
             'INSERT INTO deportista (documento, nombre, fecha_nacimiento, sexo, estatura, peso, discapacidad, estado_animico, sede_entrenamiento, autorizacion_datos, grado_actual, fecha_ingreso, estado, estado_registro, acudiente_documento, validado_por_correo) VALUES (:documento, :nombre, :fecha_nacimiento, :sexo, :estatura, :peso, :discapacidad, :estado_animico, :sede_entrenamiento, :autorizacion_datos, :grado_actual, :fecha_ingreso, :estado, :estado_registro, :acudiente_documento, :validado_por_correo)',
-            self::parametros($modelo)
+            $modelo->toArray()
         );
     }
 
@@ -86,7 +55,7 @@ class DeportistaRepository extends BaseRepository
     {
         return $this->ejecutar(
             'UPDATE deportista SET nombre = :nombre, fecha_nacimiento = :fecha_nacimiento, sexo = :sexo, estatura = :estatura, peso = :peso, discapacidad = :discapacidad, estado_animico = :estado_animico, sede_entrenamiento = :sede_entrenamiento, autorizacion_datos = :autorizacion_datos, grado_actual = :grado_actual, fecha_ingreso = :fecha_ingreso, estado = :estado, estado_registro = :estado_registro, acudiente_documento = :acudiente_documento, validado_por_correo = :validado_por_correo WHERE documento = :documento',
-            self::parametros($modelo)
+            $modelo->toArray()
         );
     }
 
@@ -99,19 +68,5 @@ class DeportistaRepository extends BaseRepository
             'DELETE FROM deportista WHERE documento = :documento',
             ['documento' => $documento]
         );
-    }
-
-    /**
-     * Arreglo de parametros para INSERT/UPDATE. autorizacion_datos va como
-     * entero (0/1): un booleano false se enviaria como texto vacio y MySQL lo
-     * rechaza en una columna TINYINT.
-     *
-     * @return array<string, mixed>
-     */
-    private static function parametros(DeportistaModel $modelo): array
-    {
-        $datos = $modelo->toArray();
-        $datos['autorizacion_datos'] = (int) $datos['autorizacion_datos'];
-        return $datos;
     }
 }

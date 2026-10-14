@@ -10,6 +10,18 @@ declare(strict_types=1);
  */
 class PagoRepository extends BaseRepository
 {
+    protected const TABLA = 'pago';
+
+    /**
+     * Columnas por las que listar()/contar() pueden filtrar (BaseRepository).
+     */
+    protected const COLUMNAS = [
+        'id', 'deportista_documento', 'tipo', 'anio', 'mes', 'semana', 'estado',
+        'consecuencia_mora',
+    ];
+
+    protected const ORDEN = 'anio, mes, id';
+
     /**
      * Obtiene una fila de `pago` por su llave primaria `id`.
      */
@@ -22,38 +34,16 @@ class PagoRepository extends BaseRepository
     }
 
     /**
-     * Lista filas de `pago`. Filtro genérico por columna=valor (sin lógica de negocio).
-     *
-     * @param array<string, mixed> $filtros
+     * Inserta una nueva fila en `pago` a partir de un PagoModel y devuelve el id
+     * generado (columna AUTO_INCREMENT). El id del modelo no se envia: lo
+     * asigna la base de datos.
      */
-    public function listar(array $filtros = [], int $limite = 100, int $desplazamiento = 0): array
-    {
-        $condiciones = [];
-        $parametros = [];
-        foreach ($filtros as $columna => $valor) {
-            $condiciones[] = "{$columna} = :{$columna}";
-            $parametros[$columna] = $valor;
-        }
-
-        $sql = 'SELECT * FROM pago';
-        if ($condiciones !== []) {
-            $sql .= ' WHERE ' . implode(' AND ', $condiciones);
-        }
-        $sql .= ' LIMIT :limite OFFSET :desplazamiento';
-        $parametros['limite'] = $limite;
-        $parametros['desplazamiento'] = $desplazamiento;
-
-        return $this->consultar($sql, $parametros);
-    }
-
-    /**
-     * Inserta una nueva fila en `pago` a partir de un PagoModel.
-     */
-    public function crear(PagoModel $modelo): bool
+    public function crear(PagoModel $modelo): int
     {
         $datos = $modelo->toArray();
-        return $this->insertar(
-            'INSERT INTO pago (id, deportista_documento, tipo, anio, mes, semana, estado, consecuencia_mora) VALUES (:id, :deportista_documento, :tipo, :anio, :mes, :semana, :estado, :consecuencia_mora)',
+        unset($datos['id']);
+        return $this->insertarYObtenerId(
+            'INSERT INTO pago (deportista_documento, tipo, anio, mes, semana, estado, consecuencia_mora) VALUES (:deportista_documento, :tipo, :anio, :mes, :semana, :estado, :consecuencia_mora)',
             $datos
         );
     }

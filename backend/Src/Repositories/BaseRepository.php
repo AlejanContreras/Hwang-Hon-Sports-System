@@ -4,11 +4,23 @@ declare(strict_types=1);
 
 /**
  * Clase base abstracta para todos los repositorios del sistema.
- * Provee acceso a la conexión PDO y helpers genéricos de consulta,
- * todos usando sentencias preparadas (sin concatenar valores en SQL).
+ * Provee acceso a la conexión PDO y helpers genéricos de consulta, todos con
+ * sentencias preparadas (los valores nunca se concatenan en el SQL).
+ *
+ * Cada Repository hijo declara tres constantes, usadas por listar() y contar():
+ *   - TABLA: nombre de la tabla.
+ *   - COLUMNAS: lista blanca de columnas por las que se puede filtrar. El
+ *     nombre de columna se escribe dentro del SQL, así que nunca puede venir
+ *     libre de la petición (evita inyección SQL por nombre de columna).
+ *   - ORDEN: cláusula ORDER BY fija, escrita en el código, nunca tomada de
+ *     datos del usuario.
  */
 abstract class BaseRepository
 {
+    protected const TABLA = '';
+    protected const COLUMNAS = [];
+    protected const ORDEN = '';
+
     protected PDO $bd;
 
     public function __construct()
@@ -17,11 +29,46 @@ abstract class BaseRepository
     }
 
     /**
-     * Ejecuta $operacion dentro de una transaccion: si todo sale bien confirma
-     * (commit); si algo lanza una excepcion, deshace todo (rollBack) y la vuelve
-     * a lanzar. Como todos los Repositories comparten la misma conexion
-     * (Database es singleton), la transaccion cubre las operaciones de varios
-     * Repositories a la vez (ej. deportista + acudiente). Asi el Service agrupa
+     * Lista filas de la tabla con filtro columna = valor (sin lógica de negocio).
+     * $limite null = sin límite (todas las filas). No hay límite por defecto.
+     * Lanza LogicException si un filtro no es una columna de COLUMNAS.
+     *
+     * @param array<string, mixed> $filtros
+     * @return array<int, array<string, mixed>>
+     */
+    public function listar(array $filtros = [], ?int $limite = null, int $desplazamiento = 0): array
+    {
+        [$donde, $parametros] = $this->construirFiltro($filtros);
+
+        $sql = 'SELECT * FROM ' . static::TABLA . $donde . ' ORDER BY ' . static::ORDEN;
+        if ($limite !== null) {
+            $sql .= ' LIMIT :limite OFFSET :desplazamiento';
+            $parametros['limite'] = $limite;
+            $parametros['desplazamiento'] = $desplazamiento;
+        }
+
+        return $this->consultar($sql, $parametros);
+    }
+
+    /**
+     * Cuenta las filas que cumplen el filtro (mismas reglas que listar()).
+     * Junto con listar(limite, desplazamiento) permite paginar: el Service de
+     * cada módulo arma la respuesta paginada.
+     *
+     * @param array<string, mixed> $filtros
+     */
+    public function contar(array $filtros = []): int
+    {
+        [$donde, $parametros] = $this->construirFiltro($filtros);
+        return $this->contarConsulta('SELECT COUNT(*) FROM ' . static::TABLA . $donde, $parametros);
+    }
+
+    /**
+     * Ejecuta $operacion dentro de una transacción: si todo sale bien confirma
+     * (commit); si algo lanza una excepción, deshace todo (rollBack) y la vuelve
+     * a lanzar. Como todos los Repositories comparten la misma conexión
+     * (Database es singleton), la transacción cubre las operaciones de varios
+     * Repositories a la vez (ej. deportista + acudiente). Así el Service agrupa
      * operaciones sin tocar PDO.
      */
     public function enTransaccion(callable $operacion): mixed
@@ -45,9 +92,7 @@ abstract class BaseRepository
      */
     protected function consultar(string $sql, array $parametros = []): array
     {
-        $sentencia = $this->bd->prepare($sql);
-        $sentencia->execute($parametros);
-        return $sentencia->fetchAll(PDO::FETCH_ASSOC);
+        return $this->preparar($sql, $parametros)->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
@@ -58,9 +103,7 @@ abstract class BaseRepository
      */
     protected function consultarUno(string $sql, array $parametros = []): ?array
     {
-        $sentencia = $this->bd->prepare($sql);
-        $sentencia->execute($parametros);
-        $fila = $sentencia->fetch(PDO::FETCH_ASSOC);
+        $fila = $this->preparar($sql, $parametros)->fetch(PDO::FETCH_ASSOC);
         return $fila === false ? null : $fila;
     }
 
@@ -71,8 +114,20 @@ abstract class BaseRepository
      */
     protected function insertar(string $sql, array $parametros = []): bool
     {
-        $sentencia = $this->bd->prepare($sql);
-        return $sentencia->execute($parametros);
+        $this->preparar($sql, $parametros);
+        return true;
+    }
+
+    /**
+     * Ejecuta un INSERT en una tabla con id AUTO_INCREMENT y devuelve el id
+     * generado por la base de datos.
+     *
+     * @param array<string, mixed> $parametros
+     */
+    protected function insertarYObtenerId(string $sql, array $parametros = []): int
+    {
+        $this->preparar($sql, $parametros);
+        return (int) $this->bd->lastInsertId();
     }
 
     /**
@@ -82,20 +137,19 @@ abstract class BaseRepository
      */
     protected function ejecutar(string $sql, array $parametros = []): bool
     {
-        $sentencia = $this->bd->prepare($sql);
-        return $sentencia->execute($parametros);
+        $this->preparar($sql, $parametros);
+        return true;
     }
 
     /**
-     * Cuenta filas que cumplen una condición.
+     * Ejecuta una consulta de conteo escrita a mano (SELECT COUNT(*) ...) y
+     * devuelve el número. Para contar por filtros simples usar contar().
      *
      * @param array<string, mixed> $parametros
      */
-    protected function contar(string $sql, array $parametros = []): int
+    protected function contarConsulta(string $sql, array $parametros = []): int
     {
-        $sentencia = $this->bd->prepare($sql);
-        $sentencia->execute($parametros);
-        return (int) $sentencia->fetchColumn();
+        return (int) $this->preparar($sql, $parametros)->fetchColumn();
     }
 
     /**
@@ -105,8 +159,49 @@ abstract class BaseRepository
      */
     protected function existe(string $sql, array $parametros = []): bool
     {
+        return $this->preparar($sql, $parametros)->fetchColumn() !== false;
+    }
+
+    /**
+     * Prepara y ejecuta la sentencia. Los booleanos se envían como 0/1: PDO
+     * enviaría false como texto vacío y MySQL lo rechaza en una columna
+     * TINYINT(1) ("Incorrect integer value: ''").
+     *
+     * @param array<string, mixed> $parametros
+     */
+    private function preparar(string $sql, array $parametros): PDOStatement
+    {
+        foreach ($parametros as $nombre => $valor) {
+            if (is_bool($valor)) {
+                $parametros[$nombre] = (int) $valor;
+            }
+        }
+
         $sentencia = $this->bd->prepare($sql);
         $sentencia->execute($parametros);
-        return $sentencia->fetchColumn() !== false;
+        return $sentencia;
+    }
+
+    /**
+     * Arma la cláusula WHERE de listar()/contar() validando cada nombre de
+     * columna contra COLUMNAS.
+     *
+     * @param array<string, mixed> $filtros
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    private function construirFiltro(array $filtros): array
+    {
+        $condiciones = [];
+        $parametros = [];
+        foreach ($filtros as $columna => $valor) {
+            if (!in_array($columna, static::COLUMNAS, true)) {
+                throw new LogicException('Columna no valida para filtrar ' . static::TABLA . ": {$columna}");
+            }
+            $condiciones[] = "{$columna} = :{$columna}";
+            $parametros[$columna] = $valor;
+        }
+
+        $donde = $condiciones === [] ? '' : ' WHERE ' . implode(' AND ', $condiciones);
+        return [$donde, $parametros];
     }
 }
