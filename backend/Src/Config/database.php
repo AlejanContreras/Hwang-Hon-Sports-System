@@ -9,6 +9,16 @@ declare(strict_types=1);
  */
 class Database
 {
+    /**
+     * Modo SQL fijo para cada conexión, sin depender de la configuración del
+     * servidor (el MariaDB de XAMPP viene sin modo estricto). Con
+     * STRICT_ALL_TABLES un valor inválido (fuera de rango, ENUM desconocido,
+     * NOT NULL omitido, texto demasiado largo) lanza error en vez de guardarse
+     * "arreglado" en silencio (ej. nota 100 quedaría en 99.99).
+     */
+    private const MODO_SQL = 'STRICT_ALL_TABLES,ONLY_FULL_GROUP_BY,NO_ZERO_IN_DATE,NO_ZERO_DATE,'
+        . 'ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+
     private static ?PDO $conexion = null;
 
     private function __construct()
@@ -42,6 +52,7 @@ class Database
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::MYSQL_ATTR_INIT_COMMAND => "SET SESSION sql_mode = '" . self::MODO_SQL . "'",
         ]);
     }
 

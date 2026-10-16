@@ -1,0 +1,199 @@
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f2f2f2','primaryTextColor':'#1a1a1a','primaryBorderColor':'#2c2c2c','lineColor':'#2c2c2c','fontFamily':'Arial, Helvetica, sans-serif','fontSize':'14px'}}}%%
+erDiagram
+    DEPORTISTA {
+        string documento PK
+        string nombre
+        date fecha_nacimiento
+        string lugar_nacimiento "NUEVO v5 — CONFIRMADO: ciudad o municipio de nacimiento (formulario de inscripcion)"
+        string sexo "NUEVO v4 — CONFIRMADO: masculino / femenino, se pide en la inscripcion; necesario para la categoria por peso y las competencias (RN-3.8)"
+        float estatura
+        float peso
+        string telefono "NUEVO v5 — CONFIRMADO: del deportista; en un menor arranca con el del acudiente. Editable en vista publica (RN-1.1, RN-1.4)"
+        string direccion "NUEVO v5 — CONFIRMADO: del deportista; en un menor arranca con la del acudiente. Editable en vista publica (RN-1.1, RN-1.4)"
+        string correo "NUEVO v5 — CONFIRMADO: del deportista; en un menor arranca con el del acudiente; hermanos menores pueden compartirlo (RN-1.1, RN-1.10)"
+        string categoria "PROPUESTA: calculada, no almacenada — depende de la tabla oficial de categorias (RN-1.3, RN-3.8)"
+        int edad "PROPUESTA: calculada, no almacenada, desde fecha_nacimiento (RN-1.3)"
+        string discapacidad "CORREGIDO v5: editable tambien en vista publica (RN-1.5); texto libre que reemplaza las seis preguntas de salud del formulario: infecto-contagiosas, cardiovasculares, respiratorias, alergicas, fracturas y otras"
+        string experiencia_previa "NUEVO v5 — CONFIRMADO: opcional, texto libre: arte marcial anterior, club, pais/ciudad, maestro, fecha de retiro, motivo, ultimo grado y fecha de ultima graduacion (formulario de inscripcion)"
+        string estado_animico "CONFIRMADO en BD, no visible en interfaz (RN-2.4) — reserva a futuro"
+        string sede_entrenamiento "NUEVO v2 — CONFIRMADO: Club Hwang Hon / Escuela IMRDS (RN-T.8), dato adicional, no activa gestion de escuelas"
+        boolean autorizacion_datos "NUEVO v2 — CONFIRMADO: checkbox si el registro es virtual; ya cubierta por firma fisica si es presencial (RN-1.8/RN-T.9)"
+        string grado_actual "CORREGIDO v5: cinturon vigente, necesario para la ficha consolidada (RN-10.3); nulo equivale a Ingresado (sin cinturon) hasta el primer examen aprobado; pasa al grado evaluado al confirmarse la entrega del cinturon (Entrega_Cinturon) y es editable a mano por el administrativo; si llega de otro club con cinturon, lo digita el administrativo (RN-5.3, RN-5.7)"
+        date fecha_ingreso
+        string estado "activo / inactivo"
+        string estado_registro "pendiente_validacion / validado — solo autorregistrados"
+        string acudiente_documento FK "nulo si el deportista es mayor de edad"
+        string validado_por_correo FK "auditoria de autorregistro — nulo si no aplica"
+    }
+
+    ACUDIENTE_TUTOR {
+        string documento PK
+        string nombre
+        string relacion
+        string telefono "NUEVO v5 — CONFIRMADO: celular del acudiente que firma el formulario; el otro padre queda solo en el formulario escaneado"
+        string correo "NUEVO v5 — CONFIRMADO: correo del acudiente que firma el formulario"
+    }
+
+    USUARIO_ADMINISTRATIVO {
+        string correo PK
+        string contrasena
+        string nombre
+        string rol "CORREGIDO v5 — PROPUESTA (opcional): Aldrin / Tesorero / Contador / Secretaria / Desarrollador, solo identificacion, sin efecto en permisos (RN-T.2, RN-T.10)"
+        boolean es_administrador_principal "CORREGIDO v5: verdadero para quien gestiona cuentas administrativas — Aldrin y la cuenta Desarrollador (RN-T.11)"
+        boolean activa "NUEVO v5 — CONFIRMADO: falso = cuenta desactivada; las cuentas no se borran (RN-T.11)"
+        string creado_por_correo FK "reflexiva — nulo para la cuenta fundadora"
+        string token_recuperacion "NUEVO v3 — CONFIRMADO: token de un solo uso para recuperar contrasena, guardado como hash (RN-T.12)"
+        datetime token_recuperacion_expira "NUEVO v3 — CONFIRMADO: vigencia de 1 hora (RN-T.12)"
+    }
+
+    DOCUMENTO {
+        int id PK
+        string deportista_documento FK
+        string tipo_documento "CORREGIDO v5: formulario_inscripcion / documento_identidad / documento_acudiente / fotografia / consentimiento / certificado_ascenso / competencia / preparacion_fisica / otro (RN-6.1)"
+        string archivo "CORREGIDO v5: nombre aleatorio en disco, fuera de la carpeta publica (RN-6.3)"
+        string nombre_original "NUEVO v5 — CONFIRMADO: nombre con el que se entrega la descarga (RN-6.3)"
+        date fecha_carga
+    }
+
+    DOCUMENTO_GENERAL {
+        int id PK "NUEVO v5"
+        string titulo "NUEVO v5 — PROPUESTA: documento del club, ej. teoria de ascenso; visible para todos, sin filtro por grado (RN-6.8)"
+        string archivo "NUEVO v5"
+        string nombre_original "NUEVO v5: nombre con el que se entrega la descarga (RN-6.3)"
+        date fecha_carga "NUEVO v5"
+    }
+
+    ASISTENCIA {
+        string deportista_documento PK "tambien FK a Deportista"
+        date fecha PK
+        boolean asistio
+    }
+
+    PAGO {
+        int id PK
+        string deportista_documento FK
+        string tipo "mensualidad / matricula — CORREGIDO v5: solo se registran pagos hechos; la deuda se calcula por ausencia (RN-8.1, RN-8.3)"
+        int anio "NUEVO v2 — PROPUESTA: separa la granularidad que en v1 mezclaba un solo campo periodo (RN-8.1/RN-8.2)"
+        int mes "CORREGIDO v5: 0 = matricula, 1-12 = mensualidad; un solo pago por deportista, tipo, anio y mes"
+        int semana "aplica solo a mensualidad, 1-4 (RN-8.1) — semana del mes en que se realizo el pago"
+    }
+
+    EVENTO_CALENDARIO {
+        int id PK
+        string nombre "NUEVO v2 — CONFIRMADO: nombre o descripcion del evento (RN-3.1/RN-9.4)"
+        string tipo "CORREGIDO v5: competencia / evaluacion / grado / reunion_administrativa / evento_extra (RN-9.2)"
+        date fecha
+        string lugar
+        string visibilidad "administrativa / publica"
+        string observaciones "NUEVO v2 — CONFIRMADO: notas generales del evento, a nivel de torneo — distinto de notas_oponente (RN-3.1)"
+    }
+
+    COMPETENCIA {
+        int evento_id PK "tambien FK a Evento_Calendario — 1 a 1 cuando tipo = competencia"
+        string plataforma "NUEVO v2 — CONFIRMADO: Fitofan u otra, texto libre, sin integracion (RN-3.4)"
+        string tipo_torneo "NUEVO v2 — CONFIRMADO: nacional / internacional / departamental (RN-3.3)"
+    }
+
+    PARTICIPACION_COMPETENCIA {
+        string deportista_documento PK "tambien FK a Deportista"
+        int competencia_evento_id PK "tambien FK a Competencia"
+        string modalidad "CONFIRMADO (RN-3.1/RN-3.2): un torneo agrupa varias modalidades, cada participacion especifica una — 6 modalidades posibles"
+        string categoria_edad "TRASLADADO v2 desde Competencia — CONFIRMADO: Infantil 8-11, Junior 12-14, Juvenil 15-17, Mayores 18-35, Senior 36-45, Master 46+ (RN-3.1/RN-3.8). Es un dato de la PARTICIPACION, no del torneo: un mismo torneo agrupa varias categorias a la vez, y la categoria del deportista puede variar con el tiempo — este campo guarda el valor historico vigente en esa participacion"
+        string categoria_peso "CORREGIDO v5: PROPUESTA, sugerida por la tabla consolidada del equipo, que cubre todas las categorias con corte inclusivo; editable; se reemplaza si llega la tabla oficial (RN-3.1/RN-3.8)"
+        int puesto "NUEVO v5 — CONFIRMADO: lugar en el torneo, lo digita el staff, no es un ranking (RN-3.1, RN-3.3)"
+        string resultado "resultado general / medalleria, texto libre (RN-3.1)"
+        string medalla "NUEVO v2 — PROPUESTA: oro / plata / bronce / ninguna — estructurado para poder graficar evolucion (RN-2.3, RN-3.3)"
+        int combates_ganados "NUEVO v2 — PROPUESTA: aplica a modalidades de combate (RN-3.1)"
+        int combates_perdidos "NUEVO v2 — PROPUESTA: aplica a modalidades de combate (RN-3.1)"
+        string notas_oponente "texto libre, uso interno del staff"
+    }
+
+    SESION_EXAMEN {
+        int id PK
+        date fecha "CORREGIDO v5: fecha de INICIO de los examenes (RN-5.5); CONFIRMADO: 26 abr, 26 jul, 13 dic 2026 — verificado en Plan de Accion IMRDS (RN-5.4)"
+        date fecha_grado "NUEVO v5 — CONFIRMADO: ceremonia de entrega de cinturones (RN-5.5)"
+        string lugar
+        string estado "NUEVO v5 — CONFIRMADO: abierta / cerrada, por defecto abierta (RN-5.5)"
+        int evento_examen_id FK "NUEVO v5: evento de calendario tipo evaluacion (RN-5.5, RN-9.2)"
+        int evento_grado_id FK "NUEVO v5: evento de calendario tipo grado (RN-5.5, RN-9.2)"
+    }
+
+    DETALLE_EVALUACION {
+        int sesion_examen_id PK "tambien FK a Sesion_Examen"
+        string deportista_documento PK "tambien FK a Deportista"
+        string modalidad PK "teorico / fisico / combate / rompimiento / formas / llaves"
+        string grado_evaluado "NUEVO v2 — CONFIRMADO: grado/cinturon al que aspira el deportista en este examen (RN-5.1)"
+        string estado "pendiente / completado"
+        date fecha_completado "cada modalidad puede completarse en fecha distinta al resto del grupo (RN-5.5)"
+        float nota "NUEVO v5: escala de 1 a 10 (RN-5.1, RN-5.3)"
+        string criterios_evaluados "NUEVO v2, reemplaza el campo unico resultado de v1 — PENDIENTE DE RESPUESTA (RN-5.1/RN-5.3): estructura confirmada, valores desde la plantilla oficial. Si la plantilla resulta tener multiples criterios con puntaje propio, este campo debe evolucionar a una entidad hija (p. ej. CRITERIO_EVALUACION 1 a N) en vez de repetirlos aqui — no se construye esa entidad todavia para no sobre-disenar sin la plantilla real"
+        string puntajes "NUEVO v2 — PENDIENTE DE RESPUESTA (RN-5.1/RN-5.3): estructura confirmada, escala desde la plantilla oficial"
+        float valor_medible "NUEVO v2 — PROPUESTA: valor numerico de prueba fisica (ej. repeticiones/minuto), para graficar evolucion (RN-2.3) — aplica cuando modalidad = fisico"
+        string aspectos_fallidos "NUEVO v2 — PENDIENTE DE RESPUESTA (RN-5.1/RN-5.3): estructura confirmada"
+        string observaciones "NUEVO v2 — PENDIENTE DE RESPUESTA (RN-5.1/RN-5.3): estructura confirmada"
+        string recomendaciones "NUEVO v2 — PENDIENTE DE RESPUESTA (RN-5.1/RN-5.3): estructura confirmada"
+        boolean aprobado "CORREGIDO v5: se deriva de la nota al guardar y es solo informativo. Resultado general provisional: las seis modalidades completadas y promedio >= 5, sin exigir aprobar cada una (RN-5.3)"
+    }
+
+    ENTREGA_CINTURON {
+        int sesion_examen_id PK "NUEVO v3 — tambien FK a Sesion_Examen"
+        string deportista_documento PK "NUEVO v3 — tambien FK a Deportista"
+        boolean cinturon_entregado "CORREGIDO v5 — CONFIRMADO: confirmacion manual de la entrega fisica del cinturon, por el administrativo o por el deportista (RN-5.7). Va aparte de Detalle_Evaluacion porque es un dato por deportista y sesion, no por modalidad"
+        date fecha_entrega "CORREGIDO v5: nulo mientras no se haya entregado; por defecto la fecha de grado de la sesion (RN-5.7)"
+        string confirmado_por "NUEVO v5 — CONFIRMADO: administrativo / deportista (RN-5.7)"
+    }
+
+    INTENTO_ACCESO {
+        string ambito PK "NUEVO v5: administrativa / publica"
+        string identificador PK "NUEVO v5: correo (administrativa) o documento del deportista (publica); sin relacion a proposito, para no revelar si existe"
+        int intentos_fallidos "NUEVO v5 — CONFIRMADO: con 4 fallos consecutivos se bloquea 15 minutos; vuelve a 0 al acertar (RN-T.16)"
+        datetime bloqueado_hasta "NUEVO v5 — CONFIRMADO: fin del bloqueo (RN-T.16)"
+    }
+
+    LEYENDA_NOTACION {
+        string entidad_nucleo "Borde rojo grueso solido = entidad confirmada (Reglas de Negocio v0.3)"
+        string entidad_asociativa "Borde gris fino solido = entidad de relacion N a N (tabla asociativa)"
+        string entidad_tecnica "Borde gris medio solido = entidad tecnica de seguridad, sin relaciones con el dominio"
+        string dato_pendiente "Comentario PROPUESTA o PENDIENTE DE RESPUESTA junto al atributo = dato o regla aun no confirmada; no construir como definitivo (PENDIENTE DE RESPUESTA unifica desde 28/09/2026 las antiguas PENDIENTE DE ALDRIN/VERIFICACION/VALIDACION)"
+        string cambio_v2 "Comentario NUEVO v2 o TRASLADADO v2 = agregado o movido en la revision de normalizacion y completitud del 24/09/2026, frente al MER v1"
+        string cambio_v3 "Comentario NUEVO v3 o CORREGIDO v3 = agregado o actualizado el 29/09/2026 (entidad Entrega_Cinturon RN-5.7, token de recuperacion RN-T.12, estados de RN-8.7/RN-3.8 y etiqueta unificada)"
+        string cambio_v4 "Comentario NUEVO v4 = agregado el 09/10/2026 (atributo sexo de Deportista, RN-3.8). Resto sin cambios frente a v3"
+        string cambio_v5 "15/10/2026, Reglas de Negocio v1.0 (alinea el MER con el esquema v4). NUEVO v5 = entidades Documento_General (RN-6.8) e Intento_Acceso (RN-T.16, reemplaza la tabla tecnica intento_acceso_publico del esquema v3, que no figuraba en el MER), relaciones Evento_Calendario - Sesion_Examen y los atributos nuevos marcados. CORREGIDO v5 = atributos marcados. RETIRADO v5 = Documento.estado, Pago.estado y Pago.consecuencia_mora. Incluye los campos del formulario de inscripcion (16/10/2026). Resto sin cambios frente a v4"
+    }
+
+    ACUDIENTE_TUTOR ||--o{ DEPORTISTA : "es responsable de"
+    USUARIO_ADMINISTRATIVO ||--o{ DEPORTISTA : "valida (registro pendiente)"
+    USUARIO_ADMINISTRATIVO ||--o{ USUARIO_ADMINISTRATIVO : "da de alta / gestiona"
+    DEPORTISTA ||--o{ DOCUMENTO : "tiene"
+    DEPORTISTA ||--o{ ASISTENCIA : "registra"
+    DEPORTISTA ||--o{ PAGO : "realiza"
+    EVENTO_CALENDARIO ||--o| COMPETENCIA : "se especializa en"
+    DEPORTISTA ||--o{ PARTICIPACION_COMPETENCIA : "participa en"
+    COMPETENCIA ||--o{ PARTICIPACION_COMPETENCIA : "recibe"
+    DEPORTISTA ||--o{ DETALLE_EVALUACION : "es evaluado en"
+    SESION_EXAMEN ||--o{ DETALLE_EVALUACION : "agrupa"
+    DEPORTISTA ||--o{ ENTREGA_CINTURON : "recibe cinturon"
+    SESION_EXAMEN ||--o{ ENTREGA_CINTURON : "registra entrega"
+    EVENTO_CALENDARIO |o--o| SESION_EXAMEN : "inicio de examenes"
+    EVENTO_CALENDARIO |o--o| SESION_EXAMEN : "dia del grado"
+
+    DEPORTISTA:::confirmado
+    ACUDIENTE_TUTOR:::confirmado
+    USUARIO_ADMINISTRATIVO:::confirmado
+    DOCUMENTO:::confirmado
+    DOCUMENTO_GENERAL:::confirmado
+    ASISTENCIA:::confirmado
+    PAGO:::confirmado
+    EVENTO_CALENDARIO:::confirmado
+    COMPETENCIA:::confirmado
+    SESION_EXAMEN:::confirmado
+    PARTICIPACION_COMPETENCIA:::asociativa
+    DETALLE_EVALUACION:::asociativa
+    ENTREGA_CINTURON:::asociativa
+    INTENTO_ACCESO:::tecnica
+    LEYENDA_NOTACION:::leyenda
+
+    classDef confirmado fill:#f2f2f2,stroke:#8b1e1e,stroke-width:3px
+    classDef asociativa fill:#ffffff,stroke:#2c2c2c,stroke-width:1px
+    classDef tecnica fill:#ffffff,stroke:#6b6b6b,stroke-width:2px
+    classDef leyenda fill:#fbf6ea,stroke:#b08d2a,stroke-width:2px,stroke-dasharray:5 4

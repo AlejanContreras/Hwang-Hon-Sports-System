@@ -17,7 +17,7 @@ class DetalleEvaluacionRepository extends BaseRepository
      */
     protected const COLUMNAS = [
         'sesion_examen_id', 'deportista_documento', 'modalidad', 'grado_evaluado',
-        'estado', 'fecha_completado', 'criterios_evaluados', 'puntajes',
+        'estado', 'fecha_completado', 'nota', 'criterios_evaluados', 'puntajes',
         'valor_medible', 'aspectos_fallidos', 'observaciones', 'recomendaciones',
         'aprobado',
     ];
@@ -46,7 +46,7 @@ class DetalleEvaluacionRepository extends BaseRepository
     {
         $datos = $modelo->toArray();
         return $this->insertar(
-            'INSERT INTO detalle_evaluacion (sesion_examen_id, deportista_documento, modalidad, grado_evaluado, estado, fecha_completado, criterios_evaluados, puntajes, valor_medible, aspectos_fallidos, observaciones, recomendaciones, aprobado) VALUES (:sesion_examen_id, :deportista_documento, :modalidad, :grado_evaluado, :estado, :fecha_completado, :criterios_evaluados, :puntajes, :valor_medible, :aspectos_fallidos, :observaciones, :recomendaciones, :aprobado)',
+            'INSERT INTO detalle_evaluacion (sesion_examen_id, deportista_documento, modalidad, grado_evaluado, estado, fecha_completado, nota, criterios_evaluados, puntajes, valor_medible, aspectos_fallidos, observaciones, recomendaciones, aprobado) VALUES (:sesion_examen_id, :deportista_documento, :modalidad, :grado_evaluado, :estado, :fecha_completado, :nota, :criterios_evaluados, :puntajes, :valor_medible, :aspectos_fallidos, :observaciones, :recomendaciones, :aprobado)',
             $datos
         );
     }
@@ -58,7 +58,7 @@ class DetalleEvaluacionRepository extends BaseRepository
     {
         $datos = $modelo->toArray();
         return $this->ejecutar(
-            'UPDATE detalle_evaluacion SET grado_evaluado = :grado_evaluado, estado = :estado, fecha_completado = :fecha_completado, criterios_evaluados = :criterios_evaluados, puntajes = :puntajes, valor_medible = :valor_medible, aspectos_fallidos = :aspectos_fallidos, observaciones = :observaciones, recomendaciones = :recomendaciones, aprobado = :aprobado WHERE sesion_examen_id = :sesion_examen_id AND deportista_documento = :deportista_documento AND modalidad = :modalidad',
+            'UPDATE detalle_evaluacion SET grado_evaluado = :grado_evaluado, estado = :estado, fecha_completado = :fecha_completado, nota = :nota, criterios_evaluados = :criterios_evaluados, puntajes = :puntajes, valor_medible = :valor_medible, aspectos_fallidos = :aspectos_fallidos, observaciones = :observaciones, recomendaciones = :recomendaciones, aprobado = :aprobado WHERE sesion_examen_id = :sesion_examen_id AND deportista_documento = :deportista_documento AND modalidad = :modalidad',
             $datos
         );
     }

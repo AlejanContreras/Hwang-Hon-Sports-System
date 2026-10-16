@@ -17,7 +17,7 @@ class EntregaCinturonRepository extends BaseRepository
      */
     protected const COLUMNAS = [
         'sesion_examen_id', 'deportista_documento', 'cinturon_entregado',
-        'fecha_entrega',
+        'fecha_entrega', 'confirmado_por',
     ];
 
     protected const ORDEN = 'sesion_examen_id, deportista_documento';
@@ -43,7 +43,7 @@ class EntregaCinturonRepository extends BaseRepository
     {
         $datos = $modelo->toArray();
         return $this->insertar(
-            'INSERT INTO entrega_cinturon (sesion_examen_id, deportista_documento, cinturon_entregado, fecha_entrega) VALUES (:sesion_examen_id, :deportista_documento, :cinturon_entregado, :fecha_entrega)',
+            'INSERT INTO entrega_cinturon (sesion_examen_id, deportista_documento, cinturon_entregado, fecha_entrega, confirmado_por) VALUES (:sesion_examen_id, :deportista_documento, :cinturon_entregado, :fecha_entrega, :confirmado_por)',
             $datos
         );
     }
@@ -55,7 +55,7 @@ class EntregaCinturonRepository extends BaseRepository
     {
         $datos = $modelo->toArray();
         return $this->ejecutar(
-            'UPDATE entrega_cinturon SET cinturon_entregado = :cinturon_entregado, fecha_entrega = :fecha_entrega WHERE sesion_examen_id = :sesion_examen_id AND deportista_documento = :deportista_documento',
+            'UPDATE entrega_cinturon SET cinturon_entregado = :cinturon_entregado, fecha_entrega = :fecha_entrega, confirmado_por = :confirmado_por WHERE sesion_examen_id = :sesion_examen_id AND deportista_documento = :deportista_documento',
             $datos
         );
     }

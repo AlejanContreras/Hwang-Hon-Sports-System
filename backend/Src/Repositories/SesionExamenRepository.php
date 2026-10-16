@@ -16,7 +16,8 @@ class SesionExamenRepository extends BaseRepository
      * Columnas por las que listar()/contar() pueden filtrar (BaseRepository).
      */
     protected const COLUMNAS = [
-        'id', 'fecha', 'lugar',
+        'id', 'fecha', 'fecha_grado', 'lugar', 'estado', 'evento_examen_id',
+        'evento_grado_id',
     ];
 
     protected const ORDEN = 'fecha, id';
@@ -35,14 +36,14 @@ class SesionExamenRepository extends BaseRepository
     /**
      * Inserta una nueva fila en `sesion_examen` a partir de un SesionExamenModel y devuelve el id
      * generado (columna AUTO_INCREMENT). El id del modelo no se envia: lo
-     * asigna la base de datos.
+     * asigna la base de datos. Envia siempre estado (ENUM NOT NULL).
      */
     public function crear(SesionExamenModel $modelo): int
     {
         $datos = $modelo->toArray();
         unset($datos['id']);
         return $this->insertarYObtenerId(
-            'INSERT INTO sesion_examen (fecha, lugar) VALUES (:fecha, :lugar)',
+            'INSERT INTO sesion_examen (fecha, fecha_grado, lugar, estado, evento_examen_id, evento_grado_id) VALUES (:fecha, :fecha_grado, :lugar, :estado, :evento_examen_id, :evento_grado_id)',
             $datos
         );
     }
@@ -54,7 +55,7 @@ class SesionExamenRepository extends BaseRepository
     {
         $datos = $modelo->toArray();
         return $this->ejecutar(
-            'UPDATE sesion_examen SET fecha = :fecha, lugar = :lugar WHERE id = :id',
+            'UPDATE sesion_examen SET fecha = :fecha, fecha_grado = :fecha_grado, lugar = :lugar, estado = :estado, evento_examen_id = :evento_examen_id, evento_grado_id = :evento_grado_id WHERE id = :id',
             $datos
         );
     }

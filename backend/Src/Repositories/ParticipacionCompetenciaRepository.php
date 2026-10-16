@@ -17,7 +17,7 @@ class ParticipacionCompetenciaRepository extends BaseRepository
      */
     protected const COLUMNAS = [
         'deportista_documento', 'competencia_evento_id', 'modalidad', 'categoria_edad',
-        'categoria_peso', 'resultado', 'medalla', 'combates_ganados',
+        'categoria_peso', 'puesto', 'resultado', 'medalla', 'combates_ganados',
         'combates_perdidos', 'notas_oponente',
     ];
 
@@ -45,7 +45,7 @@ class ParticipacionCompetenciaRepository extends BaseRepository
     {
         $datos = $modelo->toArray();
         return $this->insertar(
-            'INSERT INTO participacion_competencia (deportista_documento, competencia_evento_id, modalidad, categoria_edad, categoria_peso, resultado, medalla, combates_ganados, combates_perdidos, notas_oponente) VALUES (:deportista_documento, :competencia_evento_id, :modalidad, :categoria_edad, :categoria_peso, :resultado, :medalla, :combates_ganados, :combates_perdidos, :notas_oponente)',
+            'INSERT INTO participacion_competencia (deportista_documento, competencia_evento_id, modalidad, categoria_edad, categoria_peso, puesto, resultado, medalla, combates_ganados, combates_perdidos, notas_oponente) VALUES (:deportista_documento, :competencia_evento_id, :modalidad, :categoria_edad, :categoria_peso, :puesto, :resultado, :medalla, :combates_ganados, :combates_perdidos, :notas_oponente)',
             $datos
         );
     }
@@ -57,7 +57,7 @@ class ParticipacionCompetenciaRepository extends BaseRepository
     {
         $datos = $modelo->toArray();
         return $this->ejecutar(
-            'UPDATE participacion_competencia SET categoria_edad = :categoria_edad, categoria_peso = :categoria_peso, resultado = :resultado, medalla = :medalla, combates_ganados = :combates_ganados, combates_perdidos = :combates_perdidos, notas_oponente = :notas_oponente WHERE deportista_documento = :deportista_documento AND competencia_evento_id = :competencia_evento_id AND modalidad = :modalidad',
+            'UPDATE participacion_competencia SET categoria_edad = :categoria_edad, categoria_peso = :categoria_peso, puesto = :puesto, resultado = :resultado, medalla = :medalla, combates_ganados = :combates_ganados, combates_perdidos = :combates_perdidos, notas_oponente = :notas_oponente WHERE deportista_documento = :deportista_documento AND competencia_evento_id = :competencia_evento_id AND modalidad = :modalidad',
             $datos
         );
     }

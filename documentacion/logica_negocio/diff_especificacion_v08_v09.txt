@@ -1,0 +1,461 @@
+--- v0.8
++++ v0.9
+@@ -1,20 +1,21 @@
+ ESPECIFICACIÓN DE LÓGICA DE NEGOCIO
+ HwangHon-Sports-System
+-Versión 0.8 — documento de trabajo
++Versión 0.9 — documento de trabajo
+ Club Deportivo de Hapkido Hwang Hon — Soacha, Cundinamarca
+ Cliente: Aldrin Díaz Herrera (Maestro del club)
+ Autor: John Alejandro Contreras — Ingeniería de Software, Fundación Universitaria Compensar (práctica profesional)
+-28 de septiembre de 2026
+-Basado en Reglas de Negocio v0.9 (documentacion/reglas_negocio/) — v0.1 de este documento tomó como referencia v0.3, v0.2 pasó a v0.4, y desde v0.3 en adelante (v0.3 a v0.5) usa v0.6, v0.6 usó v0.7, v0.7 usó v0.8, y esta versión (v0.8) usa v0.9. No se duplica el contexto de cada regla ni su justificación, cada punto lo referencia por número de regla.
+-Etiquetas usadas: [CONFIRMADO] · [PROPUESTA] · [PENDIENTE DE RESPUESTA] · [PENDIENTE DE VERIFICACIÓN] (las mismas cuatro de Reglas de Negocio v0.6, citadas junto con cada regla de origen) · [PENDIENTE DE ESPECIFICAR] (quinta etiqueta, exclusiva de este documento — ver sección 1).
++16 de octubre de 2026
++Basado en Reglas de Negocio v1.0 (documentacion/reglas_negocio/) — v0.1 de este documento tomó como referencia v0.3, v0.2 pasó a v0.4, y desde v0.3 en adelante (v0.3 a v0.5) usa v0.6, v0.6 usó v0.7, v0.7 usó v0.8, v0.8 usó v0.9, y esta versión (v0.9) usa Reglas de Negocio v1.0. No se duplica el contexto de cada regla ni su justificación, cada punto lo referencia por número de regla.
++Etiquetas usadas: [CONFIRMADO] · [PROPUESTA] · [PENDIENTE DE RESPUESTA] · [PENDIENTE DE VERIFICACIÓN] (las mismas cuatro de Reglas de Negocio v1.0, citadas junto con cada regla de origen) · [PENDIENTE DE ESPECIFICAR] (quinta etiqueta, exclusiva de este documento — ver sección 1).
+ v0.1: creación inicial del documento — inventario completo de Reglas de Negocio v0.3 (994 líneas, diez módulos más Transversal). Secciones A-D con la regla de origen citada y un placeholder explícito de especificación técnica pendiente; sección E trasladada sin cambios de contenido.
+ v0.2: se reemplazan los [PENDIENTE DE ESPECIFICAR] de las secciones A-D por la especificación técnica decidida por John, usando Reglas de Negocio v0.4 (agrega RN-5.6 y RN-5.7; actualiza RN-6.3 y RN-8.7) como referencia en vez de v0.3. La sección E también pasa a citar v0.4: se retira RN-8.7 de E.6 (ya resuelta, ver A.2), quedando esa entrada solo con RN-8.6. Queda un único punto abierto, dentro de la especificación compartida de la sección D, marcado explícitamente como [PENDIENTE DE ESPECIFICAR].
+-v0.3: se cierran los dos últimos puntos pendientes de las secciones A-D. A.2 gana la precisión de que la mecánica de pausa de la permanencia es la misma con o sin el estado inactivo de RN-8.7, ya respaldada por un nuevo párrafo "Precisión" en RN-2.2. La sección D gana el comportamiento de actualización (vs. inserción) en la carga masiva y el caso de correo compartido entre un deportista adulto y su rol de tutor (RN-1.9, RN-1.10). Con esto quedan cerradas las cuatro secciones (A-D) -- ya no queda ningún [PENDIENTE DE ESPECIFICAR] en ellas. Todas las citas del documento se actualizan a Reglas de Negocio v0.5 (agrega RN-1.9 y RN-1.10; RN-2.2 gana su párrafo "Precisión"). Sección E sin cambios de contenido. Corrección puntual sobre esta misma versión (28/09/2026): las etiquetas PENDIENTE DE ALDRIN y PENDIENTE DE VALIDACIÓN se unifican como PENDIENTE DE RESPUESTA (ver Reglas de Negocio v0.6, sección 1), y todas las citas del documento se actualizan de Reglas de Negocio v0.5 a v0.6 -- sin cambios de contenido en las secciones A-E.
+-v0.4 (28/09/2026): se cierra el punto E.2 -- la categoría por peso para menores de 16 años ya no depende de que Aldrin o Viviana validen un rango oficial; usa la tabla PROPUESTA de RN-3.8 (Reglas de Negocio v0.6), en pasos de 5 kg, reemplazable si en el futuro se entrega una tabla oficial. La especificación técnica correspondiente se traslada a A.1, junto con el resto del cálculo dinámico de categoría (edad y peso). En la sección E, E.2 pasa a [RESUELTO, ver A.1] y se retira de la lista de bloqueados; el resto de la sección (E.1, E.3-E.6) sigue sin cambios de contenido.
+-v0.5 (29/09/2026): se cierra la mitad del punto que seguía abierto en B.1 (nota sobre Documentación Técnica v0.1.4, sección 13, detalle_evaluacion.aprobado). Aclarado con John: la condición de completitud de la sesión de examen pasa a [CONFIRMADO] -- se exige completado solo en las modalidades que apliquen al grado evaluado, no en todas las registradas. La regla de combinación de resultados por modalidad para el aprobado general sigue [PENDIENTE DE RESPUESTA], sin cambios -- depende de la plantilla oficial (RN-5.3). Resto del documento sin cambios de contenido.
+-v0.6 (09/10/2026): se agrega B.5, especificación técnica de RN-T.16 (Reglas de Negocio v0.7, nueva): acceso del ámbito público con documento + fecha de nacimiento y bloqueo tras 5 intentos fallidos consecutivos (15 minutos, contador reiniciado al acertar, mismo mensaje de error exista o no el documento). Pendiente: el contador de intentos fallidos necesita una tabla nueva en el esquema (hoy no existe en esquema_hwanghon_v2.sql) -- coordinar con el chat de base de datos antes de implementar en el backend. RN-T.15 (Reglas de Negocio v0.7, también nueva: personal administrativo que también es deportista) no requiere cambios aquí -- es una aclaración de relación de datos entre dos tablas independientes, sin lógica nueva que especificar. Resto del documento sin cambios de contenido.
+-v0.7 (09/10/2026): dos correcciones sobre A.1 y B.5 a partir del campo nuevo sexo en deportista (Reglas de Negocio v0.8, RN-1.1/RN-1.6). En A.1: la categoría por peso ahora se describe como dependiente también de sexo, y se corrige la afirmación de que resolver RN-3.8 "ya no bloquea" el cálculo -- la tabla de Mayores sigue incompleta en Reglas de Negocio (solo el primer corte por sexo) y el tramo de 15 años sigue sin cubrir; solo Infantil/Junior (E.2) está realmente resuelto. En B.5: se corrige la nota pendiente -- la tabla intento_acceso_publico ya existe en esquema_hwanghon_v3.sql, con la forma exacta que se necesitaba. Resto del documento sin cambios de contenido.
+-v0.8 (09/10/2026): decisión final de John sobre el ámbito público -- una sola cuenta por deportista, sin distinción por edad; el acudiente no tiene login propio (ver Reglas de Negocio v0.9, RN-1.4/RN-T.3/RN-T.4/RN-T.14/RN-T.16). En B.4: se agrega una nota aclarando que "tutores" en el título de RN-T.14 se refiere a completar el formulario en nombre de un menor, no a una cuenta propia. En B.5: se reescribe el acceso público -- se elimina la variante con la fecha de nacimiento del deportista representado por el acudiente y se agrega la justificación (credenciales compartidas por la familia, sin verificación de identidad real); el bloqueo de 5 intentos/15 minutos y la nota sobre intento_acceso_publico no cambian. En C.1: se reescriben ambos párrafos de "Regla de origen" (RN-1.4 y RN-T.3) en el mismo sentido. B.2/C.4 (RN-6.3) y la sección D (RN-1.9/RN-1.10) se revisaron y se dejan sin cambio -- usan "deportista/tutor" como forma abreviada de quien usa la cuenta pública, sin afirmar un rol de acceso propio del acudiente. Resto del documento sin cambios de contenido.
++v0.3: se cierran los dos últimos puntos pendientes de las secciones A-D. A.2 gana la precisión de que la mecánica de pausa de la permanencia es la misma con o sin el estado inactivo de RN-8.7, ya respaldada por un nuevo párrafo "Precisión" en RN-2.2. La sección D gana el comportamiento de actualización (vs. inserción) en la carga masiva y el caso de correo compartido entre un deportista adulto y su rol de tutor (RN-1.9, RN-1.10). Con esto quedan cerradas las cuatro secciones (A-D) — ya no queda ningún [PENDIENTE DE ESPECIFICAR] en ellas. Todas las citas del documento se actualizan a Reglas de Negocio v0.5 (agrega RN-1.9 y RN-1.10; RN-2.2 gana su párrafo "Precisión"). Sección E sin cambios de contenido. Corrección puntual sobre esta misma versión (28/09/2026): las etiquetas PENDIENTE DE ALDRIN y PENDIENTE DE VALIDACIÓN se unifican como PENDIENTE DE RESPUESTA (ver Reglas de Negocio v0.6, sección 1), y todas las citas del documento se actualizan de Reglas de Negocio v0.5 a v0.6 — sin cambios de contenido en las secciones A-E.
++v0.4 (28/09/2026): se cierra el punto E.2 — la categoría por peso para menores de 16 años ya no depende de que Aldrin o Viviana validen un rango oficial; usa la tabla PROPUESTA de RN-3.8 (Reglas de Negocio v0.6), en pasos de 5 kg, reemplazable si en el futuro se entrega una tabla oficial. La especificación técnica correspondiente se traslada a A.1, junto con el resto del cálculo dinámico de categoría (edad y peso). En la sección E, E.2 pasa a [RESUELTO, ver A.1] y se retira de la lista de bloqueados; el resto de la sección (E.1, E.3-E.6) sigue sin cambios de contenido.
++v0.5 (29/09/2026): se cierra la mitad del punto que seguía abierto en B.1 (nota sobre Documentación Técnica v0.1.4, sección 13, detalle_evaluacion.aprobado). Aclarado con John: la condición de completitud de la sesión de examen pasa a [CONFIRMADO] — se exige completado solo en las modalidades que apliquen al grado evaluado, no en todas las registradas. La regla de combinación de resultados por modalidad para el aprobado general sigue [PENDIENTE DE RESPUESTA], sin cambios — depende de la plantilla oficial (RN-5.3). Resto del documento sin cambios de contenido.
++v0.6 (09/10/2026): se agrega B.5, especificación técnica de RN-T.16 (Reglas de Negocio v0.7, nueva): acceso del ámbito público con documento + fecha de nacimiento y bloqueo tras 5 intentos fallidos consecutivos (15 minutos, contador reiniciado al acertar, mismo mensaje de error exista o no el documento). Pendiente: el contador de intentos fallidos necesita una tabla nueva en el esquema (hoy no existe en esquema_hwanghon_v2.sql) — coordinar con el chat de base de datos antes de implementar en el backend. RN-T.15 (Reglas de Negocio v0.7, también nueva: personal administrativo que también es deportista) no requiere cambios aquí — es una aclaración de relación de datos entre dos tablas independientes, sin lógica nueva que especificar. Resto del documento sin cambios de contenido.
++v0.7 (09/10/2026): dos correcciones sobre A.1 y B.5 a partir del campo nuevo sexo en deportista (Reglas de Negocio v0.8, RN-1.1/RN-1.6). En A.1: la categoría por peso ahora se describe como dependiente también de sexo, y se corrige la afirmación de que resolver RN-3.8 "ya no bloquea" el cálculo — la tabla de Mayores sigue incompleta en Reglas de Negocio (solo el primer corte por sexo) y el tramo de 15 años sigue sin cubrir; solo Infantil/Junior (E.2) está realmente resuelto. En B.5: se corrige la nota pendiente — la tabla intento_acceso_publico ya existe en esquema_hwanghon_v3.sql, con la forma exacta que se necesitaba. Resto del documento sin cambios de contenido.
++v0.8 (09/10/2026): decisión final de John sobre el ámbito público — una sola cuenta por deportista, sin distinción por edad; el acudiente no tiene login propio (ver Reglas de Negocio v0.9, RN-1.4/RN-T.3/RN-T.4/RN-T.14/RN-T.16). En B.4: se agrega una nota aclarando que "tutores" en el título de RN-T.14 se refiere a completar el formulario en nombre de un menor, no a una cuenta propia. En B.5: se reescribe el acceso público — se elimina la variante con la fecha de nacimiento del deportista representado por el acudiente y se agrega la justificación (credenciales compartidas por la familia, sin verificación de identidad real); el bloqueo de 5 intentos/15 minutos y la nota sobre intento_acceso_publico no cambian. En C.1: se reescriben ambos párrafos de "Regla de origen" (RN-1.4 y RN-T.3) en el mismo sentido. B.2/C.4 (RN-6.3) y la sección D (RN-1.9/RN-1.10) se revisaron y se dejan sin cambio — usan "deportista/tutor" como forma abreviada de quien usa la cuenta pública, sin afirmar un rol de acceso propio del acudiente. Resto del documento sin cambios de contenido.
++v0.9 (16/10/2026): sincronización completa con Reglas de Negocio v1.0 y esquema_hwanghon_v4.sql (sección 35 del Contexto Base, fichas de módulos del 14/10/2026). A.2 se reescribe: el estado inactivo ya no depende del impago (RN-8.7, retirada) sino de la asistencia (RN-1.11); la mecánica de pausa de la permanencia no cambia. A.3 se reescribe: la ventana de inasistencia va del examen o grado anterior al inicio del actual (desde el ingreso si es posterior), 30%/40%, solo aviso, visible en la lista de candidatos, denominador = fechas con asistencia registrada (RN-9.7, RN-7.8). A.4 se reescribe y amplía su alcance (RN-8.1/RN-8.2/RN-8.3): semana habitual, vencimiento, deuda con 2 o más asistencias desde el vencimiento, aviso «por vencer» de 3 a 5 días, matrícula con reinicio global en enero, inactivo sin alerta, «anular pago» = borrar el registro de ese mes y esa semana. A.5 retira «aptitud». Se agregan A.6 (días de entrenamiento y «hoy» en hora de Bogotá, RN-7.4/RN-7.7/RN-7.8) y A.7 (cumpleaños y vencimientos del calendario, RN-9.8). B.1 se reescribe y amplía su alcance (RN-5.1/RN-5.3/RN-5.5/RN-5.7): nota de 1 a 10, resultado provisional = seis modalidades completas y promedio ≥ 5, sesión abierta/cerrada, entrega confirmada por el administrativo o por el deportista. B.3 se actualiza: token de recuperación confirmado en 1 hora, restablecimiento directo por quien gestiona cuentas. B.4 se actualiza con el mensaje de registro pendiente y los campos editables ya vigentes. B.5 se reescribe: 4 intentos (antes 5) y 15 minutos, mismo mecanismo también para el login administrativo, tabla intento_acceso con llave ámbito + identificador. Se agregan B.6 (inactividad por asistencia, botón «Revisar inactivos» y reactivación automática, RN-1.11), B.7 (expiración de sesión, RN-T.17) y B.8 (contraseña, RN-T.18). C.1 se reescribe: la vista pública edita además teléfono, dirección y correo, y confirma la entrega de su cinturón. C.3 se reescribe: gestión de cuentas por Aldrin y por la cuenta Desarrollador; se desactiva, no se borra; nadie desactiva su propia cuenta. C.4 se reescribe con documentos por tipo, formatos por tipo, un archivo o varios, documentos críticos y nombre original. D.1 (RN-1.10) se reescribe: correo compartido entre hermanos menores, conflicto solo entre dos adultos distintos. D.2 agrega el tipo de evento grado y la omisión con aviso de duplicados en la carga del calendario. La sección E se reordena siguiendo la sección 13 de Reglas de Negocio v1.0: se agregan E.4 (RN-5.8, certificado) y E.5 (RN-10.2, plantilla de asistencia IMRDS y lista definitiva de reportes); E.7 (RN-4.4) y E.8 (RN-8.6) se conservan con una nota aclarando que no aparecen en esa sección 13 porque no dependen de información pendiente del club en el sentido de esa lista. Todas las citas del documento se actualizan a Reglas de Negocio v1.0.
+ 
+ Contenido
+ 1. Introducción y alcance
+@@ -26,210 +27,272 @@
+ Cierre
+ 
+ 1. Introducción y alcance
+-Con la Etapa 2 (Diseño de base de datos) cerrada -- Modelo Relacional v1 y el script SQL ejecutado y verificado (base_datos/esquema_hwanghon_v1.sql), documentados en Documentación Técnica v0.1.4 -- el proyecto entra a la Etapa 3 (Definición de lógica de negocio). El primer paso fue un inventario completo de Reglas de Negocio v0.3 (994 líneas, los diez módulos más Transversal), categorizando qué reglas necesitan una especificación técnica precisa antes de poder implementarlas.
+-Reglas de Negocio v0.6 da el contexto y la decisión de cada regla, pero varias de ellas describen una lógica -- un cálculo, un flujo de estados, un permiso, una importación -- sin fijar su especificación técnica exacta. Este documento existe para cerrar esa brecha antes de diseñar la arquitectura backend: cada punto más abajo cita su regla de origen en Reglas de Negocio v0.6 (no se duplica su contexto ni su justificación, solo se referencia por número) y añade una sección "Especificación técnica", que por ahora queda como [PENDIENTE DE ESPECIFICAR] -- un placeholder explícito, no una especificación inventada.
+-Las fórmulas y los flujos exactos se irán definiendo progresivamente en el chat técnico, en pasadas siguientes sobre este mismo documento (misma convención de corrección puntual sobre la misma versión ya usada en este proyecto, o v0.2 si el contenido nuevo es sustancial -- se decide cuando llegue el momento).
++Con la Etapa 2 (Diseño de base de datos) cerrada — Modelo Relacional v1 y el script SQL ejecutado y verificado (base_datos/esquema_hwanghon_v1.sql), documentados en Documentación Técnica v0.1.4 — el proyecto entra a la Etapa 3 (Definición de lógica de negocio). El primer paso fue un inventario completo de Reglas de Negocio v1.0 (994 líneas, los diez módulos más Transversal), categorizando qué reglas necesitan una especificación técnica precisa antes de poder implementarlas.
++Reglas de Negocio v1.0 da el contexto y la decisión de cada regla, pero varias de ellas describen una lógica — un cálculo, un flujo de estados, un permiso, una importación — sin fijar su especificación técnica exacta. Este documento existe para cerrar esa brecha antes de diseñar la arquitectura backend: cada punto más abajo cita su regla de origen en Reglas de Negocio v1.0 (no se duplica su contexto ni su justificación, solo se referencia por número) y añade una sección "Especificación técnica", que por ahora queda como [PENDIENTE DE ESPECIFICAR] — un placeholder explícito, no una especificación inventada.
++Las fórmulas y los flujos exactos se irán definiendo progresivamente en el chat técnico, en pasadas siguientes sobre este mismo documento (misma convención de corrección puntual sobre la misma versión ya usada en este proyecto, o v0.2 si el contenido nuevo es sustancial — se decide cuando llegue el momento).
+ Etiquetas de estado
+-Cada regla citada conserva exactamente la etiqueta con la que aparece en Reglas de Negocio v0.6. Cada sección de especificación técnica que aún no existe usa una quinta etiqueta, propia de este documento:
++Cada regla citada conserva exactamente la etiqueta con la que aparece en Reglas de Negocio v1.0. Cada sección de especificación técnica que aún no existe usa una quinta etiqueta, propia de este documento:
+ 
+ Ninguna sección marcada como [PENDIENTE DE ESPECIFICAR] debe tratarse como una especificación definitiva ni implementarse a partir de una suposición: el valor exacto se define en una pasada posterior sobre este documento.
+-Fuente: Reglas de Negocio v0.3 (documentacion/reglas_negocio/); inventario de las 994 líneas realizado por John el 26/09/2026.
++Fuente: Reglas de Negocio v1.0 (documentacion/reglas_negocio/); inventario original de las 994 líneas de v0.3 realizado por John el 26/09/2026, actualizado en cada revisión posterior hasta v1.0 (16/10/2026).
+ A. Cálculos derivados
+-Reglas que implican una fórmula a partir de datos ya almacenados. Cada una necesita una especificación técnica precisa -- la fórmula exacta, redondeos y casos borde -- antes de poder implementarse.
++Reglas que implican una fórmula a partir de datos ya almacenados. Cada una necesita una especificación técnica precisa — la fórmula exacta, redondeos y casos borde — antes de poder implementarse.
+ A.1. RN-1.3 — Edad y categoría calculadas dinámicamente
+-Regla de origen (RN-1.3, Reglas de Negocio v0.6): 
++Regla de origen (RN-1.3, Reglas de Negocio v1.0): 
++[CONFIRMADO] 
++La edad del deportista y su categoría deportiva se actualizarían automáticamente con el tiempo a partir de la fecha de nacimiento y el peso registrado (por ejemplo, un deportista pasa de juvenil a mayores al cumplir 18 años).
++Depende, además, de que la federación entregue la tabla oficial de categorías por peso para RN-3.8 (ver E.2); mientras tanto se usa la tabla PROPUESTA consolidada (ver especificación técnica abajo).
++Especificación técnica
++[CONFIRMADO] 
++La edad se recalcula siempre a partir de la fecha de nacimiento y la fecha del día en que el sistema la usa o la muestra — no es un dato fijo que se guarda y se actualiza periódicamente. La categoría por edad se obtiene con una consulta directa (lookup) contra la tabla de rangos de RN-3.8 (Infantil 8-11, Junior 12-14, Juvenil 15-17, Mayores 18-35, Sénior 36-45, Máster 46+). La categoría por peso depende también de sexo (masculino/femenino, RN-1.1) y se obtiene con el mismo mecanismo de consulta directa (lookup), con corte inclusivo (el peso hasta el corte pertenece a esa categoría; sobre el último corte, categoría abierta «más de X kg»): tabla de Infantil/Junior (por sexo, con los cortes exactos de RN-3.8) para menores de 16 años, y tabla DOCUMENTAL de Mayores (por sexo) desde los 16 años, incluido el tramo de 15 años (dentro de Juvenil), que usa la tabla de Mayores mientras no exista una propia.
++Precisión (16/10/2026): la tabla consolidada de pesos de RN-3.8 (actualizada el 15/10/2026) reemplaza la anterior, que solo cubría Infantil y Junior en pasos de 5 kg y dejaba sin cubrir el tramo de 15 años. Con la tabla actual, el cálculo de categoría por peso ya puede implementarse completo: lo único que sigue pendiente es que la federación entregue la tabla oficial para reemplazar la tabla PROPUESTA consolidada del equipo (ver E.2).
++A.2. RN-2.2 — Cálculo de permanencia
++Regla de origen (RN-2.2, Reglas de Negocio v1.0): 
++[CONFIRMADO] 
++La permanencia del deportista en el club se calcula a partir del historial de pagos de mensualidad (meses efectivamente pagados), en vez de construir una estructura separada de periodos de pausa o inactividad.
++Precisión (28/09/2026, actualizada 15/10/2026): esta misma mecánica aplica sin importar si el deportista llega a estar en estado inactivo (RN-1.11, por 3 meses consecutivos sin asistir — ya no por impago, ver RN-8.7, retirada) — no hay ningún efecto adicional sobre la permanencia más allá del ya descrito: los meses sin pagar, sean 1, 2, 3 o más, simplemente no suman, y la cuenta se retoma normalmente en cuanto vuelva a haber un mes pagado.
++Especificación técnica
++[CONFIRMADO] 
++La permanencia se calcula como la suma total de los meses efectivamente pagados desde el ingreso del deportista: los meses sin pagar no se descuentan de los meses ya contabilizados antes de ese hueco, solo se deja de sumar mientras no haya pago. Esta mecánica de pausa es la misma sin importar si el deportista llega a estar en estado inactivo (RN-1.11): no hay ningún efecto adicional sobre la permanencia más allá del ya descrito. Ver también RN-1.11 (Reglas de Negocio v1.0, B.6): el estado activo/inactivo ya no depende del pago de mensualidad (RN-8.7, retirada) sino de la asistencia — un deportista pasa a inactivo tras 3 meses consecutivos sin asistir, y se reactiva automáticamente al registrar una nueva asistencia.
++A.3. RN-5.2 — Umbral de inasistencia para presentar examen
++Regla de origen (RN-5.2, Reglas de Negocio v1.0): 
++[CONFIRMADO] 
++Umbral de inasistencia para la elegibilidad a presentar el examen de ascenso, medido en la ventana entre el examen o grado anterior y el inicio del examen actual (si el deportista ingresó después del examen anterior, la ventana empieza en su fecha de ingreso): más de 30% de inasistencia para deportistas de 5 a 16 años; más de 40% para deportistas de 17 años o más. Es solo un aviso — nunca un bloqueo automático — y se muestra directamente en la lista de candidatos de la sesión de examen (columnas nombre, grado, edad, % de inasistencia y marca apto/no apto), no como un mensaje al seleccionar al deportista.
++El denominador exacto lo fija RN-9.7 (Reglas de Negocio v1.0): ya no es un número fijo ligado a un ciclo de exámenes aproximado de 3 meses, sino las fechas con asistencia registrada dentro de la misma ventana — el mismo criterio con el que RN-7.8 calcula el porcentaje general de asistencia (ver también A.6).
++Especificación técnica
++[CONFIRMADO] 
++El porcentaje de inasistencia se calcula sobre las fechas con filas de asistencia registradas (RN-7.4/RN-7.8, ver A.6) dentro de la ventana entre el examen o grado anterior y el inicio del examen actual, o desde el ingreso del deportista si es posterior a esa ventana (RN-5.6: un ingreso posterior solo genera un aviso, ya no bloquea la inscripción). Un deportista no es penalizado por las sesiones anteriores a su ingreso. Cuando hay pocas sesiones registradas dentro de la ventana, se muestra «datos incompletos (N sesiones registradas)» en vez de un porcentaje engañoso (RN-7.8), igual que en el cálculo general de asistencia.
++A.4. RN-8.1 / RN-8.2 / RN-8.3 — Semana habitual, vencimiento, deuda y matrícula
++Regla de origen (RN-8.1, RN-8.2 y RN-8.3, Reglas de Negocio v1.0):
++[CONFIRMADO] 
++RN-8.1: cada mes tiene 4 semanas por fecha calendario (1: días 1-7, 2: 8-14, 3: 15-21, 4: 22-fin de mes); solo existen los pagos efectivamente hechos, nunca filas «pendiente». La semana habitual de un deportista es la de su último pago de mensualidad (la de su fecha de ingreso si nunca ha pagado); cada vez que paga en una semana distinta, esa pasa a ser la nueva habitual. La mensualidad de un mes vence cuando empieza esa semana habitual dentro de ese mes. Existe «anular pago», exclusiva del personal administrativo y con doble confirmación, que elimina únicamente el registro de un mes y una semana — un solo pago — sin afectar ningún otro dato; el mes anulado vuelve a quedar como no pagado.
+RN-8.2: la matrícula anual es una obligación distinta y separada de la mensualidad; quien ingresa a mitad de año paga matrícula y mensualidad juntas al ingresar; en enero hay un reinicio global, sin excepciones; quien no la paga en enero queda atrasado desde febrero.
+RN-8.3: un mes de mensualidad cuenta como deuda cuando ya venció, no tiene pago, y el deportista asistió dos o más veces desde la fecha de vencimiento dentro de ese mismo mes; la alerta nunca muestra el valor monetario adeudado. Un aviso de «por vencer» se muestra unos días antes del vencimiento (margen de 3 a 5 días, 3 por defecto), como mensaje en pantalla, nunca por correo ni WhatsApp. Un deportista inactivo (RN-1.11) no genera esta alerta.
++Especificación técnica
++[CONFIRMADO] 
++La semana habitual se recalcula cada vez que el deportista paga en una semana distinta a la habitual (RN-8.1); el vencimiento de un mes es la fecha en que empieza esa semana habitual dentro de ese mes. La deuda se evalúa mes por mes: vencido + sin pago + 2 o más asistencias desde la fecha de vencimiento (no desde el inicio del mes) dentro de ese mismo mes (RN-8.3); un deportista inactivo (RN-1.11) queda excluido del cálculo. El aviso «por vencer» usa un margen configurable de 3 a 5 días antes del vencimiento (valor inicial: 3), como mensaje en pantalla únicamente. La matrícula se evalúa por año calendario, independiente de los meses de mensualidad: todo deportista, sin excepción, vuelve a deberla en enero (RN-8.2); quien ingresa a mitad de año la paga junto con la mensualidad al ingresar. «Anular pago» (RN-8.1) borra el registro de un único mes y una única semana de un deportista, sin afectar los demás pagos ni otros datos del deportista; el mes anulado vuelve a contar como no pagado y la deuda se recalcula con la misma regla de arriba.
++A.5. RN-10.3 — Reporte prioritario: ficha consolidada
++Regla de origen (RN-10.3, Reglas de Negocio v1.0): 
++[CONFIRMADO] 
++El único reporte prioritario definido hasta ahora es la ficha consolidada del deportista: datos personales (nombre, edad, categoría, peso, cinturón, condición de salud), el último examen con sus notas por modalidad, los últimos torneos con puesto y medalla, y las recomendaciones del último examen. Se retira el campo «aptitud para torneos» (una frase sin definición clara en versiones anteriores): la ficha muestra hechos ya registrados, no una valoración que el sistema calcule.
++Especificación técnica
++[CONFIRMADO] 
++La ficha consolidada es una agregación pura de los campos ya calculados en A.1 (edad y categoría) y A.2 (permanencia), más el último examen (notas por modalidad y resultado provisional, B.1), los últimos torneos (puesto y medalla, módulo 3) y las recomendaciones del último examen — no introduce ningún cálculo propio adicional ni ninguna valoración de «aptitud».
++A.6. RN-7.4 / RN-7.7 / RN-7.8 — Días de entrenamiento y «hoy» en hora de Bogotá
++Regla de origen (RN-7.4, RN-7.7 y RN-7.8, Reglas de Negocio v1.0):
++[CONFIRMADO — decisión final de John, 15/10/2026] 
++El club entrena únicamente sábados y domingos, sin excepciones; el sistema solo acepta registrar asistencia en fechas que sean sábado o domingo (de hoy hacia atrás, para transcribir o corregir); cualquier otra fecha se rechaza. Los días de entrenamiento, para efectos de cálculo, son las fechas que efectivamente tienen filas de asistencia registradas (RN-7.4). La fecha de «hoy», para tomar asistencia, se calcula con la hora de Bogotá (America/Bogota), no con la hora del servidor (RN-7.7). El porcentaje de asistencia o inasistencia se calcula sobre las fechas con filas registradas, dentro de la ventana correspondiente y desde el ingreso del deportista; con pocas sesiones registradas, el sistema muestra «datos incompletos (N sesiones registradas)» (RN-7.8).
++Especificación técnica
++[CONFIRMADO] 
++El backend valida toda fecha de asistencia contra el día de la semana calculado en la zona horaria America/Bogota (no UTC ni la hora del servidor): solo sábado o domingo se aceptan, en el pasado o en «hoy»; cualquier otra fecha se rechaza antes de guardar. El denominador de cualquier cálculo de asistencia o inasistencia (incluido el umbral de examen, A.3) nunca es un número fijo de sesiones esperadas: siempre son las fechas que efectivamente tienen filas de asistencia guardadas dentro de la ventana correspondiente. Por debajo de un número mínimo de sesiones (detalle de interfaz, sin alcance de negocio) se muestra «datos incompletos (N sesiones registradas)» en vez de un porcentaje.
++A.7. RN-9.8 — Cumpleaños y vencimientos de mensualidad en el calendario
++Regla de origen (RN-9.8, Reglas de Negocio v1.0):
++[PROPUESTA, validación pendiente] 
++Los cumpleaños y los vencimientos de mensualidad no se guardan como eventos de evento_calendario: se calculan al consultar el calendario. Se agrupan por día (por ejemplo, una sola entrada «3 cumpleaños» o «5 vencimientos» que se puede expandir) y solo consideran deportistas activos (RN-1.11). La vista pública ve únicamente su propia fila dentro de ese grupo, no la de los demás. Quien nació el 29 de febrero aparece el 28 de febrero en los años que no son bisiestos.
++Especificación técnica
+ [PROPUESTA] 
+-La edad del deportista y su categoría deportiva se actualizarían automáticamente con el tiempo a partir de la fecha de nacimiento y el peso registrado (por ejemplo, un deportista pasa de juvenil a mayores al cumplir 18 años).
+-Depende, además, de que se resuelva RN-3.8 (ver sección E).
+-Especificación técnica
+-[CONFIRMADO] 
+-La edad se recalcula siempre a partir de la fecha de nacimiento y la fecha del día en que el sistema la usa o la muestra -- no es un dato fijo que se guarda y se actualiza periódicamente. La categoría por edad se obtiene con una consulta directa (lookup) contra la tabla de rangos ya confirmada en RN-3.8. La categoría por peso depende también de sexo (masculino/femenino, RN-1.1/RN-1.6, Reglas de Negocio v0.8) y se obtiene con el mismo mecanismo de consulta directa (lookup), diferenciando por sexo: contra la tabla de Mayores (16+ años, RN-3.8) para esas edades, y contra la tabla PROPUESTA de Infantil/Junior (RN-3.8, Reglas de Negocio v0.6, resuelta el 28/09/2026) para los menores de 16 años — esta última es un cálculo estimado del equipo, reemplazable si Aldrin o Viviana entregan una tabla oficial en el futuro (cierra el punto E.2, ver sección E).
+-Precisión (09/10/2026): la afirmación de que esto "ya no bloquea la implementación del cálculo dinámico de categoría" solo era exacta para el tramo Infantil/Junior (E.2, resuelto con la tabla PROPUESTA de arriba). La tabla de Mayores sigue incompleta en Reglas de Negocio: RN-3.8 solo da el primer corte por sexo (55 kg masculino, 50 kg femenino), no los cortes completos -- la tabla completa sí está verificada como DOCUMENTAL en el registro de dominio del proyecto (hombres <55/<60/<65/<70/<75/<80/<85/>85 kg; mujeres <50/<55/<60/<65/<70/<75/<80/>80 kg), pero todavía no se trasladó a RN-3.8. El tramo de 15 años (dentro de Juvenil) tampoco está cubierto, ni por la tabla de Mayores (aplica desde los 16) ni por la de Infantil/Junior. El cálculo de categoría por peso, en general, sigue sin poder implementarse completo mientras estos dos puntos no se resuelvan en Reglas de Negocio.
+-A.2. RN-2.2 — Cálculo de permanencia
+-Regla de origen (RN-2.2, Reglas de Negocio v0.6): 
+-[CONFIRMADO] 
+-La permanencia del deportista en el club se calcula a partir del historial de pagos de mensualidad (meses efectivamente pagados), en vez de construir una estructura separada de periodos de pausa o inactividad.
+-Precisión (28/09/2026): esta misma mecánica aplica sin importar si el hueco de impago llega a activar el estado inactivo de RN-8.7 (tres meses consecutivos sin pago) -- no hay ningún efecto adicional sobre la permanencia más allá del ya descrito: los meses sin pagar, sean 1, 2, 3 o más, simplemente no suman, y la cuenta se retoma normalmente en cuanto vuelva a haber un mes pagado.
+-Especificación técnica
+-[CONFIRMADO] 
+-La permanencia se calcula como la suma total de los meses efectivamente pagados desde el ingreso del deportista: los meses sin pagar no se descuentan de los meses ya contabilizados antes de ese hueco, solo se deja de sumar mientras no haya pago. Esta mecánica de pausa (los meses sin pagar no descuentan lo ya acumulado, solo dejan de sumar) es la misma sin importar si el hueco de impago llega a activar el estado inactivo de RN-8.7 (tres meses consecutivos sin pago) -- no hay ningún efecto adicional sobre la permanencia más allá del ya descrito. Ver también RN-8.7 (Reglas de Negocio v0.6): tras 3 meses consecutivos sin pago, el deportista pasa a estado inactivo (deportista.estado), sin otra consecuencia adicional.
+-A.3. RN-5.2 — Umbral de inasistencia para presentar examen
+-Regla de origen (RN-5.2, Reglas de Negocio v0.6): 
+-[CONFIRMADO] 
+-Umbral de inasistencia para la elegibilidad a presentar el examen de ascenso, evaluado en el ciclo de exámenes (aproximadamente cada 3 meses): más de 30% de inasistencia para deportistas de 5 a 16 años; más de 40% para deportistas de 17 años o más. En ambos casos el sistema muestra un mensaje recomendado de no presentar el examen -- no es un bloqueo automático obligatorio.
+-El denominador exacto de sesiones del ciclo lo fija RN-9.7 (el club entrena solo sábados y domingos), ya [CONFIRMADO] en Reglas de Negocio v0.6.
+-Especificación técnica
+-[CONFIRMADO] 
+-El porcentaje de inasistencia se calcula siempre sobre el ciclo completo de sesiones entre un examen y el siguiente (RN-5.4, con el denominador que fija RN-9.7), sin ajustar ese denominador por la fecha de ingreso del deportista: un deportista no es penalizado por las sesiones anteriores a su ingreso. Ver también RN-5.6 (Reglas de Negocio v0.6): un deportista que ingresa a mitad de un ciclo de examen no es elegible para presentar el examen inmediatamente siguiente a su ingreso -- debe esperar al ciclo completo subsiguiente.
+-A.4. RN-8.3 — Alerta de deuda sin mostrar valor monetario
+-Regla de origen (RN-8.3, Reglas de Negocio v0.6): 
+-[CONFIRMADO] 
+-Se detectan deportistas que dejan de pagar (1-2 meses) pero siguen asistiendo, comparando el estado de mensualidad (vencida) contra la asistencia (si el deportista sigue apareciendo presente). El sistema muestra una alerta del tipo "mensualidad no pagada, deuda de X mes(es)", sin mostrar el valor monetario adeudado.
+-Especificación técnica
+-[CONFIRMADO] 
+-La alerta se dispara al cumplirse el primer mes de mensualidad vencida -- no espera a que se acumulen dos meses.
+-A.5. RN-10.3 — Reporte prioritario: ficha consolidada
+-Regla de origen (RN-10.3, Reglas de Negocio v0.6): 
+-[CONFIRMADO] 
+-El único reporte prioritario definido hasta ahora es la ficha consolidada del deportista: datos personales (nombre, edad, categoría, peso, cinturón, condición de salud) junto con su nivel deportivo/aptitud para torneos y qué necesita mejorar.
+-Especificación técnica
+-[CONFIRMADO] 
+-Sin cambios de fondo respecto al planteamiento original: la ficha consolidada es una agregación pura de los campos ya calculados en A.1 (edad y categoría) y A.2 (permanencia), más el estado de grado_actual definido en B.1 (con su doble condición de aprobación académica y entrega física del cinturón) -- no introduce ningún cálculo propio adicional.
++Al consultar el calendario, el backend calcula dos listas derivadas (no almacenadas): cumpleaños del mes/rango consultado (a partir de deportista.fecha_nacimiento, con el ajuste del 29 de febrero) y vencimientos de mensualidad del mes/rango consultado (a partir del cálculo de vencimiento ya definido en A.4), ambas filtradas a deportista.estado = activo (RN-1.11). El resultado se agrupa por fecha en una sola entrada expandible por día; la vista pública recibe la misma agrupación pero filtrada a una sola fila, la propia.
+ B. Máquinas de estado
+ Reglas con un ciclo de vida de estados: necesitan definir los estados exactos, las transiciones permitidas entre ellos y qué evento dispara cada transición.
+-B.1. RN-5.5 / RN-5.7 — Creación de sesión de examen y actualización de grado_actual
+-Regla de origen (RN-5.5, Reglas de Negocio v0.6): 
+-[CONFIRMADO] 
+-Una sesión de examen se crea seleccionando primero a todos los estudiantes participantes. Luego, los resultados se registran modalidad por modalidad (teórico, físico, combate, rompimiento, formas, llaves, entre otras), con un estado de pendiente o completado independiente por deportista y por modalidad.
+-Esto permite que un deportista complete una modalidad en una fecha distinta a la del resto del grupo, sin desordenar el registro de los demás participantes de la sesión; no todas las modalidades se cierran necesariamente el mismo día.
+-Regla de origen (RN-5.7, Reglas de Negocio v0.6): 
+-[CONFIRMADO] 
+-La actualización de deportista.grado_actual requiere dos condiciones independientes, no solo la aprobación académica del examen: (1) cumplir los criterios de aprobación del examen (estructura confirmada por RN-5.1, valores exactos pendientes de la plantilla oficial -- RN-5.3) y (2) una confirmación manual adicional de que el cinturón correspondiente fue físicamente entregado al deportista.
+-Ver también Documentación Técnica v0.1.4, sección 13 (detalle_evaluacion.aprobado): nulo hasta completar la modalidad; cuando es verdadero, actualiza deportista.grado_actual -- marcado como PROPUESTA y referenciado a RN-10.3 en esa tabla, pendiente de confirmar exactamente cuándo se considera "completa" una sesión completa (¿todas las modalidades en completado, o basta con las que aplican al grado evaluado?). Este punto, aclarado con John, se divide en dos (ver especificación técnica más abajo, después de la doble condición de grado_actual): la condición de completitud de la sesión queda confirmada, y la regla de combinación de resultados por modalidad para el aprobado general sigue pendiente.
+-Especificación técnica
+-[PENDIENTE DE RESPUESTA] La primera condición (aprobación académica del examen) sigue sin especificación técnica exacta -- depende de los criterios y puntajes definitivos de la plantilla oficial de examen (RN-5.1/RN-5.3), que Aldrin aún no ha entregado.
+-[CONFIRMADO] La segunda condición (entrega física del cinturón) ya tiene especificación técnica concreta: un campo/checkbox nuevo, independiente de la aprobación académica, que el personal administrativo marca manualmente al confirmar la entrega -- deportista.grado_actual solo se actualiza cuando ambas condiciones están en verdadero.
+-[CONFIRMADO] Sobre cuándo se considera completa una sesión de examen (aclarado con John, 29/09/2026): se exige estado completado únicamente en las modalidades que apliquen al grado evaluado, no en la totalidad de las modalidades registradas en el sistema.
+-[PENDIENTE DE RESPUESTA] La regla exacta de cómo se combina el resultado de cada modalidad para determinar el aprobado general del examen sigue sin definir -- depende de los criterios y puntajes definitivos de la plantilla oficial (RN-5.3), sin cambios respecto a v0.4.
++B.1. RN-5.1 / RN-5.3 / RN-5.5 / RN-5.7 — Nota por modalidad, resultado provisional, sesión de examen y actualización de grado_actual
++Regla de origen (RN-5.1 y RN-5.5, Reglas de Negocio v1.0):
++[CONFIRMADO] 
++RN-5.1: en cuanto Aldrin envíe la plantilla oficial, se hace una transcripción literal de sus campos (fecha, grado evaluado, resultado, criterios evaluados, puntajes, aspectos fallidos, observaciones, recomendaciones, aprobado sí/no); mientras tanto, la nota de cada modalidad se registra en una escala de 1 a 10 (ya no de 1 a 5).
++RN-5.5: una sesión de examen se crea seleccionando primero a todos los participantes; los resultados se registran modalidad por modalidad, con un estado de pendiente o completado independiente por deportista y por modalidad, permitiendo que cada una se complete en una fecha distinta. La sesión tiene una fecha de inicio de exámenes y, por separado, una fecha de grado (la ceremonia), además de un estado abierta o cerrada (por defecto abierta); «cerrar examen» solo es posible con todas las modalidades de todos los participantes completadas, y una sesión cerrada se protege: para editar hay que reabrirla.
++Regla de origen (RN-5.3, Reglas de Negocio v1.0):
++[PENDIENTE DE RESPUESTA] 
++La plantilla oficial, con sus criterios y puntajes definitivos por grado, sigue sin entregarse (ver E.3). Mientras llega, las seis modalidades (teórico, físico, combate, rompimiento, formas y llaves) aplican a todos los deportistas, de cualquier grado y edad, y se generan siempre las seis al inscribir a un participante.
++[CONFIRMADO — decisión final de John, 15/10/2026] Resultado general provisional: exige que las seis modalidades estén completadas, y aprueba si el promedio de las seis notas es igual o mayor a 5 (la mitad de la escala de 1 a 10). No se exige aprobar cada modalidad por separado.
++Regla de origen (RN-5.7, Reglas de Negocio v1.0):
++[CONFIRMADO] 
++La actualización de deportista.grado_actual tras un examen requiere dos condiciones: (1) que la sesión de examen esté cerrada con resultado aprobado y (2) una confirmación de que el cinturón correspondiente fue físicamente entregado al deportista. Esa confirmación la puede hacer el personal administrativo o el propio deportista desde la vista pública (RN-1.4/RN-T.3, ver C.1) — para que la entrega no dependa de que alguien se acuerde de registrarla. Al confirmarse la entrega (por cualquiera de los dos caminos), grado_actual pasa a ser el grado evaluado en la misma operación; fecha_entrega toma por defecto la fecha del grado de la sesión, aunque puede ajustarse.
++Especificación técnica
++[PENDIENTE DE RESPUESTA] Los criterios y puntajes exactos de aprobación por modalidad siguen sin plantilla oficial de Aldrin (RN-5.3, ver E.3).
++[CONFIRMADO] Cada modalidad se califica con una nota de 1 a 10 (ya no de 1 a 5, RN-5.1); detalle_evaluacion.aprobado se deriva de esa nota al guardar y es solo informativo, no decide el resultado general.
++[CONFIRMADO — decisión final de John, 15/10/2026] El resultado general provisional es una función aislada (umbral en una constante, para reemplazarse directo cuando llegue la plantilla oficial): exige las seis modalidades completadas y aprueba si el promedio de las seis notas es ≥ 5 (RN-5.3).
++[CONFIRMADO] La sesión de examen vive en dos estados — abierta (por defecto) y cerrada —, con dos fechas separadas (inicio de exámenes y día del grado, cada una vinculada a su propio evento de calendario tipo evaluacion y grado respectivamente, RN-9.2); se califica modalidad por modalidad mientras está abierta, cada guardado es visible de inmediato, y una modalidad ya completada se puede seguir editando mientras la sesión siga abierta. «Cerrar examen» exige que todas las modalidades de todos los participantes estén completadas; una sesión cerrada se protege y solo se vuelve a editar reabriéndola (acción administrativa separada). Una sesión con modalidades completadas no se borra, solo se modifica o se reabre; un participante solo se quita si aún no tiene ninguna modalidad completada (RN-5.5).
++[CONFIRMADO] La confirmación de entrega física del cinturón (segunda condición de grado_actual) la puede hacer el personal administrativo o el propio deportista desde la vista pública (RN-1.4/RN-T.3, ver C.1); al confirmarse por cualquiera de los dos caminos, grado_actual pasa a ser el grado evaluado en la misma operación, y fecha_entrega toma por defecto la fecha de grado de la sesión, ajustable (RN-5.7).
+ B.2. RN-6.3 / RN-6.6 — Ventana de autorregistro: editable → bloqueada al confirmar "Guardar cambios"
+-Regla de origen (RN-6.3, Reglas de Negocio v0.6): 
++Regla de origen (RN-6.3, Reglas de Negocio v1.0): 
+ [CONFIRMADO] 
+ El deportista/tutor solo puede cargar o modificar sus documentos durante la ventana de autorregistro inicial (ver RN-T.14); ese acceso queda bloqueado al confirmar "Guardar cambios". Fuera de esa ventana, cualquier cambio a sus documentos requiere pasar por el personal administrativo.
+ Precisión (26/09/2026): el bloqueo se aplica campo por campo, no a la ventana completa. Los campos ya diligenciados al momento de confirmar "Guardar cambios" quedan bloqueados y pasan al régimen descrito arriba (control del personal administrativo). Los campos que quedaron vacíos en ese momento permanecen editables directamente por el deportista/tutor, para que los complete más adelante sin necesidad de pasar por el personal administrativo.
+-Regla de origen (RN-6.6, Reglas de Negocio v0.6): 
++Regla de origen (RN-6.6, Reglas de Negocio v1.0): 
+ [CONFIRMADO] 
+ Durante el autorregistro (ver RN-T.14), existen dos canales para la carga de documentos del deportista/tutor: canal externo (por ejemplo, WhatsApp), con carga y modificación a cargo del personal administrativo; y carga directa desde el sistema, en un espacio temporal con guardado en tiempo real. En el canal de carga directa, el espacio temporal queda bloqueado definitivamente solo al confirmar "Guardar cambios", momento en el que aplica el mismo límite de la ventana de autorregistro.
+ Especificación técnica
+ [CONFIRMADO] 
+-La especificación queda resuelta directamente por el texto de RN-6.3 (Reglas de Negocio v0.6, ver arriba): el bloqueo al confirmar "Guardar cambios" se aplica campo por campo, no a toda la ventana de autorregistro -- los campos vacíos en ese momento siguen editables por el deportista/tutor, los ya diligenciados pasan a control administrativo.
++La especificación queda resuelta directamente por el texto de RN-6.3 (Reglas de Negocio v1.0, ver arriba): el bloqueo al confirmar "Guardar cambios" se aplica campo por campo, no a toda la ventana de autorregistro — los campos vacíos en ese momento siguen editables por el deportista/tutor, los ya diligenciados pasan a control administrativo.
+ B.3. RN-T.12 — Recuperación de contraseña por enlace de un solo uso
+-Regla de origen (RN-T.12, Reglas de Negocio v0.6): 
++Regla de origen (RN-T.12, Reglas de Negocio v1.0): 
+ [CONFIRMADO] 
+ La recuperación de contraseña se hace mediante un enlace enviado al correo registrado de la cuenta, con un token de un solo uso y un tiempo límite de vigencia.
+ Especificación técnica
+ [PROPUESTA] 
+-Tiempo de vigencia del token de recuperación: 1 hora.
++Tiempo de vigencia del token de recuperación: 1 hora (RN-T.12).
+ Nota: Cómo se implementa técnicamente el envío del correo con el token queda para la Etapa 4 (Diseño de arquitectura backend), no es parte de esta especificación de lógica de negocio.
++Quien gestiona cuentas administrativas (RN-T.11) puede restablecer la contraseña de cualquier otra cuenta administrativa directamente desde la pantalla de usuarios, sin depender del correo. Si el correo de recuperación falla para la cuenta principal (Aldrin) y nadie más puede restablecerla desde la interfaz, el desarrollador la restablece por un procedimiento de emergencia fuera de la interfaz (directamente en la base de datos).
+ B.4. RN-T.14 — Autorregistro de deportistas y tutores
+-Regla de origen (RN-T.14, Reglas de Negocio v0.6): 
++Regla de origen (RN-T.14, Reglas de Negocio v1.0): 
+ [CONFIRMADO] 
+ Un enlace "Registrarse al club" lleva a una URL/QR permanente y separada del login, donde se abre el mismo formulario de inscripción que usa el personal administrativo (RN-1.2).
+ El registro queda en estado pendiente hasta que un administrativo valida manualmente que la persona es parte del club; el administrativo cuenta con una lista de registros pendientes de validación.
+-Especificación técnica
+-[CONFIRMADO] 
+-No existe un estado "rechazado" para el registro de autorregistro. Si un administrativo revisa un registro pendiente y determina que no corresponde a un miembro real del club, el registro simplemente se elimina -- no se conserva con una marca de rechazo.
+-Nota (09/10/2026): "tutores" en el título de esta regla (RN-T.14) se refiere a quien completa el formulario de autorregistro en nombre de un deportista menor de edad (igual que hoy ocurre con el formulario físico, RN-1.8/RN-T.9) -- no a una cuenta o un acceso propio del acudiente. La cuenta que resulta del autorregistro es la del deportista (RN-T.3/RN-T.16, Reglas de Negocio v0.9); el acudiente no inicia sesión con su propio documento.
+-B.5. RN-T.16 — Login público: documento + fecha de nacimiento, bloqueo tras intentos fallidos
+-Regla de origen (RN-T.16, Reglas de Negocio v0.7): 
+-[CONFIRMADO] 
+-El acceso del ámbito público se hace con el documento y la fecha de nacimiento del deportista -- siempre los del deportista, sea mayor o menor de edad; no existe una variante con los datos del acudiente. Es una sola cuenta por deportista: quien conozca esos dos datos (el propio deportista, un menor, o su acudiente) entra como ese deportista, porque esas credenciales las conoce toda la familia; el sistema no distingue quién es la persona física detrás del acceso y no intenta verificarlo.
+-RN-1.10 (correo compartido entre un deportista adulto y su rol de tutor) es una regla de depuración de datos para la carga masiva administrativa, no de este mecanismo de acceso: aquí no hay dos roles que resolver, porque el acceso público siempre corresponde a un deportista, nunca a un acudiente como identidad propia.
+-Precisión (09/10/2026) — decisión final de John: se elimina la variante de acceso con la fecha de nacimiento de "cualquiera de los deportistas que el acudiente representa" -- el acudiente no tiene credenciales propias ni una cuenta distinta a la del deportista. El acudiente sigue existiendo como dato de contacto del deportista (gestionado por el personal administrativo: alta, edición, reasignación), no como un rol de acceso.
+-Especificación técnica
+-[CONFIRMADO] 
+-Tras 5 intentos fallidos consecutivos para un mismo documento, el acceso queda bloqueado 15 minutos; el contador se reinicia al acertar. El mensaje de error es el mismo exista o no el documento, para no revelar qué documentos están registrados.
+-Nota (09/10/2026): la tabla para este contador ya existe -- intento_acceso_publico (esquema_hwanghon_v3.sql), con documento como llave primaria (sin llave foránea a propósito, para no poder deducir si un documento existe), intentos_fallidos (entero, por defecto 0) y bloqueado_hasta (fecha y hora, nulo si no está bloqueado) -- disponible para implementarse en el backend.
++Precisión (15/10/2026): mientras esté pendiente de validación, el registro es invisible para el ámbito público (ver C.1) — no se puede iniciar sesión con él hasta que el personal administrativo lo valide.
++Especificación técnica
++[CONFIRMADO] 
++No existe un estado "rechazado" para el registro de autorregistro. Si un administrativo revisa un registro pendiente y determina que no corresponde a un miembro real del club, el registro simplemente se elimina — no se conserva con una marca de rechazo.
++Nota (09/10/2026): "tutores" en el título de esta regla (RN-T.14) se refiere a quien completa el formulario de autorregistro en nombre de un deportista menor de edad (igual que hoy ocurre con el formulario físico, RN-1.8/RN-T.9) — no a una cuenta o un acceso propio del acudiente. La cuenta que resulta del autorregistro es la del deportista (RN-T.3/RN-T.16, Reglas de Negocio v1.0); el acudiente no inicia sesión con su propio documento.
++B.5. RN-T.16 — Login público y administrativo: bloqueo tras intentos fallidos
++Regla de origen (RN-T.16, Reglas de Negocio v1.0): 
++[CONFIRMADO] 
++El acceso del ámbito público se hace con el documento y la fecha de nacimiento del deportista — siempre los del deportista, sea mayor o menor de edad; no existe una variante con los datos del acudiente. Es una sola cuenta por deportista: quien conozca esos dos datos (el propio deportista, un menor, o su acudiente) entra como ese deportista, porque esas credenciales las conoce toda la familia; el sistema no distingue quién es la persona física detrás del acceso y no intenta verificarlo.
++RN-1.10 (correo compartido entre hermanos menores, con conflicto real solo entre dos deportistas adultos distintos) es una regla de depuración de datos para la carga masiva administrativa, no de este mecanismo de acceso: aquí no hay dos roles que resolver, porque el acceso público siempre corresponde a un deportista, nunca a un acudiente como identidad propia.
++Precisión (09/10/2026) — decisión final de John: se elimina la variante de acceso con la fecha de nacimiento de "cualquiera de los deportistas que el acudiente representa" — el acudiente no tiene credenciales propias ni una cuenta distinta a la del deportista. El acudiente sigue existiendo como dato de contacto del deportista (gestionado por el personal administrativo: alta, edición, reasignación), no como un rol de acceso.
++Especificación técnica
++[CONFIRMADO] 
++Tras 4 intentos fallidos consecutivos (antes 5) para un mismo documento o correo, según el ámbito, el acceso queda bloqueado 15 minutos; el contador se reinicia al acertar, o directamente al cumplirse el bloqueo si no se acierta de inmediato (un intento fallido después de los 15 minutos vuelve a contar desde uno, no desde cuatro). El mismo mecanismo de bloqueo cubre también el login administrativo (RN-T.2), identificado por correo en vez de documento. El mensaje de error es el mismo exista o no la cuenta, para no revelar qué documentos o correos están registrados.
++Nota (16/10/2026): la tabla para este contador es intento_acceso (esquema_hwanghon_v4.sql), compartida entre los dos ámbitos — llave primaria compuesta (ambito, identificador): ambito distingue «administrativa» (identificador = correo) de «publica» (identificador = documento, sin llave foránea a propósito, para no poder deducir si existe); intentos_fallidos (entero, por defecto 0) y bloqueado_hasta (fecha y hora, nulo si no está bloqueado) completan la tabla. Reemplaza a la anterior intento_acceso_publico (esquema_hwanghon_v3.sql), que solo cubría el ámbito público.
++B.6. RN-1.11 — Estado activo/inactivo por asistencia, con reactivación automática
++Regla de origen (RN-1.11, Reglas de Negocio v1.0): 
++[CONFIRMADO — decisión final de John, 15/10/2026] 
++Un deportista pasa a estado inactivo (deportista.estado) cuando lleva 3 meses consecutivos sin asistir, contados desde la fecha de su última asistencia registrada — o desde su fecha de ingreso, si nunca ha asistido. La revisión no es automática ni periódica, por una limitación del hosting previsto: se ejecuta con una acción administrativa «Revisar inactivos», que el personal administrativo dispara cuando lo considere.
++La reactivación sí es automática: al registrarse una nueva asistencia del deportista (ver A.6), su estado vuelve a activo de inmediato, sin acción administrativa adicional. La mora en el pago de mensualidad no cambia este estado — solo genera la alerta de deuda ya descrita (ver A.4); un deportista inactivo conserva su acceso a la vista pública (ver C.1) y puede seguir consultando sus propios registros, pero no genera alerta de deuda ni aparece agrupado en cumpleaños o vencimientos de mensualidad en el calendario (ver A.7), porque esos cálculos se limitan a deportistas activos. Esta regla reemplaza a RN-8.7 (retirada, ver A.2), que basaba la inactividad en el pago en vez de en la asistencia.
++Especificación técnica
++[CONFIRMADO] 
++La pantalla de tomar asistencia (ver A.6) muestra dos listas: arriba, los deportistas activos, todos cargados por defecto como «no asistió» — no existe un botón «marcar todos presentes», porque nunca asisten todos. Abajo, los deportistas inactivos: al hacer clic en uno, se marca presente, se reactiva automáticamente, y sube a la lista de activos.
++B.7. RN-T.17 — Expiración de sesión por inactividad
++Regla de origen (RN-T.17, Reglas de Negocio v1.0): 
++[CONFIRMADO — decisión final de John, 15/10/2026] 
++La sesión expira por inactividad a las 2 horas en el ámbito administrativo, y a los 30 minutos en el ámbito público.
++Especificación técnica
++[CONFIRMADO] 
++El tiempo de expiración se mide desde la última petición del usuario, no desde el inicio de sesión; al expirar, la siguiente petición exige iniciar sesión de nuevo. Cómo se implementa el mecanismo exacto (cookie de sesión, token, etc.) queda para la Etapa 4 (Diseño de arquitectura backend), no es parte de esta especificación de lógica de negocio.
++B.8. RN-T.18 — Requisitos de contraseña y cambio de contraseña propio
++Regla de origen (RN-T.18, Reglas de Negocio v1.0): 
++[CONFIRMADO] 
++La contraseña debe tener un mínimo de 8 caracteres. Quien ya inició sesión tiene una acción «cambiar mi contraseña», que le pide la contraseña actual antes de permitir la nueva.
++Especificación técnica
++[CONFIRMADO] 
++El requisito de 8 caracteres se valida tanto al crear la cuenta (autorregistro, ver B.4, o alta administrativa) como al restablecerla (ver B.3) o cambiarla (acción «cambiar mi contraseña»). No se exige ningún otro requisito de complejidad (mayúsculas, símbolos, etc.) en esta primera versión.
+ C. Reglas de autorización
+ Quién puede ver o editar qué. Cada regla necesita traducirse en un chequeo de permisos concreto en el backend (por rol/vista, no por módulo).
+-C.1. RN-1.4 / RN-T.3 — Vista pública: solo edita peso y discapacidad/condición de salud
+-Regla de origen (RN-1.4, Reglas de Negocio v0.6): 
+-[CONFIRMADO] 
+-La vista administrativa puede editar cualquier dato del deportista. La vista pública -- una sola cuenta por deportista, sin distinción por edad (RN-T.3, RN-T.16) -- solo puede editar dos campos: peso y discapacidad / condición de salud.
+-Regla de origen (RN-T.3, Reglas de Negocio v0.6): 
+-[CONFIRMADO] 
+-Cada deportista ve y edita únicamente su propio registro: formulario de registro para nuevos ingresos, estado de mensualidad y matrícula, alerta de vencimiento, y edición de peso y discapacidad/condición de salud. No hay distinción por edad: es una sola cuenta por deportista, sea mayor o menor (RN-T.16); el acudiente no tiene una cuenta ni un acceso propio.
+-Precisión (09/10/2026) — decisión final de John: ambas reglas de origen se reescriben para retirar la distinción entre deportista mayor de edad y acudiente/representante de un menor -- el ámbito público es una sola cuenta por deportista (RN-T.3/RN-T.16, Reglas de Negocio v0.9); el acudiente no tiene una cuenta ni un acceso propio, solo existe como dato de contacto gestionado por el personal administrativo.
+-Especificación técnica
+-[CONFIRMADO] 
+-Este chequeo de permisos queda completamente definido por las reglas citadas arriba: no requiere una decisión técnica adicional, se traduce directo a una validación de vista/rol en el backend (vista administrativa: acceso total; vista pública: solo edición de peso y discapacidad/condición de salud).
++C.1. RN-1.4 / RN-T.3 — Vista pública: campos editables y confirmación de entrega del cinturón
++Regla de origen (RN-1.4, Reglas de Negocio v1.0): 
++[CONFIRMADO] 
++La vista administrativa puede editar cualquier dato del deportista. La vista pública — una sola cuenta por deportista, sin distinción por edad (RN-T.3, RN-T.16) — puede editar peso, discapacidad / condición de salud, teléfono, dirección y correo, y puede confirmar la entrega de su propio cinturón cuando corresponda (ver B.1).
++Regla de origen (RN-T.3, Reglas de Negocio v1.0): 
++[CONFIRMADO] 
++Cada deportista ve y edita únicamente su propio registro: formulario de registro para nuevos ingresos, estado de mensualidad y matrícula, alerta de vencimiento, y edición de peso, discapacidad/condición de salud, teléfono, dirección y correo, y confirmación de entrega de su propio cinturón cuando corresponda. No hay distinción por edad: es una sola cuenta por deportista, sea mayor o menor (RN-T.16); el acudiente no tiene una cuenta ni un acceso propio.
++Precisión (09/10/2026) — decisión final de John: ambas reglas de origen se reescriben para retirar la distinción entre deportista mayor de edad y acudiente/representante de un menor — el ámbito público es una sola cuenta por deportista (RN-T.3/RN-T.16, Reglas de Negocio v1.0); el acudiente no tiene una cuenta ni un acceso propio, solo existe como dato de contacto gestionado por el personal administrativo.
++Precisión (15/10/2026): se amplían los campos editables por la vista pública — antes solo peso y discapacidad — para incluir teléfono, dirección y correo, y la confirmación de entrega del propio cinturón (ver B.1). La fotografía del deportista se gestiona como un documento (ver C.4), no como una foto de perfil dentro de la interfaz.
++Especificación técnica
++[CONFIRMADO] 
++Este chequeo de permisos queda completamente definido por las reglas citadas arriba: no requiere una decisión técnica adicional, se traduce directo a una validación de vista/rol en el backend (vista administrativa: acceso total; vista pública: edición de peso, discapacidad/condición de salud, teléfono, dirección y correo, más la confirmación de entrega de su propio cinturón cuando corresponda).
+ C.2. RN-T.2 — Vista administrativa unificada, sin permisos granulares
+-Regla de origen (RN-T.2, Reglas de Negocio v0.6): 
++Regla de origen (RN-T.2, Reglas de Negocio v1.0): 
+ [CONFIRMADO] 
+ La vista administrativa es única y compartida, sin permisos granulares por rol: Aldrin (Maestro y usuario principal), el Tesorero, el Contador/a y la Secretaria (Viviana González Sánchez) acceden a todo el sistema. El inicio de sesión (documento o correo) sirve solo para identificar quién entra, sin restricción técnica por módulo.
+-Especificación técnica
+-[CONFIRMADO] 
+-El chequeo de permisos se reduce a identificar quién inició sesión, sin restricción técnica adicional por módulo -- no se construye una capa de permisos granular por rol.
+-C.3. RN-T.10 / RN-T.11 — Solo Aldrin gestiona cuentas administrativas
+-Regla de origen (RN-T.10, Reglas de Negocio v0.6): 
+-[CONFIRMADO] 
+-Las cuentas administrativas son individuales por persona, con correo y contraseña propios -- no una credencial genérica compartida entre el equipo administrativo.
+-Regla de origen (RN-T.11, Reglas de Negocio v0.6): 
+-[CONFIRMADO] 
+-Aldrin, como administrador principal, es el único con capacidad de gestionar las cuentas del equipo administrativo: alta, edición y baja.
+-Especificación técnica
+-[CONFIRMADO] 
+-Este chequeo de permisos queda completamente definido por las reglas citadas arriba: solo Aldrin tiene acceso a las operaciones de alta, edición y baja de cuentas administrativas; el resto del equipo administrativo mantiene el acceso unificado ya descrito en RN-T.2 (C.2).
+-C.4. RN-6.3 — Documentos: administrativo sin restricción, deportista/tutor solo durante la ventana de autorregistro
+-Regla de origen (RN-6.3, Reglas de Negocio v0.6): 
+-[CONFIRMADO] 
+-El personal administrativo y el deportista/tutor pueden revisar los documentos cargados. El personal administrativo puede modificarlos sin restricción, en cualquier momento, coherente con la vista administrativa compartida sin permisos granulares (RN-T.2). El deportista/tutor solo puede cargar o modificar sus documentos durante la ventana de autorregistro inicial (ver RN-T.14).
+-Esta misma regla ya aparece en la sección B (B.2) desde el ángulo de máquina de estados; aquí se cita desde el ángulo de autorización -- ambas comparten una sola especificación técnica, no dos.
+-Especificación técnica
+-[CONFIRMADO] 
+-Este chequeo de permisos queda completamente definido por la regla citada arriba: personal administrativo sin restricción; deportista/tutor solo durante la ventana de autorregistro, cuya mecánica exacta (bloqueo campo por campo) ya se define en B.2.
++Precisión (15/10/2026): además del equipo administrativo del club, existe una cuenta técnica «Desarrollador» (ver C.3), de John como responsable técnico del proyecto, con el mismo acceso completo al sistema — visible en la lista de usuarios, no oculta.
++Especificación técnica
++[CONFIRMADO] 
++El chequeo de permisos se reduce a identificar quién inició sesión, sin restricción técnica adicional por módulo — no se construye una capa de permisos granular por rol.
++C.3. RN-T.10 / RN-T.11 — Gestión de cuentas administrativas: Aldrin y la cuenta Desarrollador
++Regla de origen (RN-T.10, Reglas de Negocio v1.0): 
++[CONFIRMADO] 
++Las cuentas administrativas son individuales por persona, con correo y contraseña propios — no una credencial genérica compartida entre el equipo administrativo.
++Regla de origen (RN-T.11, Reglas de Negocio v1.0): 
++[CONFIRMADO] 
++La gestión de las cuentas del equipo administrativo — alta, edición y desactivación (ya no «baja»: no se borran cuentas) — la pueden hacer Aldrin, como administrador principal, y la cuenta técnica «Desarrollador» (RN-T.10), de John. Esta sigue siendo la única función exclusiva dentro de la vista administrativa; el resto del acceso al sistema sigue siendo igual para todo el equipo (ver C.2). Nadie puede desactivar su propia cuenta ni quitarse a sí mismo el rol de administrador principal. Una cuenta desactivada no puede iniciar sesión, y si tenía una sesión abierta, esa sesión deja de ser válida en la siguiente petición que haga.
++Especificación técnica
++[CONFIRMADO] 
++Este chequeo de permisos queda completamente definido por las reglas citadas arriba: Aldrin y la cuenta Desarrollador tienen acceso a las operaciones de alta, edición y desactivación de cuentas administrativas (nunca una baja o borrado); ninguna cuenta puede desactivarse a sí misma. El resto del equipo administrativo mantiene el acceso unificado ya descrito en RN-T.2 (ver C.2).
++C.4. RN-6.1 / RN-6.3 — Documentos: tipos, formatos, archivo único o múltiple y documentos críticos
++Regla de origen (RN-6.1, Reglas de Negocio v1.0): 
++[CONFIRMADO] 
++Cada deportista tiene un explorador de archivos propio, organizado en tipos fijos: formulario_inscripcion, documento_identidad, documento_acudiente (si es menor), fotografia, consentimiento, certificado_ascenso, competencia, preparacion_fisica, y otro (para cualquier documento administrativo que no encaje en los anteriores).
++Regla de origen (RN-6.3, Reglas de Negocio v1.0): 
++[CONFIRMADO] 
++El personal administrativo y el deportista/tutor pueden revisar los documentos cargados. El personal administrativo puede modificarlos sin restricción, en cualquier momento, coherente con la vista administrativa compartida sin permisos granulares (ver C.2). Formatos permitidos según el tipo de documento: documento_identidad, formulario_inscripcion, documento_acudiente y fotografia — PDF e imágenes (jpg, jpeg, png, webp); consentimiento y certificado_ascenso — PDF y Word; preparacion_fisica y otro — PDF, Word y Excel. El deportista/tutor solo puede cargar o modificar sus documentos durante la ventana de autorregistro inicial (ver B.4); ese acceso queda bloqueado al confirmar "Guardar cambios" (mecánica exacta, campo por campo, ya definida en B.2). Fuera de esa ventana, cualquier cambio a sus documentos requiere pasar por el personal administrativo.
++Esta misma regla ya aparece en la sección B (B.2) desde el ángulo de máquina de estados; aquí se cita desde el ángulo de autorización — ambas comparten una sola especificación técnica, no dos.
++Un solo archivo por tipo en documento_identidad, formulario_inscripcion, documento_acudiente y fotografia — un archivo nuevo del mismo tipo reemplaza al anterior (solo el personal administrativo puede reemplazar o borrar; el archivo anterior se elimina del disco). Los demás tipos — certificado_ascenso, consentimiento, competencia, preparacion_fisica y otro — acumulan varios archivos, y su carga también es exclusiva del personal administrativo. El deportista/tutor, desde la vista pública, solo puede cargar los tipos que todavía están vacíos (dentro de la ventana de autorregistro); no puede reemplazar ni borrar nada ya cargado.
++Documentos críticos (obligatorios): documento_identidad, formulario_inscripcion y, si el deportista es menor de edad, documento_acudiente. La fotografía es necesaria pero no crítica — un faltante de prioridad baja. El indicador de qué le falta a un deportista se calcula al consultar, no se guarda como campo aparte.
++La descarga entrega el archivo con su nombre original (documento.nombre_original), sin exponer una URL directa al archivo; en disco se guarda con un nombre aleatorio, fuera de la carpeta pública del servidor. El ámbito público solo puede descargar sus propios documentos. Tamaño máximo por archivo: 10 MB como valor inicial, en un solo lugar de configuración y modificable más adelante.
++Especificación técnica
++[CONFIRMADO] 
++Este chequeo de permisos queda completamente definido por las reglas citadas arriba: personal administrativo sin restricción sobre cualquier tipo de documento; deportista/tutor solo durante la ventana de autorregistro, cuya mecánica exacta (bloqueo campo por campo) ya se define en B.2, y solo sobre los tipos de documento que todavía están vacíos.
+ D. Procesos de importación
+-Carga masiva vía Excel/CSV. Ambas reglas comparten el mismo mecanismo -- el mismo patrón de plantilla Excel exportada a CSV -- así que comparten una sola especificación técnica en vez de dos.
++Carga masiva vía Excel/CSV. Ambas reglas comparten el mismo mecanismo — el mismo patrón de plantilla Excel exportada a CSV — así que comparten una sola especificación técnica en vez de dos.
+ D.1. RN-1.7 — Carga masiva de deportistas
+-Regla de origen (RN-1.7, Reglas de Negocio v0.6): 
+-[CONFIRMADO] 
+-Alta de deportistas en bloque mediante plantilla Excel exportada a CSV y cargada al sistema -- mismo mecanismo confirmado para la carga anual del calendario de eventos (RN-9.6). Alternativa a crearlos uno por uno; referencia: mecanismo usado en el proyecto anterior de John, AttendQR, para creación de cuentas de estudiantes en bloque.
++Regla de origen (RN-1.7, Reglas de Negocio v1.0): 
++[CONFIRMADO] 
++Alta de deportistas en bloque mediante plantilla Excel exportada a CSV y cargada al sistema — mismo mecanismo confirmado para la carga anual del calendario de eventos (RN-9.6). Alternativa a crearlos uno por uno; referencia: mecanismo usado en el proyecto anterior de John, AttendQR, para creación de cuentas de estudiantes en bloque.
+ D.2. RN-9.6 — Carga anual vía plantilla
+-Regla de origen (RN-9.6, Reglas de Negocio v0.6): 
++Regla de origen (RN-9.6, Reglas de Negocio v1.0): 
+ [CONFIRMADO] 
+ El administrador (Aldrin) carga el calendario anualmente, cruzando el calendario deportivo oficial del año con los eventos propios del club, mediante una plantilla de Excel que se exporta a CSV y se sube al sistema en bloque (mismo patrón de carga masiva propuesto para deportistas en RN-1.7). El sistema mantiene el orden tal como viene en la plantilla.
+-RN-1.7 y RN-9.6 comparten el mismo mecanismo de importación (plantilla Excel → CSV → carga en bloque); la especificación técnica se define una sola vez para ambas -- formato exacto de columnas, validaciones de fila y manejo de errores de importación.
+-Regla de origen (RN-1.9, Reglas de Negocio v0.6): 
+-[CONFIRMADO] 
+-La carga masiva de deportistas (RN-1.7) también sirve para actualizar datos de deportistas ya registrados, no solo para dar de alta deportistas nuevos: el club puede volver a cargar el mismo archivo, con datos corregidos o más recientes, cada vez que lo necesite -- no está limitado a la primera carga.
++Precisión (15/10/2026): si la plantilla trae un evento duplicado (mismo nombre y misma fecha de uno ya existente), esa fila se omite — no se bloquea toda la importación — y el resultado de la carga informa cuáles filas se omitieron por ser duplicadas.
++Nota: el tipo de evento grado (ceremonia de entrega de cinturones, nuevo en esta versión, ver B.1) puede venir en la plantilla igual que cualquier otro tipo; cada evento trae una sola fecha de inicio, sin fecha de fin — un rango de días se describe en el nombre del evento, no con dos fechas.
++RN-1.7 y RN-9.6 comparten el mismo mecanismo de importación (plantilla Excel → CSV → carga en bloque); la especificación técnica se define una sola vez para ambas — formato exacto de columnas, validaciones de fila y manejo de errores de importación.
++Regla de origen (RN-1.9, Reglas de Negocio v1.0): 
++[CONFIRMADO] 
++La carga masiva de deportistas (RN-1.7) también sirve para actualizar datos de deportistas ya registrados, no solo para dar de alta deportistas nuevos: el club puede volver a cargar el mismo archivo, con datos corregidos o más recientes, cada vez que lo necesite — no está limitado a la primera carga.
+ El sistema identifica una fila como "deportista existente" por coincidencia de documento (identificador único y confiable por persona). Cuando encuentra una coincidencia, no aplica el cambio de forma automática: antes de guardar, muestra al personal administrativo una confirmación con los campos que cambiarían y sus valores actuales frente a los nuevos del archivo, para que decida aplicar o descartar la actualización. El diseño exacto de esa pantalla de confirmación (fila por fila o en un resumen agrupado) es un detalle de la etapa de diseño de frontend, no una decisión de lógica de negocio.
+-Regla de origen (RN-1.10, Reglas de Negocio v0.6): 
+-[CONFIRMADO] 
+-El mismo correo puede aparecer legítimamente dos veces en el sistema sin ser un error de datos: una vez como correo propio de un deportista mayor de edad (su propia cuenta), y otra vez en el campo de tutor/representante de un deportista menor al que esa misma persona representa -- por ejemplo, un padre que entrena en el club y también inscribe a su hijo o hija. Son dos contextos distintos y no se tratan como duplicado.
+-En cambio, si el mismo correo aparece como correo propio de dos deportistas mayores de edad distintos, sin relación de tutoría entre ellos, sí es un conflicto real: esa fila se rechaza durante la carga masiva, con la misma notificación (toast) ya definida para filas incompletas, indicando el campo y la fila en conflicto.
++Regla de origen (RN-1.10, Reglas de Negocio v1.0): 
++[CONFIRMADO] 
++El campo correo del deportista puede repetirse legítimamente entre varios deportistas menores de edad que son hermanos entre sí, sin ser un error de datos: en un menor, el correo arranca siendo el del acudiente, y es normal que dos o más hermanos menores compartan ese mismo correo mientras no tengan uno propio. No se tratan como duplicado.
++En cambio, si el mismo correo aparece como correo propio de dos deportistas ADULTOS distintos, sin relación de hermandad entre ellos, sí es un conflicto real: esa fila se rechaza durante la carga masiva, con la misma notificación (toast) ya definida para filas incompletas, indicando el campo y la fila en conflicto.
+ Especificación técnica (compartida entre D.1 y D.2)
+ [CONFIRMADO] 
+-Validación campo por campo dentro de cada fila del CSV: los campos válidos de una fila se cargan igual; el campo que falta o está mal formado se deja vacío en ese registro -- no se rechaza la fila completa ni se cancela toda la carga. El sistema muestra un aviso (toast) indicando qué campo, y de qué registro o persona, falta o quedó inválido.
+-Cuando una fila trae un documento que ya existe en el sistema, no se rechaza ni se inserta como duplicado: se trata como una actualización del registro existente (RN-1.9), con confirmación previa del personal administrativo antes de aplicar el cambio (ver arriba). Cuando la coincidencia es por correo en vez de documento, se evalúa el contexto antes de decidir (RN-1.10): si el correo ya existe como correo propio de otro deportista adulto sin relación de tutoría, es un conflicto real y esa fila se rechaza con la misma notificación (toast) ya definida para filas incompletas; si el correo coincide porque la misma persona ya está registrada como deportista adulto y ahora aparece en el campo de tutor/representante de un menor que representa, no es un conflicto -- son dos contextos distintos y se permite.
++Validación campo por campo dentro de cada fila del CSV: los campos válidos de una fila se cargan igual; el campo que falta o está mal formado se deja vacío en ese registro — no se rechaza la fila completa ni se cancela toda la carga. El sistema muestra un aviso (toast) indicando qué campo, y de qué registro o persona, falta o quedó inválido.
++Cuando una fila trae un documento que ya existe en el sistema, no se rechaza ni se inserta como duplicado: se trata como una actualización del registro existente (RN-1.9), con confirmación previa del personal administrativo antes de aplicar el cambio (ver arriba). Cuando la coincidencia es por correo en vez de documento, se evalúa el contexto antes de decidir (RN-1.10): si el correo ya existe como correo propio de otro deportista ADULTO distinto, sin relación de hermandad entre ellos, es un conflicto real y esa fila se rechaza con la misma notificación (toast) ya definida para filas incompletas; si el correo coincide porque dos deportistas menores de edad son hermanos entre sí y comparten el correo de su acudiente, no es un conflicto — son hermanos, no un duplicado, y se permite.
+ E. Bloqueadas por falta de insumo
+-Puntos trasladados desde Reglas de Negocio v0.6 (antes citados contra v0.4, y originalmente contra v0.3; sin cambios de contenido en la regla en sí en ninguna de esas actualizaciones). Todos permanecen igual salvo E.6 y E.2: en E.6, RN-8.7 se retira porque ya se resolvió y ahora se cita en A.2 -- E.6 queda solo con RN-8.6, que sigue sin resolver; en E.2, la parte de pesos menores de 16 años de RN-3.8 se resuelve el 28/09/2026 con una tabla PROPUESTA y se traslada a A.1 (ver detalle en E.2). No llevan todavía sección de especificación técnica (salvo la excepción de E.6 ya señalada): cada uno queda marcado solo con el punto de extensión y a quién le corresponde resolverlo.
++Puntos bloqueados por falta de insumo externo, alineados con la lista consolidada de información pendiente de Reglas de Negocio v1.0 (sección 13): E.1, E.2, E.3, E.4, E.5 y E.6. Se agregan además E.7 y E.8, que no aparecen en esa lista porque dependen de una decisión de desarrollo y no de que el club o la federación entreguen algo, pero siguen sin especificación técnica por el mismo motivo de fondo. Cada punto queda marcado solo con el punto de extensión y a quién le corresponde resolverlo; no llevan todavía especificación técnica propia.
+ E.1. RN-2.5 — Tiempos mínimos de entrenamiento entre ascensos
+-Regla de origen (RN-2.5, Reglas de Negocio v0.6): 
++Regla de origen (RN-2.5, Reglas de Negocio v1.0): 
+ [PENDIENTE DE RESPUESTA] 
+ Se han recogido tiempos mínimos de entrenamiento exigidos entre ascensos de cinturón, que aumentan con el nivel: cinturones menores (ingresado, blanco, amarillo, naranja) tomarían en total aproximadamente 2,5 años; de azul a rojo el mínimo sería de unos 9 meses entrenando; de violeta a marrón, entre 1 y 1,5 años entrenando. Este dato proviene de la experiencia personal de John en el club, no de un documento oficial, por lo que debe confirmarse antes de tratarse como regla oficial.
+ Punto de extensión: pendiente de Aldrin y Viviana (consulta ya en curso con ambos).
+-E.2. RN-3.8 — Categorías oficiales por edad y peso — parte de pesos menores de 16 años [RESUELTO, ver A.1]
+-Regla de origen (RN-3.8, Reglas de Negocio v0.6): 
+-Este punto se cierra el 28/09/2026: la parte de pesos por edad menores de 16 años, que aquí permanecía bloqueada, se resuelve con la tabla PROPUESTA (cálculo estimado del equipo, en pasos de 5 kg) que RN-3.8 gana en Reglas de Negocio v0.6 -- ya no depende de que Viviana la valide. La especificación técnica correspondiente se trasladó a A.1, junto con el resto del cálculo de categoría (la parte de categorías por edad de esta misma regla ya estaba CONFIRMADO desde antes y tampoco forma parte de este punto). Este punto se retira de la lista de bloqueados por falta de insumo.
+-E.3. RN-4.4 — Evaluación cualitativa periódica
+-Regla de origen (RN-4.4, Reglas de Negocio v0.6): 
++E.2. RN-3.8 — Tabla oficial de categorías por peso de la federación
++Regla de origen (RN-3.8, Reglas de Negocio v1.0): 
++[PENDIENTE DE RESPUESTA] 
++La tabla propia de categorías por peso, consolidada por el equipo de desarrollo, ya quedó completa y en uso (ver A.1): cubre Infantil, Junior y, para Juvenil/Mayores/Sénior/Máster, la tabla documental de Mayores por sexo. Lo único que sigue pendiente es la tabla OFICIAL de la federación que la reemplazaría si llega a entregarse — ya no es un dato faltante del equipo de desarrollo, sino de la federación.
++Punto de extensión: pendiente de la federación.
++E.3. RN-5.3 — Plantilla oficial de examen: criterios y puntajes definitivos por grado
++Regla de origen (RN-5.3, Reglas de Negocio v1.0): 
++[PENDIENTE DE RESPUESTA] 
++La plantilla oficial de evaluación de examen de ascenso, con sus criterios y puntajes definitivos por grado, aún no ha sido entregada por Aldrin. Además de la plantilla, para el examen también se necesita el consentimiento correspondiente (ver E.6). Mientras tanto, el resto del mecanismo del examen (modalidades, escala de notas, resultado provisional, sesión de examen) ya está especificado en B.1.
++Punto de extensión: pendiente de Aldrin.
++E.4. RN-5.8 — Certificado o acta de ascenso generado por el sistema
++Regla de origen (RN-5.8, Reglas de Negocio v1.0): 
++[PROPUESTA — depende de que el club entregue la plantilla, PENDIENTE DE RESPUESTA] 
++Idea de John: al confirmarse la entrega del cinturón (ver B.1), el sistema generaría automáticamente el certificado o acta de ascenso a partir de la plantilla oficial del club, rellenando nombre, fecha y grado, y pintando el color del cinturón correspondiente; el administrador solo firmaría. Evitaría errores de escritura del nombre del deportista. Mientras no se construya, el certificado de ascenso sigue siendo un archivo subido a mano (ver C.4).
++Punto de extensión: pendiente de que el club entregue la plantilla oficial del certificado.
++E.5. RN-10.2 — Plantilla de asistencia del IMRDS y lista definitiva de reportes
++Regla de origen (RN-10.2, Reglas de Negocio v1.0): 
++[PENDIENTE DE RESPUESTA] 
++La asistencia se exportaría en una plantilla propia similar a la del IMRDS, pero esa plantilla de referencia todavía no se ha conseguido ni confirmado con el club. Además, la lista definitiva de qué reportes y exportaciones necesita el club, más allá de los seis de la primera versión, se valida con Aldrin más adelante.
++Punto de extensión: pendiente de Aldrin (plantilla de asistencia del IMRDS y validación de la lista de reportes).
++E.6. RN-6.5 — Consentimientos específicos
++Regla de origen (RN-6.5, Reglas de Negocio v1.0): 
++[PENDIENTE DE RESPUESTA] 
++Falta confirmar con Aldrin la lista exacta de consentimientos específicos requeridos, más allá de la autorización general de datos (RN-1.8/RN-T.9) — por ejemplo, un consentimiento del padre o acudiente para que un menor participe en un torneo de combate, asumiendo el riesgo de lesión, y el consentimiento requerido para que el deportista participe en un examen de ascenso (ver E.3).
++Punto de extensión: pendiente de Aldrin.
++E.7. RN-4.4 — Evaluación cualitativa periódica
++Regla de origen (RN-4.4, Reglas de Negocio v1.0): 
+ [PENDIENTE DE RESPUESTA] 
+ Se explora un sistema de evaluación cualitativa donde Aldrin calificaría al deportista periódicamente (por ejemplo, trimestralmente) sobre unas "preguntas base" con una escala (1 a 5, o 1 a 10), graficadas en el tiempo para visualizar mejora o desmejora. Las preguntas o criterios base son subjetivos y propios del club: deben salir de Aldrin, no se inventan.
+ Punto de extensión: pendiente de Aldrin.
+-E.4. RN-5.1 / RN-5.3 — Plantilla oficial de examen de ascenso
+-Regla de origen (RN-5.1, Reglas de Negocio v0.6): 
+-[CONFIRMADO] 
+-En cuanto Aldrin envíe la plantilla oficial de examen de ascenso, se hace una transcripción literal de sus campos al sistema: fecha, grado evaluado, resultado, criterios evaluados, puntajes, aspectos fallidos, observaciones, recomendaciones, aprobado sí/no. No se inventa una estructura propia más allá de estos campos.
+-Regla de origen (RN-5.3, Reglas de Negocio v0.6): 
+-[PENDIENTE DE RESPUESTA] 
+-La plantilla oficial de evaluación de examen de ascenso, con sus criterios y puntajes definitivos por grado, aún no ha sido entregada por Aldrin.
+-Punto de extensión: pendiente de Aldrin.
+-E.5. RN-6.5 — Consentimientos específicos
+-Regla de origen (RN-6.5, Reglas de Negocio v0.6): 
+-[PENDIENTE DE RESPUESTA] 
+-Falta confirmar con Aldrin la lista exacta de consentimientos específicos requeridos, más allá de la autorización general de datos (RN-1.8/RN-T.9) -- por ejemplo, un consentimiento del padre o acudiente para que un menor participe en un torneo de combate, asumiendo el riesgo de lesión.
+-Punto de extensión: pendiente de Aldrin.
+-E.6. RN-8.6 — Reglas de mora
+-Regla de origen (RN-8.6, Reglas de Negocio v0.6): 
++Nota: este punto no aparece en la lista consolidada de información pendiente de Reglas de Negocio v1.0 (sección 13), porque esa lista solo recoge lo que el club o la federación todavía no han entregado o confirmado. Esta evaluación es una funcionalidad extra que se construye más adelante, cuando el backend esté casi terminado, y de todas formas depende de que Aldrin defina las preguntas o criterios base — no se inventan.
++E.8. RN-8.6 — Reglas de mora
++Regla de origen (RN-8.6, Reglas de Negocio v1.0): 
+ [PROPUESTA] 
+ Por defecto, el sistema solo mostraría una advertencia/alerta ante mora, nunca un bloqueo automático del deportista.
+-Punto de extensión: pendiente de decisión propia (John) -- funcionalidad a definir y construir al final del proyecto, no prioritaria ahora (agrupada con RN-4.4 en Reglas de Negocio v0.6). RN-8.7, que antes vivía en este mismo punto, ya se resolvió -- ver A.2.
++Punto de extensión: pendiente de una decisión propia de desarrollo (no del club) — funcionalidad a definir y construir al final del proyecto, no prioritaria ahora (agrupada con la evaluación cualitativa periódica, ver E.7). No aparece en la lista consolidada de información pendiente de Reglas de Negocio v1.0 (sección 13) por el mismo motivo que E.7: depende de una decisión de desarrollo, no de que el club o la federación entreguen algo. RN-8.7, que antes vivía en este mismo punto, ya se resolvió y fue retirada — ver A.2.
+ Cierre
+-Con esta versión (v0.4), las cuatro secciones (A a D) quedan completamente cerradas: cada punto tiene su especificación técnica definida, a partir de Reglas de Negocio v0.6. Ya no queda ningún [PENDIENTE DE ESPECIFICAR] en las secciones A-D.
+-La sección E se traslada desde Reglas de Negocio v0.6 sin cambios de contenido en las reglas en sí, salvo E.6 y E.2: en E.6, RN-8.7 se retira porque ya se resolvió (ver A.2) y esa entrada queda solo con RN-8.6, todavía sin resolver; E.2 se resuelve el 28/09/2026 y su especificación técnica se traslada a A.1 (ver detalle en E.2). El resto de la sección E (E.1, E.3-E.6) sigue bloqueada por falta del mismo insumo (Aldrin o Viviana) descrito en cada regla, y se cierra solo cuando Reglas de Negocio también se actualice con la confirmación correspondiente.
++Con esta versión (v0.9), las secciones A a D permanecen completamente cerradas y alineadas con Reglas de Negocio v1.0: no queda ningún [PENDIENTE DE ESPECIFICAR] en ellas. Se agregan además A.6, A.7, B.6, B.7 y B.8 para especificar mecánicas que antes no tenían un punto propio en este documento (días de entrenamiento válidos y «hoy» en hora de Bogotá, cumpleaños/vencimientos en el calendario, inactividad por asistencia con reactivación automática, expiración de sesión y requisitos de contraseña).
++La sección E queda reorganizada en ocho puntos (E.1 a E.8), alineados con la lista consolidada de información pendiente de Reglas de Negocio v1.0 (sección 13): E.1, E.2 (ahora enfocado solo en la tabla oficial de la federación, con la tabla propia ya completa trasladada a A.1), E.3, E.4 (nueva), E.5 (nueva) y E.6 — más dos puntos que no aparecen en esa lista porque dependen de una decisión de desarrollo y no del club (E.7, E.8). Cada punto se cierra solo cuando el club, la federación o el equipo de desarrollo entreguen la confirmación correspondiente.
+ Etiqueta | Significado
+ [CONFIRMADO] | Confirmado por Aldrin directamente, o decisión ya cerrada por John como responsable técnico del proyecto.
+ [PROPUESTA] | Planteamiento del equipo de desarrollo, sujeto a validación o construcción futura.
+ [PENDIENTE DE RESPUESTA] | Depende de que el club (Aldrin o Viviana, según corresponda) confirme la información o entregue documentación oficial.
+ [PENDIENTE DE VERIFICACIÓN] | El dato existe en una fuente, pero no se ha verificado directamente contra el documento original.
+-[PENDIENTE DE ESPECIFICAR] | Exclusiva de este documento: la regla de origen ya está confirmada o decidida en Reglas de Negocio v0.6, pero su especificación técnica exacta (fórmula, flujo de estados, umbral, formato) aún no se ha definido.
+-[HEADER] HwangHon-Sports-System — Especificación de Lógica de Negocio v0.8
++[PENDIENTE DE ESPECIFICAR] | Exclusiva de este documento: la regla de origen ya está confirmada o decidida en Reglas de Negocio v1.0, pero su especificación técnica exacta (fórmula, flujo de estados, umbral, formato) aún no se ha definido.
++[HEADER] HwangHon-Sports-System — Especificación de Lógica de Negocio v0.9

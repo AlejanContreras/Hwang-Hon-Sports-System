@@ -15,13 +15,14 @@ class DeportistaRepository extends BaseRepository
      * Columnas por las que listar()/contar() pueden filtrar (BaseRepository).
      */
     protected const COLUMNAS = [
-        'documento', 'nombre', 'fecha_nacimiento', 'sexo', 'estatura', 'peso',
-        'discapacidad', 'estado_animico', 'sede_entrenamiento', 'autorizacion_datos',
-        'grado_actual', 'fecha_ingreso', 'estado', 'estado_registro',
-        'acudiente_documento', 'validado_por_correo',
+        'documento', 'nombre', 'fecha_nacimiento', 'lugar_nacimiento', 'sexo', 'estatura',
+        'peso', 'telefono', 'direccion', 'correo', 'discapacidad', 'experiencia_previa',
+        'estado_animico', 'sede_entrenamiento', 'autorizacion_datos', 'grado_actual',
+        'fecha_ingreso', 'estado', 'estado_registro', 'acudiente_documento',
+        'validado_por_correo',
     ];
 
-    protected const ORDEN = 'nombre';
+    protected const ORDEN = 'nombre, documento';
 
     /**
      * Obtiene una fila de `deportista` por su llave primaria `documento`.
@@ -35,6 +36,17 @@ class DeportistaRepository extends BaseRepository
     }
 
     /**
+     * Indica si existe un deportista con ese documento (sin leer la fila).
+     */
+    public function existePorId(string $documento): bool
+    {
+        return $this->existe(
+            'SELECT 1 FROM deportista WHERE documento = :documento LIMIT 1',
+            ['documento' => $documento]
+        );
+    }
+
+    /**
      * Inserta una nueva fila en `deportista` a partir de un DeportistaModel.
      * Envia siempre todas las columnas, incluidos sexo, estado y
      * estado_registro: son ENUM NOT NULL y, si se omiten, MySQL los completaria
@@ -43,7 +55,7 @@ class DeportistaRepository extends BaseRepository
     public function crear(DeportistaModel $modelo): bool
     {
         return $this->insertar(
-            'INSERT INTO deportista (documento, nombre, fecha_nacimiento, sexo, estatura, peso, discapacidad, estado_animico, sede_entrenamiento, autorizacion_datos, grado_actual, fecha_ingreso, estado, estado_registro, acudiente_documento, validado_por_correo) VALUES (:documento, :nombre, :fecha_nacimiento, :sexo, :estatura, :peso, :discapacidad, :estado_animico, :sede_entrenamiento, :autorizacion_datos, :grado_actual, :fecha_ingreso, :estado, :estado_registro, :acudiente_documento, :validado_por_correo)',
+            'INSERT INTO deportista (documento, nombre, fecha_nacimiento, lugar_nacimiento, sexo, estatura, peso, telefono, direccion, correo, discapacidad, experiencia_previa, estado_animico, sede_entrenamiento, autorizacion_datos, grado_actual, fecha_ingreso, estado, estado_registro, acudiente_documento, validado_por_correo) VALUES (:documento, :nombre, :fecha_nacimiento, :lugar_nacimiento, :sexo, :estatura, :peso, :telefono, :direccion, :correo, :discapacidad, :experiencia_previa, :estado_animico, :sede_entrenamiento, :autorizacion_datos, :grado_actual, :fecha_ingreso, :estado, :estado_registro, :acudiente_documento, :validado_por_correo)',
             $modelo->toArray()
         );
     }
@@ -54,7 +66,7 @@ class DeportistaRepository extends BaseRepository
     public function actualizar(DeportistaModel $modelo): bool
     {
         return $this->ejecutar(
-            'UPDATE deportista SET nombre = :nombre, fecha_nacimiento = :fecha_nacimiento, sexo = :sexo, estatura = :estatura, peso = :peso, discapacidad = :discapacidad, estado_animico = :estado_animico, sede_entrenamiento = :sede_entrenamiento, autorizacion_datos = :autorizacion_datos, grado_actual = :grado_actual, fecha_ingreso = :fecha_ingreso, estado = :estado, estado_registro = :estado_registro, acudiente_documento = :acudiente_documento, validado_por_correo = :validado_por_correo WHERE documento = :documento',
+            'UPDATE deportista SET nombre = :nombre, fecha_nacimiento = :fecha_nacimiento, lugar_nacimiento = :lugar_nacimiento, sexo = :sexo, estatura = :estatura, peso = :peso, telefono = :telefono, direccion = :direccion, correo = :correo, discapacidad = :discapacidad, experiencia_previa = :experiencia_previa, estado_animico = :estado_animico, sede_entrenamiento = :sede_entrenamiento, autorizacion_datos = :autorizacion_datos, grado_actual = :grado_actual, fecha_ingreso = :fecha_ingreso, estado = :estado, estado_registro = :estado_registro, acudiente_documento = :acudiente_documento, validado_por_correo = :validado_por_correo WHERE documento = :documento',
             $modelo->toArray()
         );
     }

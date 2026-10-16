@@ -16,10 +16,10 @@ class AcudienteTutorRepository extends BaseRepository
      * Columnas por las que listar()/contar() pueden filtrar (BaseRepository).
      */
     protected const COLUMNAS = [
-        'documento', 'nombre', 'relacion',
+        'documento', 'nombre', 'relacion', 'telefono', 'correo',
     ];
 
-    protected const ORDEN = 'nombre';
+    protected const ORDEN = 'nombre, documento';
 
     /**
      * Obtiene una fila de `acudiente_tutor` por su llave primaria `documento`.
@@ -33,13 +33,24 @@ class AcudienteTutorRepository extends BaseRepository
     }
 
     /**
+     * Indica si existe un acudiente con ese documento (sin leer la fila).
+     */
+    public function existePorId(string $documento): bool
+    {
+        return $this->existe(
+            'SELECT 1 FROM acudiente_tutor WHERE documento = :documento LIMIT 1',
+            ['documento' => $documento]
+        );
+    }
+
+    /**
      * Inserta una nueva fila en `acudiente_tutor` a partir de un AcudienteTutorModel.
      */
     public function crear(AcudienteTutorModel $modelo): bool
     {
         $datos = $modelo->toArray();
         return $this->insertar(
-            'INSERT INTO acudiente_tutor (documento, nombre, relacion) VALUES (:documento, :nombre, :relacion)',
+            'INSERT INTO acudiente_tutor (documento, nombre, relacion, telefono, correo) VALUES (:documento, :nombre, :relacion, :telefono, :correo)',
             $datos
         );
     }
@@ -51,7 +62,7 @@ class AcudienteTutorRepository extends BaseRepository
     {
         $datos = $modelo->toArray();
         return $this->ejecutar(
-            'UPDATE acudiente_tutor SET nombre = :nombre, relacion = :relacion WHERE documento = :documento',
+            'UPDATE acudiente_tutor SET nombre = :nombre, relacion = :relacion, telefono = :telefono, correo = :correo WHERE documento = :documento',
             $datos
         );
     }

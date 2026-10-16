@@ -1,3 +1,5 @@
 recursos/archivos_originales/*
 recursos/academico/*
 !recursos/academico/.gitignore
+recursos/contexto/*
+!recursos/contexto/.gitignore

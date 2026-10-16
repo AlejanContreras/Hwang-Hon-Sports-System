@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /**
  * Repositorio de la tabla `evento_calendario`.
- * Evento general del calendario del club: competencia, evaluación, reunión administrativa o evento extra (RN-3.1/RN-9.x).
+ * Evento general del calendario del club: competencia, evaluación, grado (ceremonia de entrega de cinturones), reunión administrativa o evento extra (RN-3.1/RN-9.x).
  * CRUD genérico únicamente — sin reglas de negocio (esas se implementan en Etapa 5,
  * en la capa de Services, según la Especificación de Lógica de Negocio).
  */

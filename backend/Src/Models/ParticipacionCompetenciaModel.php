@@ -14,6 +14,7 @@ class ParticipacionCompetenciaModel
     private string $modalidad;
     private string $categoriaEdad;
     private ?string $categoriaPeso;
+    private ?int $puesto;
     private ?string $resultado;
     private ?string $medalla;
     private ?int $combatesGanados;
@@ -26,6 +27,7 @@ class ParticipacionCompetenciaModel
         string $modalidad = '',
         string $categoriaEdad = '',
         ?string $categoriaPeso = null,
+        ?int $puesto = null,
         ?string $resultado = null,
         ?string $medalla = null,
         ?int $combatesGanados = null,
@@ -37,6 +39,7 @@ class ParticipacionCompetenciaModel
         $this->modalidad = $modalidad;
         $this->categoriaEdad = $categoriaEdad;
         $this->categoriaPeso = $categoriaPeso;
+        $this->puesto = $puesto;
         $this->resultado = $resultado;
         $this->medalla = $medalla;
         $this->combatesGanados = $combatesGanados;
@@ -92,6 +95,16 @@ class ParticipacionCompetenciaModel
     public function establecerCategoriaPeso(?string $categoriaPeso): void
     {
         $this->categoriaPeso = $categoriaPeso;
+    }
+
+    public function obtenerPuesto(): ?int
+    {
+        return $this->puesto;
+    }
+
+    public function establecerPuesto(?int $puesto): void
+    {
+        $this->puesto = $puesto;
     }
 
     public function obtenerResultado(): ?string
@@ -155,6 +168,7 @@ class ParticipacionCompetenciaModel
             'modalidad' => $this->modalidad,
             'categoria_edad' => $this->categoriaEdad,
             'categoria_peso' => $this->categoriaPeso,
+            'puesto' => $this->puesto,
             'resultado' => $this->resultado,
             'medalla' => $this->medalla,
             'combates_ganados' => $this->combatesGanados,
@@ -174,6 +188,7 @@ class ParticipacionCompetenciaModel
             modalidad: $datos['modalidad'] ?? '',
             categoriaEdad: $datos['categoria_edad'] ?? '',
             categoriaPeso: $datos['categoria_peso'] ?? null,
+            puesto: $datos['puesto'] ?? null,
             resultado: $datos['resultado'] ?? null,
             medalla: $datos['medalla'] ?? null,
             combatesGanados: $datos['combates_ganados'] ?? null,

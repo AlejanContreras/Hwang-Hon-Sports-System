@@ -16,8 +16,8 @@ class DocumentoRepository extends BaseRepository
      * Columnas por las que listar()/contar() pueden filtrar (BaseRepository).
      */
     protected const COLUMNAS = [
-        'id', 'deportista_documento', 'tipo_documento', 'archivo', 'fecha_carga',
-        'estado',
+        'id', 'deportista_documento', 'tipo_documento', 'archivo', 'nombre_original',
+        'fecha_carga',
     ];
 
     protected const ORDEN = 'id';
@@ -43,7 +43,7 @@ class DocumentoRepository extends BaseRepository
         $datos = $modelo->toArray();
         unset($datos['id']);
         return $this->insertarYObtenerId(
-            'INSERT INTO documento (deportista_documento, tipo_documento, archivo, fecha_carga, estado) VALUES (:deportista_documento, :tipo_documento, :archivo, :fecha_carga, :estado)',
+            'INSERT INTO documento (deportista_documento, tipo_documento, archivo, nombre_original, fecha_carga) VALUES (:deportista_documento, :tipo_documento, :archivo, :nombre_original, :fecha_carga)',
             $datos
         );
     }
@@ -55,7 +55,7 @@ class DocumentoRepository extends BaseRepository
     {
         $datos = $modelo->toArray();
         return $this->ejecutar(
-            'UPDATE documento SET deportista_documento = :deportista_documento, tipo_documento = :tipo_documento, archivo = :archivo, fecha_carga = :fecha_carga, estado = :estado WHERE id = :id',
+            'UPDATE documento SET deportista_documento = :deportista_documento, tipo_documento = :tipo_documento, archivo = :archivo, nombre_original = :nombre_original, fecha_carga = :fecha_carga WHERE id = :id',
             $datos
         );
     }

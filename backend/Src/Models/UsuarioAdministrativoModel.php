@@ -14,6 +14,7 @@ class UsuarioAdministrativoModel
     private string $nombre;
     private ?string $rol;
     private bool $esAdministradorPrincipal;
+    private bool $activa;
     private ?string $creadoPorCorreo;
     private ?string $tokenRecuperacion;
     private ?string $tokenRecuperacionExpira;
@@ -24,6 +25,7 @@ class UsuarioAdministrativoModel
         string $nombre = '',
         ?string $rol = null,
         bool $esAdministradorPrincipal = false,
+        bool $activa = true,
         ?string $creadoPorCorreo = null,
         ?string $tokenRecuperacion = null,
         ?string $tokenRecuperacionExpira = null
@@ -33,6 +35,7 @@ class UsuarioAdministrativoModel
         $this->nombre = $nombre;
         $this->rol = $rol;
         $this->esAdministradorPrincipal = $esAdministradorPrincipal;
+        $this->activa = $activa;
         $this->creadoPorCorreo = $creadoPorCorreo;
         $this->tokenRecuperacion = $tokenRecuperacion;
         $this->tokenRecuperacionExpira = $tokenRecuperacionExpira;
@@ -88,6 +91,16 @@ class UsuarioAdministrativoModel
         $this->esAdministradorPrincipal = $esAdministradorPrincipal;
     }
 
+    public function obtenerActiva(): bool
+    {
+        return $this->activa;
+    }
+
+    public function establecerActiva(bool $activa): void
+    {
+        $this->activa = $activa;
+    }
+
     public function obtenerCreadoPorCorreo(): ?string
     {
         return $this->creadoPorCorreo;
@@ -129,6 +142,7 @@ class UsuarioAdministrativoModel
             'nombre' => $this->nombre,
             'rol' => $this->rol,
             'es_administrador_principal' => $this->esAdministradorPrincipal,
+            'activa' => $this->activa,
             'creado_por_correo' => $this->creadoPorCorreo,
             'token_recuperacion' => $this->tokenRecuperacion,
             'token_recuperacion_expira' => $this->tokenRecuperacionExpira,
@@ -149,6 +163,7 @@ class UsuarioAdministrativoModel
             nombre: $datos['nombre'] ?? '',
             rol: $datos['rol'] ?? null,
             esAdministradorPrincipal: (bool) ($datos['es_administrador_principal'] ?? false),
+            activa: (bool) ($datos['activa'] ?? true),
             creadoPorCorreo: $datos['creado_por_correo'] ?? null,
             tokenRecuperacion: $datos['token_recuperacion'] ?? null,
             tokenRecuperacionExpira: $datos['token_recuperacion_expira'] ?? null,

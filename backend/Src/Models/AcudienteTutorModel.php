@@ -12,15 +12,21 @@ class AcudienteTutorModel
     private string $documento;
     private string $nombre;
     private string $relacion;
+    private ?string $telefono;
+    private ?string $correo;
 
     public function __construct(
         string $documento = '',
         string $nombre = '',
-        string $relacion = ''
+        string $relacion = '',
+        ?string $telefono = null,
+        ?string $correo = null
     ) {
         $this->documento = $documento;
         $this->nombre = $nombre;
         $this->relacion = $relacion;
+        $this->telefono = $telefono;
+        $this->correo = $correo;
     }
 
     public function obtenerDocumento(): string
@@ -53,6 +59,26 @@ class AcudienteTutorModel
         $this->relacion = $relacion;
     }
 
+    public function obtenerTelefono(): ?string
+    {
+        return $this->telefono;
+    }
+
+    public function establecerTelefono(?string $telefono): void
+    {
+        $this->telefono = $telefono;
+    }
+
+    public function obtenerCorreo(): ?string
+    {
+        return $this->correo;
+    }
+
+    public function establecerCorreo(?string $correo): void
+    {
+        $this->correo = $correo;
+    }
+
     /**
      * Convierte el modelo a un arreglo asociativo (claves = columnas de la tabla `acudiente_tutor`).
      */
@@ -62,6 +88,8 @@ class AcudienteTutorModel
             'documento' => $this->documento,
             'nombre' => $this->nombre,
             'relacion' => $this->relacion,
+            'telefono' => $this->telefono,
+            'correo' => $this->correo,
         ];
     }
 
@@ -74,6 +102,8 @@ class AcudienteTutorModel
             documento: $datos['documento'] ?? '',
             nombre: $datos['nombre'] ?? '',
             relacion: $datos['relacion'] ?? '',
+            telefono: $datos['telefono'] ?? null,
+            correo: $datos['correo'] ?? null,
         );
     }
 }

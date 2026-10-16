@@ -13,23 +13,23 @@ class DocumentoModel
     private string $deportistaDocumento;
     private string $tipoDocumento;
     private string $archivo;
+    private string $nombreOriginal;
     private string $fechaCarga;
-    private string $estado;
 
     public function __construct(
         int $id = 0,
         string $deportistaDocumento = '',
         string $tipoDocumento = '',
         string $archivo = '',
-        string $fechaCarga = '',
-        string $estado = ''
+        string $nombreOriginal = '',
+        string $fechaCarga = ''
     ) {
         $this->id = $id;
         $this->deportistaDocumento = $deportistaDocumento;
         $this->tipoDocumento = $tipoDocumento;
         $this->archivo = $archivo;
+        $this->nombreOriginal = $nombreOriginal;
         $this->fechaCarga = $fechaCarga;
-        $this->estado = $estado;
     }
 
     public function obtenerId(): int
@@ -72,6 +72,16 @@ class DocumentoModel
         $this->archivo = $archivo;
     }
 
+    public function obtenerNombreOriginal(): string
+    {
+        return $this->nombreOriginal;
+    }
+
+    public function establecerNombreOriginal(string $nombreOriginal): void
+    {
+        $this->nombreOriginal = $nombreOriginal;
+    }
+
     public function obtenerFechaCarga(): string
     {
         return $this->fechaCarga;
@@ -80,16 +90,6 @@ class DocumentoModel
     public function establecerFechaCarga(string $fechaCarga): void
     {
         $this->fechaCarga = $fechaCarga;
-    }
-
-    public function obtenerEstado(): string
-    {
-        return $this->estado;
-    }
-
-    public function establecerEstado(string $estado): void
-    {
-        $this->estado = $estado;
     }
 
     /**
@@ -102,8 +102,8 @@ class DocumentoModel
             'deportista_documento' => $this->deportistaDocumento,
             'tipo_documento' => $this->tipoDocumento,
             'archivo' => $this->archivo,
+            'nombre_original' => $this->nombreOriginal,
             'fecha_carga' => $this->fechaCarga,
-            'estado' => $this->estado,
         ];
     }
 
@@ -117,8 +117,8 @@ class DocumentoModel
             deportistaDocumento: $datos['deportista_documento'] ?? '',
             tipoDocumento: $datos['tipo_documento'] ?? '',
             archivo: $datos['archivo'] ?? '',
+            nombreOriginal: $datos['nombre_original'] ?? '',
             fechaCarga: $datos['fecha_carga'] ?? '',
-            estado: $datos['estado'] ?? '',
         );
     }
 }

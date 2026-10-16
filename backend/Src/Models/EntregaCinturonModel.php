@@ -13,17 +13,20 @@ class EntregaCinturonModel
     private string $deportistaDocumento;
     private bool $cinturonEntregado;
     private ?string $fechaEntrega;
+    private ?string $confirmadoPor;
 
     public function __construct(
         int $sesionExamenId = 0,
         string $deportistaDocumento = '',
         bool $cinturonEntregado = false,
-        ?string $fechaEntrega = null
+        ?string $fechaEntrega = null,
+        ?string $confirmadoPor = null
     ) {
         $this->sesionExamenId = $sesionExamenId;
         $this->deportistaDocumento = $deportistaDocumento;
         $this->cinturonEntregado = $cinturonEntregado;
         $this->fechaEntrega = $fechaEntrega;
+        $this->confirmadoPor = $confirmadoPor;
     }
 
     public function obtenerSesionExamenId(): int
@@ -66,6 +69,16 @@ class EntregaCinturonModel
         $this->fechaEntrega = $fechaEntrega;
     }
 
+    public function obtenerConfirmadoPor(): ?string
+    {
+        return $this->confirmadoPor;
+    }
+
+    public function establecerConfirmadoPor(?string $confirmadoPor): void
+    {
+        $this->confirmadoPor = $confirmadoPor;
+    }
+
     /**
      * Convierte el modelo a un arreglo asociativo (claves = columnas de la tabla `entrega_cinturon`).
      */
@@ -76,6 +89,7 @@ class EntregaCinturonModel
             'deportista_documento' => $this->deportistaDocumento,
             'cinturon_entregado' => $this->cinturonEntregado,
             'fecha_entrega' => $this->fechaEntrega,
+            'confirmado_por' => $this->confirmadoPor,
         ];
     }
 
@@ -92,6 +106,7 @@ class EntregaCinturonModel
             deportistaDocumento: $datos['deportista_documento'] ?? '',
             cinturonEntregado: (bool) ($datos['cinturon_entregado'] ?? false),
             fechaEntrega: $datos['fecha_entrega'] ?? null,
+            confirmadoPor: $datos['confirmado_por'] ?? null,
         );
     }
 }

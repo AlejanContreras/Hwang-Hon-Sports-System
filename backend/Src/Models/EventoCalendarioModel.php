@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /**
  * Modelo de la tabla `evento_calendario`.
- * Evento general del calendario del club: competencia, evaluación, reunión administrativa o evento extra (RN-3.1/RN-9.x).
+ * Evento general del calendario del club: competencia, evaluación, grado (ceremonia de entrega de cinturones), reunión administrativa o evento extra (RN-3.1/RN-9.x).
  * Llave primaria: id.
  */
 class EventoCalendarioModel

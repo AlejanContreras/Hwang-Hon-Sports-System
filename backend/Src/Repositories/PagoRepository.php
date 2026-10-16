@@ -16,8 +16,7 @@ class PagoRepository extends BaseRepository
      * Columnas por las que listar()/contar() pueden filtrar (BaseRepository).
      */
     protected const COLUMNAS = [
-        'id', 'deportista_documento', 'tipo', 'anio', 'mes', 'semana', 'estado',
-        'consecuencia_mora',
+        'id', 'deportista_documento', 'tipo', 'anio', 'mes', 'semana',
     ];
 
     protected const ORDEN = 'anio, mes, id';
@@ -43,7 +42,7 @@ class PagoRepository extends BaseRepository
         $datos = $modelo->toArray();
         unset($datos['id']);
         return $this->insertarYObtenerId(
-            'INSERT INTO pago (deportista_documento, tipo, anio, mes, semana, estado, consecuencia_mora) VALUES (:deportista_documento, :tipo, :anio, :mes, :semana, :estado, :consecuencia_mora)',
+            'INSERT INTO pago (deportista_documento, tipo, anio, mes, semana) VALUES (:deportista_documento, :tipo, :anio, :mes, :semana)',
             $datos
         );
     }
@@ -55,7 +54,7 @@ class PagoRepository extends BaseRepository
     {
         $datos = $modelo->toArray();
         return $this->ejecutar(
-            'UPDATE pago SET deportista_documento = :deportista_documento, tipo = :tipo, anio = :anio, mes = :mes, semana = :semana, estado = :estado, consecuencia_mora = :consecuencia_mora WHERE id = :id',
+            'UPDATE pago SET deportista_documento = :deportista_documento, tipo = :tipo, anio = :anio, mes = :mes, semana = :semana WHERE id = :id',
             $datos
         );
     }

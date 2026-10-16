@@ -13,13 +13,19 @@ declare(strict_types=1);
  *     nombre de columna se escribe dentro del SQL, así que nunca puede venir
  *     libre de la petición (evita inyección SQL por nombre de columna).
  *   - ORDEN: cláusula ORDER BY fija, escrita en el código, nunca tomada de
- *     datos del usuario.
+ *     datos del usuario. Termina siempre en la llave primaria, para que el
+ *     orden sea único y la paginación estable (sin filas repetidas ni
+ *     saltadas entre páginas).
+ * Opcional:
+ *   - COLUMNAS_LECTURA: columnas que devuelve listar(). Por defecto todas; un
+ *     hijo la redefine para no leer columnas sensibles (ej. contrasena).
  */
 abstract class BaseRepository
 {
     protected const TABLA = '';
     protected const COLUMNAS = [];
     protected const ORDEN = '';
+    protected const COLUMNAS_LECTURA = '*';
 
     protected PDO $bd;
 
@@ -29,18 +35,25 @@ abstract class BaseRepository
     }
 
     /**
-     * Lista filas de la tabla con filtro columna = valor (sin lógica de negocio).
+     * Lista filas de la tabla con filtro columna = valor (sin lógica de negocio);
+     * un filtro con valor null busca columna IS NULL.
      * $limite null = sin límite (todas las filas). No hay límite por defecto.
-     * Lanza LogicException si un filtro no es una columna de COLUMNAS.
+     * Lanza LogicException si un filtro no es una columna de COLUMNAS, y
+     * InvalidArgumentException si el límite o el desplazamiento son negativos
+     * (el Service valida antes lo que venga de la petición).
      *
      * @param array<string, mixed> $filtros
      * @return array<int, array<string, mixed>>
      */
     public function listar(array $filtros = [], ?int $limite = null, int $desplazamiento = 0): array
     {
+        if (($limite !== null && $limite < 0) || $desplazamiento < 0) {
+            throw new InvalidArgumentException('El limite y el desplazamiento no pueden ser negativos.');
+        }
+
         [$donde, $parametros] = $this->construirFiltro($filtros);
 
-        $sql = 'SELECT * FROM ' . static::TABLA . $donde . ' ORDER BY ' . static::ORDEN;
+        $sql = 'SELECT ' . static::COLUMNAS_LECTURA . ' FROM ' . static::TABLA . $donde . ' ORDER BY ' . static::ORDEN;
         if ($limite !== null) {
             $sql .= ' LIMIT :limite OFFSET :desplazamiento';
             $parametros['limite'] = $limite;
@@ -153,13 +166,15 @@ abstract class BaseRepository
     }
 
     /**
-     * Verifica si existe al menos una fila que cumpla una condición.
+     * Verifica si existe al menos una fila que cumpla una condición. Sirve con
+     * SELECT COUNT(*) ... o con SELECT 1 ... LIMIT 1: sin filas, fetchColumn()
+     * devuelve false, que como entero es 0.
      *
      * @param array<string, mixed> $parametros
      */
     protected function existe(string $sql, array $parametros = []): bool
     {
-        return $this->preparar($sql, $parametros)->fetchColumn() !== false;
+        return (int) $this->preparar($sql, $parametros)->fetchColumn() > 0;
     }
 
     /**
@@ -184,7 +199,8 @@ abstract class BaseRepository
 
     /**
      * Arma la cláusula WHERE de listar()/contar() validando cada nombre de
-     * columna contra COLUMNAS.
+     * columna contra COLUMNAS. Un valor null se compara con IS NULL: en SQL
+     * "columna = NULL" nunca es verdadero y no encontraría ninguna fila.
      *
      * @param array<string, mixed> $filtros
      * @return array{0: string, 1: array<string, mixed>}
@@ -196,6 +212,10 @@ abstract class BaseRepository
         foreach ($filtros as $columna => $valor) {
             if (!in_array($columna, static::COLUMNAS, true)) {
                 throw new LogicException('Columna no valida para filtrar ' . static::TABLA . ": {$columna}");
+            }
+            if ($valor === null) {
+                $condiciones[] = "{$columna} IS NULL";
+                continue;
             }
             $condiciones[] = "{$columna} = :{$columna}";
             $parametros[$columna] = $valor;

@@ -1,0 +1,203 @@
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f2f2f2','primaryTextColor':'#1a1a1a','primaryBorderColor':'#2c2c2c','lineColor':'#2c2c2c','fontFamily':'Arial, Helvetica, sans-serif','fontSize':'14px'}}}%%
+erDiagram
+    deportista {
+        VARCHAR(20) documento PK "NOT NULL"
+        VARCHAR(150) nombre "NOT NULL"
+        DATE fecha_nacimiento "NOT NULL"
+        VARCHAR(100) lugar_nacimiento "NULL — NUEVO v4: ciudad o municipio de nacimiento (formulario de inscripcion)"
+        ENUM sexo "NOT NULL — NUEVO v3: valores: masculino, femenino — se pide en la inscripcion; necesario para la categoria por peso y las competencias (RN-3.8)"
+        DECIMAL(4_2) estatura "NOT NULL — metros, ej. 1.75"
+        DECIMAL(5_2) peso "NOT NULL — kilogramos"
+        VARCHAR(20) telefono "NULL — NUEVO v4: del deportista; en un menor arranca con el del acudiente. Editable en vista publica (RN-1.1, RN-1.4)"
+        VARCHAR(150) direccion "NULL — NUEVO v4: del deportista; en un menor arranca con la del acudiente. Editable en vista publica (RN-1.1, RN-1.4)"
+        VARCHAR(150) correo "NULL — NUEVO v4: del deportista; en un menor arranca con el del acudiente. Sin indice unico: hermanos menores pueden compartirlo (RN-1.1, RN-1.10)"
+        CALCULADO categoria "No es columna fisica — PROPUESTA: se calcula en consulta/aplicacion, depende de la tabla oficial de categorias (RN-1.3, RN-3.8)"
+        CALCULADO edad "No es columna fisica — PROPUESTA: se calcula en consulta desde fecha_nacimiento; no puede ser columna generada de MySQL porque depende de la fecha actual (RN-1.3)"
+        VARCHAR(255) discapacidad "NULL — CORREGIDO v4: condicion de salud relevante, editable tambien en vista publica (RN-1.5); texto libre que reemplaza las seis preguntas de salud del formulario: infecto-contagiosas, cardiovasculares, respiratorias, alergicas, fracturas y otras"
+        TEXT experiencia_previa "NULL — NUEVO v4: opcional, texto libre: arte marcial anterior, club, pais/ciudad, maestro, fecha de retiro, motivo, ultimo grado y fecha de ultima graduacion (formulario de inscripcion)"
+        VARCHAR(100) estado_animico "NULL — CONFIRMADO en BD, no visible en interfaz (RN-2.4), reserva a futuro"
+        VARCHAR(100) sede_entrenamiento "NULL — Club Hwang Hon / Escuela IMRDS (RN-T.8)"
+        TINYINT(1) autorizacion_datos "NOT NULL — checkbox de autorizacion si el registro es virtual (RN-1.8/RN-T.9)"
+        VARCHAR(30) grado_actual "NULL — CORREGIDO v4: nulo equivale a Ingresado (sin cinturon) hasta el primer examen aprobado; editable a mano por el administrativo; si llega de otro club con cinturon, lo digita el administrativo (RN-5.3, RN-10.3)"
+        DATE fecha_ingreso "NOT NULL"
+        ENUM estado "NOT NULL — valores: activo, inactivo"
+        ENUM estado_registro "NOT NULL — valores: pendiente_validacion, validado (solo autorregistrados)"
+        VARCHAR(20) acudiente_documento FK "NULL — nulo si el deportista es mayor de edad · INDICE FK: ON DELETE SET NULL, ON UPDATE CASCADE"
+        VARCHAR(150) validado_por_correo FK "NULL — auditoria de autorregistro, nulo si no aplica · INDICE FK: ON DELETE SET NULL, ON UPDATE CASCADE"
+    }
+
+    acudiente_tutor {
+        VARCHAR(20) documento PK "NOT NULL"
+        VARCHAR(150) nombre "NOT NULL"
+        VARCHAR(50) relacion "NOT NULL — ej. padre, madre, tutor legal; PROPUESTA dejar abierto en VARCHAR"
+        VARCHAR(20) telefono "NULL — NUEVO v4: celular del acudiente que firma el formulario; el otro padre queda solo en el formulario escaneado"
+        VARCHAR(150) correo "NULL — NUEVO v4: correo del acudiente que firma el formulario; el otro padre queda solo en el formulario escaneado"
+    }
+
+    usuario_administrativo {
+        VARCHAR(150) correo PK "NOT NULL"
+        VARCHAR(255) contrasena "NOT NULL — almacenar como hash (bcrypt/argon2), nunca texto plano"
+        VARCHAR(150) nombre "NOT NULL"
+        VARCHAR(30) rol "NULL — CORREGIDO v4: PROPUESTA opcional: Aldrin/Tesorero/Contador/Secretaria/Desarrollador, solo identificacion (RN-T.2, RN-T.10)"
+        TINYINT(1) es_administrador_principal "NOT NULL — CORREGIDO v4: verdadero para quien gestiona cuentas administrativas (RN-T.11): Aldrin y la cuenta Desarrollador"
+        TINYINT(1) activa "NOT NULL DEFAULT 1 — NUEVO v4: falso = cuenta desactivada: no inicia sesion y su sesion abierta deja de valer; las cuentas no se borran (RN-T.11)"
+        VARCHAR(150) creado_por_correo FK "NULL — reflexiva, nulo para la cuenta fundadora · INDICE FK: ON DELETE SET NULL, ON UPDATE RESTRICT — CORREGIDO 25/09/2026: verificado empiricamente que InnoDB/MariaDB no ejecuta CASCADE en llave reflexiva al actualizar la fila padre (error 1451); se documenta el comportamiento real. El correo de un administrador que ya dio de alta otras cuentas no se puede cambiar directamente"
+        CHAR(64) token_recuperacion "NULL — NUEVO v2: Hash SHA-256 (hex) del token de un solo uso, nunca el token en claro; nulo si no hay solicitud activa (RN-T.12) · INDICE UNICO: unico_token_recuperacion"
+        DATETIME token_recuperacion_expira "NULL — NUEVO v2: Fecha y hora de vencimiento del token: 1 hora desde la solicitud (RN-T.12)"
+    }
+
+    documento {
+        INT id PK "NOT NULL — AUTO_INCREMENT"
+        VARCHAR(20) deportista_documento FK "NOT NULL · INDICE FK: ON DELETE RESTRICT, ON UPDATE CASCADE"
+        VARCHAR(30) tipo_documento "NOT NULL — CORREGIDO v4: tipos de RN-6.1: formulario_inscripcion, documento_identidad, documento_acudiente, fotografia, consentimiento, certificado_ascenso, competencia, preparacion_fisica, otro"
+        VARCHAR(255) archivo "NOT NULL — CORREGIDO v4: nombre aleatorio del archivo en disco, fuera de la carpeta publica (RN-6.3)"
+        VARCHAR(150) nombre_original "NOT NULL — NUEVO v4: nombre con el que se subio; con el se entrega la descarga (RN-6.3)"
+        DATE fecha_carga "NOT NULL"
+    }
+
+    documento_general {
+        INT id PK "NOT NULL — NUEVO v4 — AUTO_INCREMENT"
+        VARCHAR(150) titulo "NOT NULL — NUEVO v4: ej. teoria de ascenso; visible para todos, sin filtro por grado (RN-6.8)"
+        VARCHAR(255) archivo "NOT NULL — NUEVO v4: nombre del archivo almacenado"
+        VARCHAR(150) nombre_original "NOT NULL — NUEVO v4: nombre con el que se subio; con el se entrega la descarga (RN-6.3)"
+        DATE fecha_carga "NOT NULL — NUEVO v4"
+    }
+
+    asistencia {
+        VARCHAR(20) deportista_documento PK "NOT NULL — tambien FK a deportista · INDICE FK: ON DELETE RESTRICT, ON UPDATE CASCADE"
+        DATE fecha PK "NOT NULL"
+        TINYINT(1) asistio "NOT NULL"
+    }
+
+    pago {
+        INT id PK "NOT NULL — AUTO_INCREMENT"
+        VARCHAR(20) deportista_documento FK "NOT NULL · INDICE FK: ON DELETE RESTRICT, ON UPDATE CASCADE · INDICE UNICO: unico_pago_periodo (deportista_documento, tipo, anio, mes) — NUEVO v4"
+        ENUM tipo "NOT NULL — valores: mensualidad, matricula — CORREGIDO v4: solo se guardan pagos hechos; la deuda se calcula por ausencia de fila (RN-8.1, RN-8.3)"
+        SMALLINT anio "NOT NULL — ej. 2026"
+        TINYINT mes "NOT NULL — CORREGIDO v4: 0 = matricula; 1 a 12 = mes de la mensualidad · CHECK rango_pago_mes: mes BETWEEN 0 AND 12 — NUEVO v4; algunos MySQL antiguos ignoran CHECK, el backend valida igual"
+        TINYINT semana "NULL — 1 a 4, semana del mes en que se pago (RN-8.1), aplica solo a mensualidad · CHECK rango_pago_semana: semana IS NULL OR semana BETWEEN 1 AND 4 — NUEVO v4; algunos MySQL antiguos ignoran CHECK, el backend valida igual"
+    }
+
+    evento_calendario {
+        INT id PK "NOT NULL — AUTO_INCREMENT"
+        VARCHAR(150) nombre "NOT NULL"
+        ENUM tipo "NOT NULL — CORREGIDO v4: valores: competencia, evaluacion, grado, reunion_administrativa, evento_extra (grado = ceremonia de entrega de cinturones, RN-9.2)"
+        DATE fecha "NOT NULL"
+        VARCHAR(150) lugar "NOT NULL"
+        ENUM visibilidad "NOT NULL — valores: administrativa, publica"
+        TEXT observaciones "NULL — notas generales del evento (RN-3.1)"
+    }
+
+    competencia {
+        INT evento_id PK "NOT NULL — tambien FK a evento_calendario · INDICE FK: ON DELETE CASCADE, ON UPDATE CASCADE"
+        VARCHAR(50) plataforma "NULL — Fitofan u otra, texto libre, sin integracion (RN-3.4)"
+        ENUM tipo_torneo "NOT NULL — valores: nacional, internacional, departamental"
+    }
+
+    participacion_competencia {
+        VARCHAR(20) deportista_documento PK "NOT NULL — tambien FK a deportista · INDICE FK: ON DELETE RESTRICT, ON UPDATE CASCADE"
+        INT competencia_evento_id PK "NOT NULL — tambien FK a competencia · INDICE FK: ON DELETE RESTRICT, ON UPDATE CASCADE"
+        ENUM modalidad PK "NOT NULL — CORREGIDO al pasar a modelo relacional: se agrega a la llave compuesta porque un deportista puede tener una participacion por modalidad dentro del mismo torneo (RN-3.1/RN-3.2). Valores: combate_individual, combate_equipos, defensa_personal, salto_alto, salto_largo, formas — verificado contra RN-3.2 el 25/09/2026, coincide exactamente"
+        ENUM categoria_edad "NOT NULL — valores: infantil, junior, juvenil, mayores, senior, master (RN-3.1/RN-3.8)"
+        VARCHAR(30) categoria_peso "NULL — CORREGIDO v4: PROPUESTA (RN-3.1/RN-3.8) — sugerida por la tabla consolidada del equipo, que cubre todas las categorias con corte inclusivo; editable; se reemplaza si llega la tabla oficial"
+        TINYINT_UNSIGNED puesto "NULL — NUEVO v4: lugar en el torneo, lo digita el staff, no se calcula; nulo hasta despues del torneo (RN-3.1, RN-3.3)"
+        VARCHAR(255) resultado "NULL — resultado general, texto libre (RN-3.1)"
+        ENUM medalla "NULL — valores: oro, plata, bronce, ninguna"
+        TINYINT combates_ganados "NULL — aplica a modalidades de combate"
+        TINYINT combates_perdidos "NULL — aplica a modalidades de combate"
+        TEXT notas_oponente "NULL — texto libre, uso interno del staff"
+    }
+
+    sesion_examen {
+        INT id PK "NOT NULL — AUTO_INCREMENT"
+        DATE fecha "NOT NULL — CORREGIDO v4: fecha de INICIO de los examenes (RN-5.5); CONFIRMADO: 26 abr, 26 jul, 13 dic 2026 (RN-5.4)"
+        DATE fecha_grado "NOT NULL — NUEVO v4: fecha de la ceremonia de entrega de cinturones; fecha_entrega toma este valor por defecto (RN-5.5, RN-5.7)"
+        VARCHAR(150) lugar "NOT NULL"
+        ENUM estado "NOT NULL DEFAULT abierta — NUEVO v4: valores: abierta, cerrada — cerrada solo con todas las modalidades completadas; para editar notas se reabre (RN-5.5)"
+        INT evento_examen_id FK "NULL — NUEVO v4: evento de calendario tipo evaluacion, en la fecha de inicio (RN-5.5, RN-9.2) · INDICE FK: ON DELETE SET NULL, ON UPDATE CASCADE · INDICE UNICO: unico_evento_examen"
+        INT evento_grado_id FK "NULL — NUEVO v4: evento de calendario tipo grado, en la fecha de grado (RN-5.5, RN-9.2) · INDICE FK: ON DELETE SET NULL, ON UPDATE CASCADE · INDICE UNICO: unico_evento_grado"
+    }
+
+    detalle_evaluacion {
+        INT sesion_examen_id PK "NOT NULL — tambien FK a sesion_examen · INDICE FK: ON DELETE RESTRICT, ON UPDATE CASCADE"
+        VARCHAR(20) deportista_documento PK "NOT NULL — tambien FK a deportista · INDICE FK: ON DELETE RESTRICT, ON UPDATE CASCADE"
+        VARCHAR(30) modalidad PK "NOT NULL — CORREGIDO: cambia de ENUM a VARCHAR porque RN-5.5 deja la lista abierta ('...teorico, fisico, combate, rompimiento, formas, llaves, entre otras'), a diferencia de RN-3.2 que si es un conjunto cerrado; Contexto Base §12 ya menciona 'armas segun grado' como modalidad adicional posible — mismo criterio que documento.tipo_documento. Valores conocidos, no lista cerrada: teorico, fisico, combate, rompimiento, formas, llaves"
+        VARCHAR(30) grado_evaluado "NOT NULL — grado al que aspira (RN-5.1)"
+        ENUM estado "NOT NULL — valores: pendiente, completado"
+        DATE fecha_completado "NULL — cada modalidad puede completarse en fecha distinta al resto del grupo (RN-5.5)"
+        DECIMAL(4_2) nota "NULL — NUEVO v4: escala de 1 a 10; nulo hasta calificar (RN-5.1, RN-5.3) · CHECK rango_detalle_nota: nota IS NULL OR nota BETWEEN 1 AND 10; algunos MySQL antiguos ignoran CHECK, el backend valida igual"
+        TEXT criterios_evaluados "NULL — CORREGIDO v2: PENDIENTE DE RESPUESTA (RN-5.1/RN-5.3) — estructura confirmada, valores exactos sin la plantilla oficial"
+        TEXT puntajes "NULL — CORREGIDO v2: PENDIENTE DE RESPUESTA (RN-5.1/RN-5.3) — estructura confirmada, valores exactos sin la plantilla oficial"
+        DECIMAL(6_2) valor_medible "NULL — PROPUESTA: valor numerico de prueba fisica, aplica cuando modalidad = fisico (RN-2.3)"
+        TEXT aspectos_fallidos "NULL — CORREGIDO v2: PENDIENTE DE RESPUESTA (RN-5.1/RN-5.3) — estructura confirmada, valores exactos sin la plantilla oficial"
+        TEXT observaciones "NULL — CORREGIDO v2: PENDIENTE DE RESPUESTA (RN-5.1/RN-5.3) — estructura confirmada, valores exactos sin la plantilla oficial"
+        TEXT recomendaciones "NULL — CORREGIDO v2: PENDIENTE DE RESPUESTA (RN-5.1/RN-5.3) — estructura confirmada, valores exactos sin la plantilla oficial"
+        TINYINT(1) aprobado "NULL — CORREGIDO v4: nulo hasta calificar; se deriva de nota al guardar y es solo informativo. El resultado general del examen es provisional: las seis modalidades completadas y promedio de notas >= 5, sin exigir aprobar cada una (RN-5.3)"
+    }
+
+    entrega_cinturon {
+        INT sesion_examen_id PK "NOT NULL — NUEVO v2 — tambien FK a sesion_examen · INDICE FK: ON DELETE RESTRICT, ON UPDATE CASCADE"
+        VARCHAR(20) deportista_documento PK "NOT NULL — NUEVO v2 — tambien FK a deportista · INDICE FK: ON DELETE RESTRICT, ON UPDATE CASCADE"
+        TINYINT(1) cinturon_entregado "NOT NULL — CORREGIDO v4: confirmacion manual de la entrega fisica del cinturon, por el administrativo o por el deportista (RN-5.7). deportista.grado_actual pasa al grado evaluado al confirmarse, con la sesion cerrada y el examen aprobado"
+        DATE fecha_entrega "NULL — CORREGIDO v4: nulo mientras no se haya entregado; por defecto la fecha de grado de la sesion (RN-5.7)"
+        ENUM confirmado_por "NULL — NUEVO v4: valores: administrativo, deportista — quien confirmo la entrega; nulo mientras no se haya entregado (RN-5.7)"
+    }
+
+    intento_acceso {
+        ENUM ambito PK "NOT NULL — NUEVO v4: valores: administrativa, publica — login al que corresponde el contador; mismos valores que el ambito de la sesion"
+        VARCHAR(150) identificador PK "NOT NULL — CORREGIDO v4 (antes documento VARCHAR(20)): lo digitado al entrar: correo (administrativa) o documento del deportista (publica). Sin llave foranea a proposito: puede no existir y no debe poder deducirse si existe"
+        INT intentos_fallidos "NOT NULL DEFAULT 0 — CORREGIDO v4: fallos consecutivos; con 4 se bloquea 15 minutos; vuelve a 0 al acertar (RN-T.16)"
+        DATETIME bloqueado_hasta "NULL — CORREGIDO v4: fin del bloqueo de 15 minutos tras el cuarto fallo; nulo si no esta bloqueado (RN-T.16)"
+    }
+
+    leyenda_notacion {
+        VARCHAR entidad_nucleo "Borde rojo grueso solido = entidad confirmada (Reglas de Negocio v0.3)"
+        VARCHAR entidad_asociativa "Borde gris fino solido = entidad de relacion N a N (tabla asociativa)"
+        VARCHAR dato_pendiente "Comentario con PENDIENTE DE RESPUESTA (etiqueta unificada 28/09/2026, reemplaza PENDIENTE DE ALDRIN y PENDIENTE DE VALIDACION) = tipo ya asignado, valor/formato exacto aun no confirmado"
+        VARCHAR notacion_decimal "DECIMAL(m_d) representa DECIMAL(m,d) — se usa guion bajo porque la coma no es valida dentro del tipo en este renderizador; por la misma razon TINYINT_UNSIGNED representa TINYINT UNSIGNED"
+        VARCHAR indice_pk "Cada llave marcada PK (simple o compuesta) es la definicion de indice PRIMARY KEY lista para DDL; en las compuestas, el orden de las filas mostradas en la tabla es el orden de columnas de la llave"
+        VARCHAR indice_fk "Comportamiento ON DELETE / ON UPDATE de cada llave foranea (paquete 2), anotado en el comentario de la columna FK correspondiente con el prefijo INDICE FK"
+        VARCHAR alcance_paquete "Paquete 1 (24/09/2026): nombre de tabla/columna, tipo MySQL 8 y nulidad. Paquete 2 (24/09/2026): llaves primarias confirmadas como indice PRIMARY KEY y comportamiento ON DELETE/ON UPDATE de cada llave foranea — mismo diagrama, sin version nueva"
+        VARCHAR cambio_v2 "v2 (29/09/2026): NUEVO v2 = entidad entrega_cinturon (RN-5.7) y columnas de token de recuperacion (RN-T.12); CORREGIDO v2 = comentarios actualizados por RN-8.7 confirmada, etiqueta unificada PENDIENTE DE RESPUESTA y RN-3.8 como PROPUESTA. Resto sin cambios frente a v1"
+        VARCHAR cambio_v3 "v3 (08/10/2026): NUEVO v3 = tabla tecnica intento_acceso_publico para limitar intentos del acceso publico por documento + fecha de nacimiento, sin relaciones a proposito; y columna deportista.sexo (RN-3.8, 09/10/2026). Resto sin cambios frente a v2"
+        VARCHAR restriccion_check "Validacion CHECK anotada en el comentario de la columna con el prefijo CHECK, seguida de su nombre y su condicion"
+        VARCHAR entidad_tecnica "Borde gris medio solido = tabla tecnica de seguridad, sin relaciones con el dominio"
+        VARCHAR cambio_v4 "v4 (15/10/2026, Reglas de Negocio v1.0): NUEVO v4 = tabla documento_general (RN-6.8); deportista.telefono/direccion/correo; deportista.lugar_nacimiento y experiencia_previa y acudiente_tutor.telefono/correo (formulario de inscripcion, 16/10/2026); documento.nombre_original; participacion_competencia.puesto; sesion_examen.fecha_grado/estado/evento_examen_id/evento_grado_id; detalle_evaluacion.nota; entrega_cinturon.confirmado_por; usuario_administrativo.activa; indice unico_pago_periodo; CHECK rango_pago_mes, rango_pago_semana y rango_detalle_nota. CORREGIDO v4 = intento_acceso_publico pasa a intento_acceso (ambito + identificador, cubre tambien el login administrativo, umbral 4); pago.mes NOT NULL (0 = matricula); valor grado en evento_calendario.tipo; comentarios de grado_actual, categoria_peso, rol, es_administrador_principal y discapacidad; el procedimiento cambiar_correo_administrador (fuera del diagrama) gana un EXIT HANDLER que deshace y restablece FOREIGN_KEY_CHECKS. RETIRADO v4 = documento.estado, pago.estado y pago.consecuencia_mora. Resto sin cambios frente a v3"
+    }
+
+    acudiente_tutor ||--o{ deportista : "es responsable de"
+    usuario_administrativo ||--o{ deportista : "valida (registro pendiente)"
+    usuario_administrativo ||--o{ usuario_administrativo : "da de alta / gestiona"
+    deportista ||--o{ documento : "tiene"
+    deportista ||--o{ asistencia : "registra"
+    deportista ||--o{ pago : "realiza"
+    evento_calendario ||--o| competencia : "se especializa en"
+    deportista ||--o{ participacion_competencia : "participa en"
+    competencia ||--o{ participacion_competencia : "recibe"
+    deportista ||--o{ detalle_evaluacion : "es evaluado en"
+    sesion_examen ||--o{ detalle_evaluacion : "agrupa"
+    deportista ||--o{ entrega_cinturon : "recibe cinturon"
+    sesion_examen ||--o{ entrega_cinturon : "registra entrega"
+    evento_calendario |o--o| sesion_examen : "inicio de examenes"
+    evento_calendario |o--o| sesion_examen : "dia del grado"
+
+    deportista:::confirmado
+    acudiente_tutor:::confirmado
+    usuario_administrativo:::confirmado
+    documento:::confirmado
+    asistencia:::confirmado
+    pago:::confirmado
+    evento_calendario:::confirmado
+    competencia:::confirmado
+    sesion_examen:::confirmado
+    participacion_competencia:::asociativa
+    detalle_evaluacion:::asociativa
+    entrega_cinturon:::asociativa
+    documento_general:::confirmado
+    intento_acceso:::tecnica
+    leyenda_notacion:::leyenda
+
+    classDef confirmado fill:#f2f2f2,stroke:#8b1e1e,stroke-width:3px
+    classDef asociativa fill:#ffffff,stroke:#2c2c2c,stroke-width:1px
+    classDef tecnica fill:#ffffff,stroke:#6b6b6b,stroke-width:2px
+    classDef leyenda fill:#fbf6ea,stroke:#b08d2a,stroke-width:2px,stroke-dasharray:5 4

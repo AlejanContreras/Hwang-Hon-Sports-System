@@ -5,6 +5,8 @@ declare(strict_types=1);
 /**
  * Modelo de la tabla `pago`.
  * Registro de pago (mensualidad o matrícula) de un deportista (RN-8.x).
+ * mes: 0 = matrícula; 1 a 12 = mes de la mensualidad. semana: 1 a 4 o null.
+ * Solo se guardan pagos hechos: la deuda se calcula por ausencia de fila.
  * Llave primaria: id.
  */
 class PagoModel
@@ -13,20 +15,16 @@ class PagoModel
     private string $deportistaDocumento;
     private string $tipo;
     private int $anio;
-    private ?int $mes;
+    private int $mes;
     private ?int $semana;
-    private string $estado;
-    private ?string $consecuenciaMora;
 
     public function __construct(
         int $id = 0,
         string $deportistaDocumento = '',
         string $tipo = '',
         int $anio = 0,
-        ?int $mes = null,
-        ?int $semana = null,
-        string $estado = '',
-        ?string $consecuenciaMora = null
+        int $mes = 0,
+        ?int $semana = null
     ) {
         $this->id = $id;
         $this->deportistaDocumento = $deportistaDocumento;
@@ -34,8 +32,6 @@ class PagoModel
         $this->anio = $anio;
         $this->mes = $mes;
         $this->semana = $semana;
-        $this->estado = $estado;
-        $this->consecuenciaMora = $consecuenciaMora;
     }
 
     public function obtenerId(): int
@@ -78,12 +74,12 @@ class PagoModel
         $this->anio = $anio;
     }
 
-    public function obtenerMes(): ?int
+    public function obtenerMes(): int
     {
         return $this->mes;
     }
 
-    public function establecerMes(?int $mes): void
+    public function establecerMes(int $mes): void
     {
         $this->mes = $mes;
     }
@@ -98,26 +94,6 @@ class PagoModel
         $this->semana = $semana;
     }
 
-    public function obtenerEstado(): string
-    {
-        return $this->estado;
-    }
-
-    public function establecerEstado(string $estado): void
-    {
-        $this->estado = $estado;
-    }
-
-    public function obtenerConsecuenciaMora(): ?string
-    {
-        return $this->consecuenciaMora;
-    }
-
-    public function establecerConsecuenciaMora(?string $consecuenciaMora): void
-    {
-        $this->consecuenciaMora = $consecuenciaMora;
-    }
-
     /**
      * Convierte el modelo a un arreglo asociativo (claves = columnas de la tabla `pago`).
      */
@@ -130,8 +106,6 @@ class PagoModel
             'anio' => $this->anio,
             'mes' => $this->mes,
             'semana' => $this->semana,
-            'estado' => $this->estado,
-            'consecuencia_mora' => $this->consecuenciaMora,
         ];
     }
 
@@ -145,10 +119,8 @@ class PagoModel
             deportistaDocumento: $datos['deportista_documento'] ?? '',
             tipo: $datos['tipo'] ?? '',
             anio: $datos['anio'] ?? 0,
-            mes: $datos['mes'] ?? null,
+            mes: $datos['mes'] ?? 0,
             semana: $datos['semana'] ?? null,
-            estado: $datos['estado'] ?? '',
-            consecuenciaMora: $datos['consecuencia_mora'] ?? null,
         );
     }
 }

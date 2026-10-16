@@ -12,10 +12,15 @@ class DeportistaModel
     private string $documento;
     private string $nombre;
     private string $fechaNacimiento;
+    private ?string $lugarNacimiento;
     private string $sexo;
     private float $estatura;
     private float $peso;
+    private ?string $telefono;
+    private ?string $direccion;
+    private ?string $correo;
     private ?string $discapacidad;
+    private ?string $experienciaPrevia;
     private ?string $estadoAnimico;
     private ?string $sedeEntrenamiento;
     private bool $autorizacionDatos;
@@ -30,10 +35,15 @@ class DeportistaModel
         string $documento = '',
         string $nombre = '',
         string $fechaNacimiento = '',
+        ?string $lugarNacimiento = null,
         string $sexo = '',
         float $estatura = 0.0,
         float $peso = 0.0,
+        ?string $telefono = null,
+        ?string $direccion = null,
+        ?string $correo = null,
         ?string $discapacidad = null,
+        ?string $experienciaPrevia = null,
         ?string $estadoAnimico = null,
         ?string $sedeEntrenamiento = null,
         bool $autorizacionDatos = false,
@@ -47,10 +57,15 @@ class DeportistaModel
         $this->documento = $documento;
         $this->nombre = $nombre;
         $this->fechaNacimiento = $fechaNacimiento;
+        $this->lugarNacimiento = $lugarNacimiento;
         $this->sexo = $sexo;
         $this->estatura = $estatura;
         $this->peso = $peso;
+        $this->telefono = $telefono;
+        $this->direccion = $direccion;
+        $this->correo = $correo;
         $this->discapacidad = $discapacidad;
+        $this->experienciaPrevia = $experienciaPrevia;
         $this->estadoAnimico = $estadoAnimico;
         $this->sedeEntrenamiento = $sedeEntrenamiento;
         $this->autorizacionDatos = $autorizacionDatos;
@@ -92,6 +107,16 @@ class DeportistaModel
         $this->fechaNacimiento = $fechaNacimiento;
     }
 
+    public function obtenerLugarNacimiento(): ?string
+    {
+        return $this->lugarNacimiento;
+    }
+
+    public function establecerLugarNacimiento(?string $lugarNacimiento): void
+    {
+        $this->lugarNacimiento = $lugarNacimiento;
+    }
+
     public function obtenerSexo(): string
     {
         return $this->sexo;
@@ -122,6 +147,36 @@ class DeportistaModel
         $this->peso = $peso;
     }
 
+    public function obtenerTelefono(): ?string
+    {
+        return $this->telefono;
+    }
+
+    public function establecerTelefono(?string $telefono): void
+    {
+        $this->telefono = $telefono;
+    }
+
+    public function obtenerDireccion(): ?string
+    {
+        return $this->direccion;
+    }
+
+    public function establecerDireccion(?string $direccion): void
+    {
+        $this->direccion = $direccion;
+    }
+
+    public function obtenerCorreo(): ?string
+    {
+        return $this->correo;
+    }
+
+    public function establecerCorreo(?string $correo): void
+    {
+        $this->correo = $correo;
+    }
+
     public function obtenerDiscapacidad(): ?string
     {
         return $this->discapacidad;
@@ -130,6 +185,16 @@ class DeportistaModel
     public function establecerDiscapacidad(?string $discapacidad): void
     {
         $this->discapacidad = $discapacidad;
+    }
+
+    public function obtenerExperienciaPrevia(): ?string
+    {
+        return $this->experienciaPrevia;
+    }
+
+    public function establecerExperienciaPrevia(?string $experienciaPrevia): void
+    {
+        $this->experienciaPrevia = $experienciaPrevia;
     }
 
     public function obtenerEstadoAnimico(): ?string
@@ -231,10 +296,15 @@ class DeportistaModel
             'documento' => $this->documento,
             'nombre' => $this->nombre,
             'fecha_nacimiento' => $this->fechaNacimiento,
+            'lugar_nacimiento' => $this->lugarNacimiento,
             'sexo' => $this->sexo,
             'estatura' => $this->estatura,
             'peso' => $this->peso,
+            'telefono' => $this->telefono,
+            'direccion' => $this->direccion,
+            'correo' => $this->correo,
             'discapacidad' => $this->discapacidad,
+            'experiencia_previa' => $this->experienciaPrevia,
             'estado_animico' => $this->estadoAnimico,
             'sede_entrenamiento' => $this->sedeEntrenamiento,
             'autorizacion_datos' => $this->autorizacionDatos,
@@ -260,10 +330,15 @@ class DeportistaModel
             documento: (string) ($datos['documento'] ?? ''),
             nombre: (string) ($datos['nombre'] ?? ''),
             fechaNacimiento: (string) ($datos['fecha_nacimiento'] ?? ''),
+            lugarNacimiento: self::textoONulo($datos['lugar_nacimiento'] ?? null),
             sexo: (string) ($datos['sexo'] ?? ''),
             estatura: (float) ($datos['estatura'] ?? 0.0),
             peso: (float) ($datos['peso'] ?? 0.0),
+            telefono: self::textoONulo($datos['telefono'] ?? null),
+            direccion: self::textoONulo($datos['direccion'] ?? null),
+            correo: self::textoONulo($datos['correo'] ?? null),
             discapacidad: self::textoONulo($datos['discapacidad'] ?? null),
+            experienciaPrevia: self::textoONulo($datos['experiencia_previa'] ?? null),
             estadoAnimico: self::textoONulo($datos['estado_animico'] ?? null),
             sedeEntrenamiento: self::textoONulo($datos['sede_entrenamiento'] ?? null),
             autorizacionDatos: (bool) ($datos['autorizacion_datos'] ?? false),

@@ -10,8 +10,11 @@ declare(strict_types=1);
  *   - Publico: UNA cuenta por deportista. La sesion se inicia con el documento
  *     y la fecha de nacimiento DEL DEPORTISTA (RN-T.16), la use el propio
  *     deportista, su acudiente o un familiar, sin distincion por edad. Solo ve
- *     su propio registro y solo edita peso y discapacidad/condicion de salud.
- *     El acudiente es un dato de contacto que gestiona el club, no una cuenta.
+ *     su propio registro y solo edita peso, discapacidad/condicion de salud,
+ *     telefono, direccion y correo (RN-1.4).
+ *     El acudiente es un dato de contacto que gestiona el club, no una cuenta
+ *     (documento, nombre, relacion, telefono y correo; solo el ambito
+ *     administrativo lo registra o lo edita).
  *
  * Edad y categoria por edad (RN-1.3, RN-3.8, Especificacion A.1) se calculan
  * al consultar y nunca se guardan. La categoria por peso queda PENDIENTE
@@ -41,15 +44,23 @@ class DeportistaService
         'estado', 'estado_registro', 'sede_entrenamiento', 'grado_actual', 'acudiente_documento',
     ];
     private const CAMPOS_CREAR = [
-        'documento', 'nombre', 'fecha_nacimiento', 'sexo', 'estatura', 'peso', 'discapacidad',
-        'sede_entrenamiento', 'autorizacion_datos', 'grado_actual', 'fecha_ingreso', 'estado', 'acudiente',
+        'documento', 'nombre', 'fecha_nacimiento', 'lugar_nacimiento', 'sexo', 'estatura', 'peso',
+        'telefono', 'direccion', 'correo', 'discapacidad', 'experiencia_previa', 'sede_entrenamiento',
+        'autorizacion_datos', 'grado_actual', 'fecha_ingreso', 'estado', 'acudiente',
     ];
     private const CAMPOS_ACTUALIZAR_ADMINISTRATIVO = [
-        'nombre', 'fecha_nacimiento', 'sexo', 'estatura', 'peso', 'discapacidad', 'sede_entrenamiento',
+        'nombre', 'fecha_nacimiento', 'lugar_nacimiento', 'sexo', 'estatura', 'peso', 'telefono',
+        'direccion', 'correo', 'discapacidad', 'experiencia_previa', 'sede_entrenamiento',
         'autorizacion_datos', 'grado_actual', 'fecha_ingreso', 'estado', 'estado_registro', 'acudiente',
     ];
-    private const CAMPOS_ACTUALIZAR_PUBLICO = ['peso', 'discapacidad'];
-    private const CAMPOS_ACUDIENTE = ['documento', 'nombre', 'relacion'];
+    private const CAMPOS_ACTUALIZAR_PUBLICO = ['peso', 'discapacidad', 'telefono', 'direccion', 'correo'];
+    private const CAMPOS_ACUDIENTE = ['documento', 'nombre', 'relacion', 'telefono', 'correo'];
+
+    /**
+     * experiencia_previa es TEXT (65.535 bytes). Un caracter utf8mb4 ocupa
+     * hasta 4 bytes: con 16.000 caracteres nunca se pasa del limite.
+     */
+    private const MAXIMO_EXPERIENCIA_PREVIA = 16000;
 
     private DeportistaRepository $deportista;
     private AcudienteTutorRepository $acudiente;
@@ -133,10 +144,15 @@ class DeportistaService
             documento: $documento,
             nombre: $this->texto($datos['nombre'] ?? null, 'nombre', 150, true),
             fechaNacimiento: $fechaNacimiento,
+            lugarNacimiento: $this->texto($datos['lugar_nacimiento'] ?? null, 'lugar_nacimiento', 100, false),
             sexo: $this->opcion($datos['sexo'] ?? null, 'sexo', self::SEXOS, true),
             estatura: $this->decimal($datos['estatura'] ?? null, 'estatura', 99.99),
             peso: $this->decimal($datos['peso'] ?? null, 'peso', 999.99),
+            telefono: $this->telefono($datos['telefono'] ?? null),
+            direccion: $this->texto($datos['direccion'] ?? null, 'direccion', 150, false),
+            correo: $this->correo($datos['correo'] ?? null),
             discapacidad: $this->texto($datos['discapacidad'] ?? null, 'discapacidad', 255, false),
+            experienciaPrevia: $this->texto($datos['experiencia_previa'] ?? null, 'experiencia_previa', self::MAXIMO_EXPERIENCIA_PREVIA, false),
             estadoAnimico: null,
             sedeEntrenamiento: $this->texto($datos['sede_entrenamiento'] ?? null, 'sede_entrenamiento', 100, false),
             autorizacionDatos: $this->booleano($datos['autorizacion_datos'] ?? false, 'autorizacion_datos'),
@@ -148,7 +164,7 @@ class DeportistaService
             validadoPorCorreo: null,
         );
 
-        if ($this->deportista->obtenerPorId($documento) !== null) {
+        if ($this->deportista->existePorId($documento)) {
             throw new ExcepcionNegocio("Ya existe un deportista con el documento {$documento}.", 409);
         }
 
@@ -176,11 +192,12 @@ class DeportistaService
 
     /**
      * Administrativo: edita cualquier campo menos el documento. Con "acudiente"
-     * puede editar nombre/relacion del acudiente actual o reasignar otro
+     * puede editar nombre, relacion, telefono y correo del acudiente actual o reasignar otro
      * (ver aplicarAcudiente). Al pasar de pendiente_validacion a validado
      * registra quien valido (RN-T.14). No se permite volver de validado a
      * pendiente (Especificacion B.4).
-     * Publico: solo peso y discapacidad, y solo sobre su propio registro (RN-1.4).
+     * Publico: solo peso, discapacidad, telefono, direccion y correo, y solo
+     * sobre su propio registro (RN-1.4).
      */
     public function actualizar(array $identificador, array $datos): array
     {
@@ -209,6 +226,15 @@ class DeportistaService
         }
         if (array_key_exists('discapacidad', $datos)) {
             $modelo->establecerDiscapacidad($this->texto($datos['discapacidad'], 'discapacidad', 255, false));
+        }
+        if (array_key_exists('telefono', $datos)) {
+            $modelo->establecerTelefono($this->telefono($datos['telefono']));
+        }
+        if (array_key_exists('direccion', $datos)) {
+            $modelo->establecerDireccion($this->texto($datos['direccion'], 'direccion', 150, false));
+        }
+        if (array_key_exists('correo', $datos)) {
+            $modelo->establecerCorreo($this->correo($datos['correo']));
         }
 
         $acudienteNuevo = null;
@@ -324,6 +350,14 @@ class DeportistaService
         if (array_key_exists('fecha_nacimiento', $datos)) {
             $modelo->establecerFechaNacimiento($this->fecha($datos['fecha_nacimiento'], 'fecha_nacimiento', true));
         }
+        if (array_key_exists('lugar_nacimiento', $datos)) {
+            $modelo->establecerLugarNacimiento($this->texto($datos['lugar_nacimiento'], 'lugar_nacimiento', 100, false));
+        }
+        if (array_key_exists('experiencia_previa', $datos)) {
+            $modelo->establecerExperienciaPrevia(
+                $this->texto($datos['experiencia_previa'], 'experiencia_previa', self::MAXIMO_EXPERIENCIA_PREVIA, false)
+            );
+        }
         if (array_key_exists('sexo', $datos)) {
             $modelo->establecerSexo($this->opcion($datos['sexo'], 'sexo', self::SEXOS, true));
         }
@@ -364,11 +398,12 @@ class DeportistaService
      * Aplica el campo "acudiente" de actualizar (solo administrativo):
      *   - null: quita el acudiente (solo valido si el deportista es mayor de edad;
      *     se valida despues).
-     *   - {nombre?, relacion?} sin documento, o con el documento del acudiente
-     *     actual: edita los datos del acudiente actual.
+     *   - {nombre?, relacion?, telefono?, correo?} sin documento, o con el
+     *     documento del acudiente actual: edita los datos del acudiente actual
+     *     (telefono y correo admiten null para borrarlos).
      *   - {documento distinto, ...}: reasigna. Si ese acudiente ya existe se
      *     reutiliza sin sobrescribirlo; si no existe, se crea (nombre y relacion
-     *     obligatorios).
+     *     obligatorios; telefono y correo opcionales).
      * Devuelve [acudiente a crear o null, acudiente a editar o null].
      *
      * @return array{0: ?AcudienteTutorModel, 1: ?AcudienteTutorModel}
@@ -380,7 +415,7 @@ class DeportistaService
             return [null, null];
         }
         if (!is_array($datosAcudiente) || $datosAcudiente === []) {
-            throw new ExcepcionNegocio('El campo "acudiente" debe ser null o un objeto con documento, nombre y/o relacion.', 400);
+            throw new ExcepcionNegocio('El campo "acudiente" debe ser null o un objeto con documento, nombre, relación, teléfono y/o correo.', 400);
         }
         $this->rechazarCamposNoPermitidos($datosAcudiente, self::CAMPOS_ACUDIENTE, 400, 'Campos de acudiente no reconocidos');
 
@@ -405,6 +440,12 @@ class DeportistaService
         if (array_key_exists('relacion', $datosAcudiente)) {
             $acudiente->establecerRelacion($this->texto($datosAcudiente['relacion'], 'acudiente.relacion', 50, true));
         }
+        if (array_key_exists('telefono', $datosAcudiente)) {
+            $acudiente->establecerTelefono($this->telefono($datosAcudiente['telefono'], 'acudiente.telefono'));
+        }
+        if (array_key_exists('correo', $datosAcudiente)) {
+            $acudiente->establecerCorreo($this->correo($datosAcudiente['correo'], 'acudiente.correo'));
+        }
         return [null, $acudiente];
     }
 
@@ -422,13 +463,15 @@ class DeportistaService
 
     /**
      * Devuelve [documento del acudiente, modelo a crear o null si ya existe].
+     * Un acudiente existente se reutiliza tal cual: los demas datos que
+     * traiga la peticion (nombre, relacion, telefono, correo) se ignoran.
      *
      * @return array{0: string, 1: ?AcudienteTutorModel}
      */
     private function resolverAcudiente(mixed $datosAcudiente, string $documentoDeportista): array
     {
         if (!is_array($datosAcudiente)) {
-            throw new ExcepcionNegocio('El campo "acudiente" debe ser un objeto con documento, nombre y relacion.', 400);
+            throw new ExcepcionNegocio('El campo "acudiente" debe ser un objeto con documento, nombre, relación y, opcionalmente, teléfono y correo.', 400);
         }
         $this->rechazarCamposNoPermitidos($datosAcudiente, self::CAMPOS_ACUDIENTE, 400, 'Campos de acudiente no reconocidos');
 
@@ -437,7 +480,7 @@ class DeportistaService
             throw new ExcepcionNegocio('El deportista no puede ser su propio acudiente.', 400);
         }
 
-        if ($this->acudiente->obtenerPorId($documento) !== null) {
+        if ($this->acudiente->existePorId($documento)) {
             return [$documento, null];
         }
 
@@ -445,6 +488,8 @@ class DeportistaService
             documento: $documento,
             nombre: $this->texto($datosAcudiente['nombre'] ?? null, 'acudiente.nombre', 150, true),
             relacion: $this->texto($datosAcudiente['relacion'] ?? null, 'acudiente.relacion', 50, true),
+            telefono: $this->telefono($datosAcudiente['telefono'] ?? null, 'acudiente.telefono'),
+            correo: $this->correo($datosAcudiente['correo'] ?? null, 'acudiente.correo'),
         )];
     }
 
@@ -525,6 +570,35 @@ class DeportistaService
             throw new ExcepcionNegocio("El campo \"{$campo}\" admite maximo {$maximo} caracteres.", 400);
         }
         return $texto;
+    }
+
+    /**
+     * Telefono opcional (del deportista o del acudiente; mismo largo de
+     * columna, VARCHAR 20): digitos y espacios, con un + inicial opcional
+     * (ej. "+57 300 000 0000"). No se exige una longitud minima ni un
+     * formato de pais: el club registra lo que trae el formulario.
+     */
+    private function telefono(mixed $valor, string $campo = 'telefono'): ?string
+    {
+        $telefono = $this->texto($valor, $campo, 20, false);
+        if ($telefono !== null && preg_match('/^\+?[0-9][0-9 ]*$/', $telefono) !== 1) {
+            throw new ExcepcionNegocio("El campo \"{$campo}\" solo admite dígitos, espacios y un + inicial.", 400);
+        }
+        return $telefono;
+    }
+
+    /**
+     * Correo opcional con formato valido (usuario@dominio), del deportista o
+     * del acudiente (mismo largo de columna, VARCHAR 150). Sin indice unico:
+     * hermanos menores pueden compartirlo (RN-1.10).
+     */
+    private function correo(mixed $valor, string $campo = 'correo'): ?string
+    {
+        $correo = $this->texto($valor, $campo, 150, false);
+        if ($correo !== null && filter_var($correo, FILTER_VALIDATE_EMAIL) === false) {
+            throw new ExcepcionNegocio("El campo \"{$campo}\" debe ser un correo electrónico válido.", 400);
+        }
+        return $correo;
     }
 
     /**

@@ -15,6 +15,7 @@ class DetalleEvaluacionModel
     private string $gradoEvaluado;
     private string $estado;
     private ?string $fechaCompletado;
+    private ?float $nota;
     private ?string $criteriosEvaluados;
     private ?string $puntajes;
     private ?float $valorMedible;
@@ -30,6 +31,7 @@ class DetalleEvaluacionModel
         string $gradoEvaluado = '',
         string $estado = '',
         ?string $fechaCompletado = null,
+        ?float $nota = null,
         ?string $criteriosEvaluados = null,
         ?string $puntajes = null,
         ?float $valorMedible = null,
@@ -44,6 +46,7 @@ class DetalleEvaluacionModel
         $this->gradoEvaluado = $gradoEvaluado;
         $this->estado = $estado;
         $this->fechaCompletado = $fechaCompletado;
+        $this->nota = $nota;
         $this->criteriosEvaluados = $criteriosEvaluados;
         $this->puntajes = $puntajes;
         $this->valorMedible = $valorMedible;
@@ -111,6 +114,16 @@ class DetalleEvaluacionModel
     public function establecerFechaCompletado(?string $fechaCompletado): void
     {
         $this->fechaCompletado = $fechaCompletado;
+    }
+
+    public function obtenerNota(): ?float
+    {
+        return $this->nota;
+    }
+
+    public function establecerNota(?float $nota): void
+    {
+        $this->nota = $nota;
     }
 
     public function obtenerCriteriosEvaluados(): ?string
@@ -195,6 +208,7 @@ class DetalleEvaluacionModel
             'grado_evaluado' => $this->gradoEvaluado,
             'estado' => $this->estado,
             'fecha_completado' => $this->fechaCompletado,
+            'nota' => $this->nota,
             'criterios_evaluados' => $this->criteriosEvaluados,
             'puntajes' => $this->puntajes,
             'valor_medible' => $this->valorMedible,
@@ -220,6 +234,7 @@ class DetalleEvaluacionModel
             gradoEvaluado: $datos['grado_evaluado'] ?? '',
             estado: $datos['estado'] ?? '',
             fechaCompletado: $datos['fecha_completado'] ?? null,
+            nota: isset($datos['nota']) ? (float) $datos['nota'] : null,
             criteriosEvaluados: $datos['criterios_evaluados'] ?? null,
             puntajes: $datos['puntajes'] ?? null,
             valorMedible: isset($datos['valor_medible']) ? (float) $datos['valor_medible'] : null,
