@@ -3,3 +3,9 @@ recursos/academico/*
 !recursos/academico/.gitignore
 recursos/contexto/*
 !recursos/contexto/.gitignore
+
+# Backend: datos locales que nunca van al repositorio
+# (sesiones, correos de prueba) y configuracion con secretos.
+backend/Almacenamiento/*
+!backend/Almacenamiento/.htaccess
+backend/Src/Config/correo.php

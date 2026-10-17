@@ -155,6 +155,19 @@ abstract class BaseRepository
     }
 
     /**
+     * Ejecuta un UPDATE o DELETE y devuelve cuántas filas cambió. Sirve
+     * cuando el resultado importa (ej. un UPDATE condicionado que solo debe
+     * aplicarse una vez). Ojo: sin la opción FOUND_ROWS de la conexión, un
+     * UPDATE que deja los mismos valores cuenta 0 filas.
+     *
+     * @param array<string, mixed> $parametros
+     */
+    protected function ejecutarYContarFilas(string $sql, array $parametros = []): int
+    {
+        return $this->preparar($sql, $parametros)->rowCount();
+    }
+
+    /**
      * Ejecuta una consulta de conteo escrita a mano (SELECT COUNT(*) ...) y
      * devuelve el número. Para contar por filtros simples usar contar().
      *

@@ -36,6 +36,31 @@ class IntentoAccesoRepository extends BaseRepository
     }
 
     /**
+     * Suma un fallo en UNA sola sentencia (atómica): crea la fila con 1, o
+     * suma 1 a la existente. Si el bloqueo anterior ya venció
+     * (bloqueado_hasta <= ahora), el fallo cuenta como el primero y el
+     * bloqueo se borra. Así dos peticiones simultáneas no pueden leer el mismo
+     * contador y saltarse el límite. Decidir cuándo bloquear queda en el Service.
+     * MySQL evalúa las asignaciones de izquierda a derecha: la de
+     * intentos_fallidos todavía ve el bloqueado_hasta original.
+     */
+    public function registrarFallo(string $ambito, string $identificador, string $ahora): void
+    {
+        $this->ejecutar(
+            'INSERT INTO intento_acceso (ambito, identificador, intentos_fallidos, bloqueado_hasta) VALUES (:ambito, :identificador, 1, NULL) '
+            . 'ON DUPLICATE KEY UPDATE '
+            . 'intentos_fallidos = IF(bloqueado_hasta IS NOT NULL AND bloqueado_hasta <= :ahora, 1, intentos_fallidos + 1), '
+            . 'bloqueado_hasta = IF(bloqueado_hasta IS NOT NULL AND bloqueado_hasta <= :ahora_bloqueo, NULL, bloqueado_hasta)',
+            [
+                'ambito' => $ambito,
+                'identificador' => $identificador,
+                'ahora' => $ahora,
+                'ahora_bloqueo' => $ahora,
+            ]
+        );
+    }
+
+    /**
      * Inserta una nueva fila en `intento_acceso` a partir de un IntentoAccesoModel.
      * Envia siempre ambito: es ENUM NOT NULL.
      */

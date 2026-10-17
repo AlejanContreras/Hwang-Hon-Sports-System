@@ -58,6 +58,37 @@ class UsuarioAdministrativoRepository extends BaseRepository
     }
 
     /**
+     * Fila completa (credenciales incluidas) de la cuenta cuyo token de
+     * recuperación tiene ese hash SHA-256. Solo para restablecer la
+     * contraseña (AuthService, RN-T.12).
+     */
+    public function obtenerPorTokenRecuperacion(string $hashToken): ?array
+    {
+        return $this->consultarUno(
+            'SELECT * FROM usuario_administrativo WHERE token_recuperacion = :token_recuperacion',
+            ['token_recuperacion' => $hashToken]
+        );
+    }
+
+    /**
+     * Guarda la contraseña nueva y borra el token en UN solo UPDATE, que solo
+     * se aplica si el token sigue guardado, vigente y la cuenta activa. Si
+     * llegan dos peticiones con el mismo token, solo una cambia la fila:
+     * devuelve true únicamente para esa.
+     */
+    public function restablecerContrasenaConToken(string $hashToken, string $hashContrasena, string $ahora): bool
+    {
+        return $this->ejecutarYContarFilas(
+            'UPDATE usuario_administrativo SET contrasena = :contrasena, token_recuperacion = NULL, token_recuperacion_expira = NULL WHERE token_recuperacion = :token_recuperacion AND token_recuperacion_expira > :ahora AND activa = 1',
+            [
+                'contrasena' => $hashContrasena,
+                'token_recuperacion' => $hashToken,
+                'ahora' => $ahora,
+            ]
+        ) === 1;
+    }
+
+    /**
      * Inserta una nueva fila en `usuario_administrativo` a partir de un UsuarioAdministrativoModel.
      */
     public function crear(UsuarioAdministrativoModel $modelo): bool

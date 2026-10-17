@@ -1,0 +1,2 @@
+# Carpeta interna del backend: nunca se sirve por HTTP.
+Require all denied

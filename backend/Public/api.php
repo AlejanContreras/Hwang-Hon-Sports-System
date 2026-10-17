@@ -36,7 +36,8 @@ define('RUTA_SRC', RUTA_RAIZ . '/Src');
  *   1. Utilidades compartidas: Respuesta (respuestas JSON y descargas),
  *      Solicitud (metodo HTTP y cuerpo JSON de entrada), Sesion (usuario
  *      en sesion), ExcepcionNegocio (errores esperados) y ArchivoSubido
- *      (archivos recibidos), que usan las demas capas.
+ *      (archivos recibidos) y Correo (envio de correos), que usan las
+ *      demas capas.
  *   2. Configuracion de la base de datos (database.php).
  *   3. Los Middleware (se usan mas abajo, segun la politica de acceso).
  *   4. BaseRepository, que usa la conexion a la base de datos.
@@ -51,6 +52,7 @@ require_once RUTA_SRC . '/Utils/Solicitud.php';
 require_once RUTA_SRC . '/Utils/Sesion.php';
 require_once RUTA_SRC . '/Utils/ExcepcionNegocio.php';
 require_once RUTA_SRC . '/Utils/ArchivoSubido.php';
+require_once RUTA_SRC . '/Utils/Correo.php';
 require_once RUTA_SRC . '/Config/database.php';
 require_once RUTA_SRC . '/Middleware/AuthMiddleware.php';
 require_once RUTA_SRC . '/Middleware/AmbitoMiddleware.php';
@@ -123,23 +125,6 @@ if (!class_exists($nombreClaseControlador)) {
     Respuesta::error(500, "Controller no encontrado para el recurso: {$recurso}");
 }
 
-// Middleware segun la politica de acceso del recurso
-$politica = $politicasAcceso[$recurso] ?? 'solo_administrativa';
-
-switch ($politica) {
-    case 'publica':
-        // Sin autenticacion requerida.
-        break;
-    case 'autenticada':
-        AuthMiddleware::verificar();
-        break;
-    case 'solo_administrativa':
-        AmbitoMiddleware::verificarAdministrativa();
-        break;
-    default:
-        Respuesta::error(500, "Politica de acceso no reconocida: {$politica}");
-}
-
 /*
  * Parametros de la solicitud. La "query string" es la parte de la URL que
  * va despues del signo "?", con forma clave=valor separada por "&".
@@ -164,8 +149,27 @@ $metodo = $_SERVER['REQUEST_METHOD'];
  *     programacion): se guarda el detalle en el log del servidor y al
  *     cliente solo se le responde un 500 generico, sin exponer detalles
  *     tecnicos.
+ * El Middleware tambien va dentro: en el ambito administrativo consulta la
+ * cuenta en la base de datos, y un fallo ahi debe salir como el 500 generico.
  */
 try {
+    // Middleware segun la politica de acceso del recurso
+    $politica = $politicasAcceso[$recurso] ?? 'solo_administrativa';
+
+    switch ($politica) {
+        case 'publica':
+            // Sin autenticacion requerida.
+            break;
+        case 'autenticada':
+            AuthMiddleware::verificar();
+            break;
+        case 'solo_administrativa':
+            AmbitoMiddleware::verificarAdministrativa();
+            break;
+        default:
+            Respuesta::error(500, "Politica de acceso no reconocida: {$politica}");
+    }
+
     $controlador = new $nombreClaseControlador();
     $controlador->manejar($metodo, $accion, $parametros);
 } catch (ExcepcionNegocio $excepcion) {
