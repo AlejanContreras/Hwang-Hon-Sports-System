@@ -122,6 +122,25 @@ class UsuarioAdministrativoRepository extends BaseRepository
     }
 
     /**
+     * Cambia el correo (llave primaria) con el procedimiento
+     * cambiar_correo_administrador del esquema: la llave es reflexiva
+     * (creado_por_correo) y la usa deportista.validado_por_correo, así que
+     * nunca se cambia con un UPDATE directo. El procedimiento abre y confirma
+     * su propia transacción: no llamarlo dentro de enTransaccion(). Un correo
+     * nuevo repetido lanza PDOException con código de error 1062.
+     */
+    public function cambiarCorreo(string $correoActual, string $correoNuevo): void
+    {
+        $this->ejecutar(
+            'CALL cambiar_correo_administrador(:correo_actual, :correo_nuevo)',
+            [
+                'correo_actual' => $correoActual,
+                'correo_nuevo' => $correoNuevo,
+            ]
+        );
+    }
+
+    /**
      * Actualiza solo las credenciales: hash de la contraseña y token de
      * recuperación con su vencimiento (RN-T.12).
      */

@@ -4,19 +4,24 @@ declare(strict_types=1);
 
 /**
  * Lectura y validacion de un archivo subido por formulario (multipart,
- * arreglo $_FILES). Se usa en Documentos (PDF/Word) y en las cargas
- * masivas por CSV (deportistas y calendario).
+ * arreglo $_FILES). Se usa en Documentos y en las cargas masivas por CSV
+ * (deportistas y calendario).
  *
  * Solo valida y entrega los datos del archivo: que hacer con el (guardarlo,
- * leerlo como CSV) lo decide el Service que lo recibe.
+ * leerlo como CSV) y que extensiones admite cada caso lo decide el Service
+ * que lo recibe.
  *
  * Requiere la extension fileinfo de PHP (activa por defecto en XAMPP) para
- * comprobar el tipo real del archivo, no solo su extension.
+ * comprobar el tipo real del archivo, no solo su extension. No se aceptan
+ * HEIC, SVG ni HTML: ninguna extension de la lista lleva a esos tipos.
  */
 class ArchivoSubido
 {
     /**
-     * Tipos reales (MIME) aceptados para cada extension.
+     * Tipos reales (MIME) aceptados para cada extension. El primero de cada
+     * lista es el que se envia al descargar. Los Office modernos (docx, xlsx)
+     * son ZIP por dentro y fileinfo a veces los informa como application/zip;
+     * los antiguos (doc, xls) son contenedores OLE (application/CDFV2).
      */
     private const TIPOS_POR_EXTENSION = [
         'pdf' => ['application/pdf'],
@@ -25,6 +30,15 @@ class ArchivoSubido
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'application/zip',
         ],
+        'xls' => ['application/vnd.ms-excel', 'application/vnd.ms-office', 'application/CDFV2'],
+        'xlsx' => [
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/zip',
+        ],
+        'jpg' => ['image/jpeg'],
+        'jpeg' => ['image/jpeg'],
+        'png' => ['image/png'],
+        'webp' => ['image/webp'],
         'csv' => ['text/csv', 'text/plain', 'application/csv'],
     ];
 
@@ -39,17 +53,18 @@ class ArchivoSubido
     public static function leer(string $campo, array $extensionesPermitidas, int $tamanoMaximoBytes): array
     {
         $archivo = $_FILES[$campo] ?? null;
+        $mensajeTamano = 'El archivo supera el tamaño máximo permitido (' . round($tamanoMaximoBytes / 1048576, 1) . ' MB).';
 
         if ($archivo === null || !is_string($archivo['name'] ?? null)) {
-            throw new ExcepcionNegocio("No se recibio el archivo \"{$campo}\".", 400);
+            throw new ExcepcionNegocio("No se recibió el archivo \"{$campo}\".", 400);
         }
 
         $codigoError = (int) $archivo['error'];
         if ($codigoError === UPLOAD_ERR_NO_FILE) {
-            throw new ExcepcionNegocio("No se recibio el archivo \"{$campo}\".", 400);
+            throw new ExcepcionNegocio("No se recibió el archivo \"{$campo}\".", 400);
         }
         if ($codigoError === UPLOAD_ERR_INI_SIZE || $codigoError === UPLOAD_ERR_FORM_SIZE) {
-            throw new ExcepcionNegocio('El archivo supera el tamano maximo permitido.', 400);
+            throw new ExcepcionNegocio($mensajeTamano, 400);
         }
         if ($codigoError !== UPLOAD_ERR_OK || !is_uploaded_file($archivo['tmp_name'])) {
             throw new ExcepcionNegocio('No se pudo subir el archivo. Intente de nuevo.', 400);
@@ -57,10 +72,10 @@ class ArchivoSubido
 
         $tamanoBytes = (int) $archivo['size'];
         if ($tamanoBytes <= 0) {
-            throw new ExcepcionNegocio('El archivo esta vacio.', 400);
+            throw new ExcepcionNegocio('El archivo está vacío.', 400);
         }
         if ($tamanoBytes > $tamanoMaximoBytes) {
-            throw new ExcepcionNegocio('El archivo supera el tamano maximo permitido.', 400);
+            throw new ExcepcionNegocio($mensajeTamano, 400);
         }
 
         $extension = strtolower(pathinfo($archivo['name'], PATHINFO_EXTENSION));
@@ -77,7 +92,7 @@ class ArchivoSubido
 
         $tipoReal = (new finfo(FILEINFO_MIME_TYPE))->file($archivo['tmp_name']);
         if (!in_array($tipoReal, $tiposAceptados, true)) {
-            throw new ExcepcionNegocio('El contenido del archivo no corresponde a su extension.', 400);
+            throw new ExcepcionNegocio('El contenido del archivo no corresponde a su extensión.', 400);
         }
 
         return [
@@ -86,5 +101,14 @@ class ArchivoSubido
             'extension' => $extension,
             'tamanoBytes' => $tamanoBytes,
         ];
+    }
+
+    /**
+     * Tipo MIME con el que se entrega un archivo de esa extension al
+     * descargarlo (o application/octet-stream si no es conocida).
+     */
+    public static function tipoMime(string $extension): string
+    {
+        return self::TIPOS_POR_EXTENSION[strtolower($extension)][0] ?? 'application/octet-stream';
     }
 }

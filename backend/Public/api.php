@@ -35,9 +35,9 @@ define('RUTA_SRC', RUTA_RAIZ . '/Src');
  * necesita que la anterior ya este cargada:
  *   1. Utilidades compartidas: Respuesta (respuestas JSON y descargas),
  *      Solicitud (metodo HTTP y cuerpo JSON de entrada), Sesion (usuario
- *      en sesion), ExcepcionNegocio (errores esperados) y ArchivoSubido
- *      (archivos recibidos) y Correo (envio de correos), que usan las
- *      demas capas.
+ *      en sesion), ExcepcionNegocio (errores esperados), ArchivoSubido
+ *      (archivos recibidos), Correo (envio de correos) y Validador
+ *      (validaciones compartidas), que usan las demas capas.
  *   2. Configuracion de la base de datos (database.php).
  *   3. Los Middleware (se usan mas abajo, segun la politica de acceso).
  *   4. BaseRepository, que usa la conexion a la base de datos.
@@ -53,6 +53,7 @@ require_once RUTA_SRC . '/Utils/Sesion.php';
 require_once RUTA_SRC . '/Utils/ExcepcionNegocio.php';
 require_once RUTA_SRC . '/Utils/ArchivoSubido.php';
 require_once RUTA_SRC . '/Utils/Correo.php';
+require_once RUTA_SRC . '/Utils/Validador.php';
 require_once RUTA_SRC . '/Config/database.php';
 require_once RUTA_SRC . '/Middleware/AuthMiddleware.php';
 require_once RUTA_SRC . '/Middleware/AmbitoMiddleware.php';

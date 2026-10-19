@@ -39,14 +39,21 @@ class Respuesta
      */
     public static function archivo(string $contenido, string $nombreArchivo, string $tipoMime): never
     {
-        $nombreLimpio = preg_replace('/[^A-Za-z0-9._-]/', '_', $nombreArchivo);
+        // Sin caracteres de control, comillas ni separadores de ruta, que
+        // podrian romper la cabecera o sugerir otra carpeta al navegador.
+        $nombre = trim((string) preg_replace('/[\x00-\x1F\x7F"\\\\\/]/u', '', $nombreArchivo));
+        $nombreLimpio = preg_replace('/[^A-Za-z0-9._-]/', '_', $nombre);
         if ($nombreLimpio === null || trim($nombreLimpio, '._') === '') {
             $nombreLimpio = 'archivo';
+            $nombre = 'archivo';
         }
 
         http_response_code(200);
         header('Content-Type: ' . $tipoMime);
-        header('Content-Disposition: attachment; filename="' . $nombreLimpio . '"');
+        // filename: version solo ASCII para navegadores viejos; filename*:
+        // el nombre real en UTF-8 (RFC 6266), asi se conservan las tildes.
+        header('Content-Disposition: attachment; filename="' . $nombreLimpio . '"; filename*=UTF-8\'\'' . rawurlencode($nombre));
+        header('X-Content-Type-Options: nosniff');
         header('Content-Length: ' . strlen($contenido));
         echo $contenido;
         exit;

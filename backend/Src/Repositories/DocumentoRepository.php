@@ -20,7 +20,24 @@ class DocumentoRepository extends BaseRepository
         'fecha_carga',
     ];
 
-    protected const ORDEN = 'id';
+    protected const ORDEN = 'tipo_documento, id';
+
+    /**
+     * Tipos de documento ya cargados por cada deportista con ese
+     * estado_registro, en UNA sola consulta (indicador de faltantes de la
+     * lista de pendientes de validacion, sin una consulta por deportista).
+     *
+     * @return array<int, array{deportista_documento: string, tipo_documento: string}>
+     */
+    public function tiposPorEstadoRegistro(string $estadoRegistro): array
+    {
+        return $this->consultar(
+            'SELECT DISTINCT d.deportista_documento, d.tipo_documento FROM documento d '
+            . 'JOIN deportista p ON p.documento = d.deportista_documento '
+            . 'WHERE p.estado_registro = :estado_registro ORDER BY d.deportista_documento, d.tipo_documento',
+            ['estado_registro' => $estadoRegistro]
+        );
+    }
 
     /**
      * Obtiene una fila de `documento` por su llave primaria `id`.

@@ -36,6 +36,30 @@ class DeportistaRepository extends BaseRepository
     }
 
     /**
+     * Autocompletado: documento que empieza por $texto o nombre que lo
+     * contiene. La collation utf8mb4_unicode_ci ya ignora mayusculas y
+     * tildes. Los comodines de LIKE (%, _ y la barra invertida, que es el
+     * caracter de escape) se escapan para que el texto sea literal. Devuelve
+     * solo las columnas de identificacion, ordenadas por nombre y documento.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function buscar(string $texto, int $limite): array
+    {
+        $literal = addcslashes($texto, '\\%_');
+        return $this->consultar(
+            "SELECT documento, nombre, estado, estado_registro, grado_actual FROM deportista "
+            . "WHERE documento LIKE :prefijo ESCAPE '\\\\' OR nombre LIKE :contiene ESCAPE '\\\\' "
+            . 'ORDER BY nombre, documento LIMIT :limite',
+            [
+                'prefijo' => $literal . '%',
+                'contiene' => '%' . $literal . '%',
+                'limite' => $limite,
+            ]
+        );
+    }
+
+    /**
      * Indica si existe un deportista con ese documento (sin leer la fila).
      */
     public function existePorId(string $documento): bool

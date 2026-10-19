@@ -23,9 +23,8 @@ class AuthService
 {
     private const UMBRAL_INTENTOS = 4;
     private const MINUTOS_BLOQUEO = 15;
-    private const MINIMO_CONTRASENA = 8;
-    /** Límite de bcrypt: ignora en silencio los bytes después del 72. */
-    private const MAXIMO_BYTES_CONTRASENA = 72;
+    // MINIMO_CONTRASENA (8) y el máximo de 72 bytes viven en Validador,
+    // compartidos con UsuarioAdministrativoService.
     /** Vigencia del token de recuperación, en segundos (1 hora, RN-T.12). */
     private const VIGENCIA_TOKEN = 3600;
     /** Espera mínima entre dos solicitudes de recuperación, en segundos. */
@@ -33,7 +32,6 @@ class AuthService
 
     private const ZONA_HORARIA = 'America/Bogota';
     private const FORMATO_FECHA_HORA = 'Y-m-d H:i:s';
-    private const MAXIMO_CORREO = 150;
     private const MAXIMO_DOCUMENTO = 20;
 
     /**
@@ -68,8 +66,8 @@ class AuthService
      */
     public function iniciarSesionAdministrativa(array $credenciales): array
     {
-        $correo = $this->correo($credenciales['correo'] ?? null);
-        $contrasena = $this->contrasenaRecibida($credenciales['contrasena'] ?? null, 'contrasena');
+        $correo = Validador::correo($credenciales['correo'] ?? null);
+        $contrasena = Validador::contrasenaRecibida($credenciales['contrasena'] ?? null, 'contrasena');
 
         $this->exigirSinBloqueo('administrativa', $correo);
 
@@ -180,8 +178,8 @@ class AuthService
             throw new ExcepcionNegocio('Solo las cuentas administrativas tienen contraseña.', 403);
         }
 
-        $actual = $this->contrasenaRecibida($datos['contrasena_actual'] ?? null, 'contrasena_actual');
-        $nueva = $this->contrasenaNueva($datos['contrasena_nueva'] ?? null);
+        $actual = Validador::contrasenaRecibida($datos['contrasena_actual'] ?? null, 'contrasena_actual');
+        $nueva = Validador::contrasenaNueva($datos['contrasena_nueva'] ?? null);
 
         $cuenta = $this->usuarioAdministrativo->obtenerParaAutenticacion($usuario['identificador']);
         if ($cuenta === null || !password_verify($actual, $cuenta['contrasena'])) {
@@ -204,7 +202,7 @@ class AuthService
      */
     public function solicitarRecuperacionContrasena(array $datos): string
     {
-        $correo = $this->correo($datos['correo'] ?? null);
+        $correo = Validador::correo($datos['correo'] ?? null);
 
         $cuenta = $this->usuarioAdministrativo->obtenerParaAutenticacion($correo);
         if ($cuenta === null || !(bool) $cuenta['activa'] || $this->solicitudReciente($cuenta['token_recuperacion_expira'])) {
@@ -243,7 +241,7 @@ class AuthService
      */
     public function restablecerContrasena(array $datos): void
     {
-        $nueva = $this->contrasenaNueva($datos['contrasena_nueva'] ?? null);
+        $nueva = Validador::contrasenaNueva($datos['contrasena_nueva'] ?? null);
         $token = $datos['token'] ?? null;
         if (!is_string($token) || preg_match('/^[0-9a-f]{64}$/', $token) !== 1) {
             throw new ExcepcionNegocio(self::MENSAJE_ENLACE_INVALIDO, 400);
@@ -362,22 +360,6 @@ class AuthService
         return new DateTimeImmutable('now', new DateTimeZone(self::ZONA_HORARIA));
     }
 
-    /**
-     * Correo recortado y en minúsculas, con formato válido y que quepa en la
-     * columna (150). Un dato mal formado es 400 y no cuenta como fallo.
-     */
-    private function correo(mixed $valor): string
-    {
-        if (!is_string($valor) || trim($valor) === '') {
-            throw new ExcepcionNegocio('El campo "correo" es obligatorio.', 400);
-        }
-        $correo = mb_strtolower(trim($valor));
-        if (mb_strlen($correo) > self::MAXIMO_CORREO || filter_var($correo, FILTER_VALIDATE_EMAIL) === false) {
-            throw new ExcepcionNegocio('El campo "correo" debe ser un correo electrónico válido de máximo 150 caracteres.', 400);
-        }
-        return $correo;
-    }
-
     private function documento(mixed $valor): string
     {
         if ((!is_string($valor) && !is_int($valor)) || trim((string) $valor) === '') {
@@ -400,33 +382,5 @@ class AuthService
             throw new ExcepcionNegocio('El campo "fecha_nacimiento" debe ser una fecha válida con formato AAAA-MM-DD.', 400);
         }
         return $valor;
-    }
-
-    /**
-     * Contraseña tal como la escribió la persona (sin recortar espacios).
-     */
-    private function contrasenaRecibida(mixed $valor, string $campo): string
-    {
-        if (!is_string($valor) || $valor === '') {
-            throw new ExcepcionNegocio("El campo \"{$campo}\" es obligatorio.", 400);
-        }
-        return $valor;
-    }
-
-    /**
-     * Contraseña nueva (RN-T.18, B.8): mínimo 8 caracteres y máximo 72 bytes
-     * (límite de bcrypt). El paso de Usuarios administrativos la reutilizará
-     * al crear cuentas; ahí se extrae a Validador.
-     */
-    private function contrasenaNueva(mixed $valor): string
-    {
-        $contrasena = $this->contrasenaRecibida($valor, 'contrasena_nueva');
-        if (mb_strlen($contrasena) < self::MINIMO_CONTRASENA) {
-            throw new ExcepcionNegocio('La contraseña debe tener al menos 8 caracteres.', 400);
-        }
-        if (strlen($contrasena) > self::MAXIMO_BYTES_CONTRASENA) {
-            throw new ExcepcionNegocio('La contraseña no puede superar 72 caracteres.', 400);
-        }
-        return $contrasena;
     }
 }

@@ -35,6 +35,7 @@ class DeportistaController
         match ($accion) {
             'listar' => $this->manejarListar($metodo, $parametros),
             'consultar' => $this->manejarConsultar($metodo, $parametros),
+            'buscar' => $this->manejarBuscar($metodo, $parametros),
             'crear' => $this->manejarCrear($metodo, $parametros),
             'actualizar' => $this->manejarActualizar($metodo, $parametros),
             'eliminar' => $this->manejarEliminar($metodo, $parametros),
@@ -46,6 +47,13 @@ class DeportistaController
     {
         Solicitud::exigirMetodo('GET', $metodo);
         $resultado = $this->servicio()->listar($parametros);
+        Respuesta::exito($resultado);
+    }
+
+    private function manejarBuscar(string $metodo, array $parametros): void
+    {
+        Solicitud::exigirMetodo('GET', $metodo);
+        $resultado = $this->servicio()->buscar($parametros);
         Respuesta::exito($resultado);
     }
 

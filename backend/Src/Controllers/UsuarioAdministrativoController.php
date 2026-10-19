@@ -6,9 +6,15 @@ declare(strict_types=1);
  * Controller HTTP del modulo UsuarioAdministrativo.
  * Gestion de cuentas administrativas (RN-T.10/RN-T.11/RN-T.12).
  *
- * Recibe la solicitud ya autenticada (segun la politica de acceso de
- * Public/api.php), despacha segun la accion solicitada y delega toda
- * logica de negocio a UsuarioAdministrativoService.
+ * Public/api.php ya aplico la politica 'solo_administrativa' (sesion
+ * administrativa valida y cuenta activa). Que la cuenta sea principal
+ * (es_administrador_principal) lo valida UsuarioAdministrativoService en
+ * cada accion: depende de la identidad, no del ambito. Este Controller solo
+ * despacha segun la accion y delega toda logica de negocio al Service.
+ *
+ * Acciones: listar y consultar (GET); crear (POST); actualizar, desactivar,
+ * reactivar y restablecerContrasena (PUT, con ?correo=). No existe
+ * "eliminar": las cuentas se desactivan, no se borran (RN-T.11).
  */
 class UsuarioAdministrativoController
 {
@@ -37,7 +43,9 @@ class UsuarioAdministrativoController
             'consultar' => $this->manejarConsultar($metodo, $parametros),
             'crear' => $this->manejarCrear($metodo, $parametros),
             'actualizar' => $this->manejarActualizar($metodo, $parametros),
-            'eliminar' => $this->manejarEliminar($metodo, $parametros),
+            'desactivar' => $this->manejarDesactivar($metodo, $parametros),
+            'reactivar' => $this->manejarReactivar($metodo, $parametros),
+            'restablecerContrasena' => $this->manejarRestablecerContrasena($metodo, $parametros),
             default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
         };
     }
@@ -45,7 +53,7 @@ class UsuarioAdministrativoController
     private function manejarListar(string $metodo, array $parametros): void
     {
         Solicitud::exigirMetodo('GET', $metodo);
-        $resultado = $this->servicio()->listar($parametros);
+        $resultado = $this->servicio()->listar();
         Respuesta::exito($resultado);
     }
 
@@ -75,10 +83,25 @@ class UsuarioAdministrativoController
         Respuesta::exito($resultado);
     }
 
-    private function manejarEliminar(string $metodo, array $parametros): void
+    private function manejarDesactivar(string $metodo, array $parametros): void
     {
-        Solicitud::exigirMetodo('DELETE', $metodo);
-        $this->servicio()->eliminar($parametros);
-        Respuesta::exito(['eliminado' => true]);
+        Solicitud::exigirMetodo('PUT', $metodo);
+        $resultado = $this->servicio()->desactivar($parametros);
+        Respuesta::exito($resultado);
+    }
+
+    private function manejarReactivar(string $metodo, array $parametros): void
+    {
+        Solicitud::exigirMetodo('PUT', $metodo);
+        $resultado = $this->servicio()->reactivar($parametros);
+        Respuesta::exito($resultado);
+    }
+
+    private function manejarRestablecerContrasena(string $metodo, array $parametros): void
+    {
+        Solicitud::exigirMetodo('PUT', $metodo);
+        $datos = Solicitud::cuerpoJson();
+        $this->servicio()->restablecerContrasena($parametros, $datos);
+        Respuesta::exito(['contrasena_restablecida' => true]);
     }
 }

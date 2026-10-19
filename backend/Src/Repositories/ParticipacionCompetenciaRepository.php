@@ -39,6 +39,27 @@ class ParticipacionCompetenciaRepository extends BaseRepository
     }
 
     /**
+     * Record de combates de un deportista: suma de combates_ganados y
+     * combates_perdidos de todas sus participaciones. Una sola consulta
+     * agregada sin GROUP BY (valida con ONLY_FULL_GROUP_BY); COALESCE deja 0
+     * cuando no hay filas o todas son NULL.
+     *
+     * @return array{combates_ganados: int, combates_perdidos: int}
+     */
+    public function recordDeCombates(string $deportistaDocumento): array
+    {
+        $fila = $this->consultarUno(
+            'SELECT COALESCE(SUM(combates_ganados), 0) AS combates_ganados, COALESCE(SUM(combates_perdidos), 0) AS combates_perdidos '
+            . 'FROM participacion_competencia WHERE deportista_documento = :deportista_documento',
+            ['deportista_documento' => $deportistaDocumento]
+        );
+        return [
+            'combates_ganados' => (int) ($fila['combates_ganados'] ?? 0),
+            'combates_perdidos' => (int) ($fila['combates_perdidos'] ?? 0),
+        ];
+    }
+
+    /**
      * Inserta una nueva fila en `participacion_competencia` a partir de un ParticipacionCompetenciaModel.
      */
     public function crear(ParticipacionCompetenciaModel $modelo): bool

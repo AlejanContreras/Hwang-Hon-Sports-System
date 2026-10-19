@@ -16,9 +16,11 @@ declare(strict_types=1);
  *     (documento, nombre, relacion, telefono y correo; solo el ambito
  *     administrativo lo registra o lo edita).
  *
- * Edad y categoria por edad (RN-1.3, RN-3.8, Especificacion A.1) se calculan
- * al consultar y nunca se guardan. La categoria por peso queda PENDIENTE
- * (faltan los valores oficiales de Mayores).
+ * Edad, categoria por edad y categoria por peso (RN-1.3, RN-3.8,
+ * Especificacion A.1; tabla PROPUESTA del Contexto Base 35.5) se calculan al
+ * leer y nunca se guardan. consultar agrega el record de combates (suma de
+ * participacion_competencia); listar no, para no hacer una consulta por fila.
+ * buscar (solo administrativo) es el autocompletado por nombre o documento.
  */
 class DeportistaService
 {
@@ -39,6 +41,33 @@ class DeportistaService
         [36, 45, 'Sénior'],
         [46, null, 'Máster'],
     ];
+
+    /**
+     * Categoria por peso: tabla PROPUESTA (Contexto Base 35.5), provisional y
+     * reemplazable por la oficial de la federacion. Este es el UNICO lugar de
+     * la tabla. Cada entrada: [categorias por edad a las que aplica, cortes en
+     * kg por sexo]. Corte INCLUSIVO: el peso hasta el corte pertenece a esa
+     * categoria ("-35"); por encima del ultimo corte, "+X". Los 15 anos
+     * (Juvenil) usan la tabla de Mayores (PROPUESTA: no tienen tabla propia).
+     */
+    private const CATEGORIAS_PESO = [
+        [['Infantil'], [
+            'masculino' => [20, 25, 30, 35],
+            'femenino' => [20, 25, 30, 35],
+        ]],
+        [['Junior'], [
+            'masculino' => [35, 40, 45, 50],
+            'femenino' => [35, 40],
+        ]],
+        [['Juvenil', 'Mayores', 'Sénior', 'Máster'], [
+            'masculino' => [55, 60, 65, 70, 75, 80, 85],
+            'femenino' => [50, 55, 60, 65, 70, 75, 80],
+        ]],
+    ];
+
+    /** Maximo de resultados del autocompletado (buscar). */
+    private const MAXIMO_RESULTADOS_BUSQUEDA = 20;
+    private const MINIMO_TEXTO_BUSQUEDA = 2;
 
     private const FILTROS_ADMINISTRATIVOS = [
         'estado', 'estado_registro', 'sede_entrenamiento', 'grado_actual', 'acudiente_documento',
@@ -64,11 +93,13 @@ class DeportistaService
 
     private DeportistaRepository $deportista;
     private AcudienteTutorRepository $acudiente;
+    private ParticipacionCompetenciaRepository $participacion;
 
     public function __construct()
     {
         $this->deportista = new DeportistaRepository();
         $this->acudiente = new AcudienteTutorRepository();
+        $this->participacion = new ParticipacionCompetenciaRepository();
     }
 
     /**
@@ -116,11 +147,36 @@ class DeportistaService
         }
 
         $ficha = $this->formatear($fila, $usuario['ambito'] === 'administrativa');
+        $record = $this->participacion->recordDeCombates($documento);
+        $ficha['combates_ganados'] = $record['combates_ganados'];
+        $ficha['combates_perdidos'] = $record['combates_perdidos'];
         $ficha['acudiente'] = $fila['acudiente_documento'] === null
             ? null
             : $this->acudiente->obtenerPorId($fila['acudiente_documento']);
 
         return $ficha;
+    }
+
+    /**
+     * Autocompletado (solo administrativo): documento que EMPIEZA por el texto
+     * o nombre que lo CONTIENE (la collation de la tabla ignora mayusculas y
+     * tildes). El texto es literal: los comodines de LIKE se escapan en el
+     * Repository. Incluye inactivos y pendientes de validacion (RN-3.9).
+     * Maximo 20 resultados, ordenados por nombre y documento, solo con datos
+     * de identificacion (sin salud ni contacto).
+     *
+     * @return array<int, array{documento: string, nombre: string, estado: string, estado_registro: string, grado_actual: ?string}>
+     */
+    public function buscar(array $parametros): array
+    {
+        $this->exigirAdministrativo('buscar deportistas');
+
+        $texto = $parametros['texto'] ?? null;
+        if (!is_string($texto) || mb_strlen(trim($texto)) < self::MINIMO_TEXTO_BUSQUEDA) {
+            throw new ExcepcionNegocio('Escribe al menos 2 caracteres para buscar.', 400);
+        }
+
+        return $this->deportista->buscar(trim($texto), self::MAXIMO_RESULTADOS_BUSQUEDA);
     }
 
     /**
@@ -134,7 +190,7 @@ class DeportistaService
         $this->exigirAdministrativo('registrar deportistas');
         $this->rechazarCamposNoPermitidos($datos, self::CAMPOS_CREAR, 400, 'Campos no reconocidos');
 
-        $documento = $this->texto($datos['documento'] ?? null, 'documento', 20, true);
+        $documento = Validador::texto($datos['documento'] ?? null, 'documento', 20, true);
         $fechaNacimiento = $this->fecha($datos['fecha_nacimiento'] ?? null, 'fecha_nacimiento', true);
         $fechaIngreso = $this->fecha($datos['fecha_ingreso'] ?? null, 'fecha_ingreso', false)
             ?? (new DateTimeImmutable('today'))->format('Y-m-d');
@@ -142,21 +198,21 @@ class DeportistaService
 
         $modelo = new DeportistaModel(
             documento: $documento,
-            nombre: $this->texto($datos['nombre'] ?? null, 'nombre', 150, true),
+            nombre: Validador::texto($datos['nombre'] ?? null, 'nombre', 150, true),
             fechaNacimiento: $fechaNacimiento,
-            lugarNacimiento: $this->texto($datos['lugar_nacimiento'] ?? null, 'lugar_nacimiento', 100, false),
+            lugarNacimiento: Validador::texto($datos['lugar_nacimiento'] ?? null, 'lugar_nacimiento', 100, false),
             sexo: $this->opcion($datos['sexo'] ?? null, 'sexo', self::SEXOS, true),
             estatura: $this->decimal($datos['estatura'] ?? null, 'estatura', 99.99),
             peso: $this->decimal($datos['peso'] ?? null, 'peso', 999.99),
             telefono: $this->telefono($datos['telefono'] ?? null),
-            direccion: $this->texto($datos['direccion'] ?? null, 'direccion', 150, false),
-            correo: $this->correo($datos['correo'] ?? null),
-            discapacidad: $this->texto($datos['discapacidad'] ?? null, 'discapacidad', 255, false),
-            experienciaPrevia: $this->texto($datos['experiencia_previa'] ?? null, 'experiencia_previa', self::MAXIMO_EXPERIENCIA_PREVIA, false),
+            direccion: Validador::texto($datos['direccion'] ?? null, 'direccion', 150, false),
+            correo: Validador::correoOpcional($datos['correo'] ?? null),
+            discapacidad: Validador::texto($datos['discapacidad'] ?? null, 'discapacidad', 255, false),
+            experienciaPrevia: Validador::texto($datos['experiencia_previa'] ?? null, 'experiencia_previa', self::MAXIMO_EXPERIENCIA_PREVIA, false),
             estadoAnimico: null,
-            sedeEntrenamiento: $this->texto($datos['sede_entrenamiento'] ?? null, 'sede_entrenamiento', 100, false),
+            sedeEntrenamiento: Validador::texto($datos['sede_entrenamiento'] ?? null, 'sede_entrenamiento', 100, false),
             autorizacionDatos: $this->booleano($datos['autorizacion_datos'] ?? false, 'autorizacion_datos'),
-            gradoActual: $this->texto($datos['grado_actual'] ?? null, 'grado_actual', 30, false),
+            gradoActual: Validador::texto($datos['grado_actual'] ?? null, 'grado_actual', 30, false),
             fechaIngreso: $fechaIngreso,
             estado: $this->opcion($datos['estado'] ?? null, 'estado', self::ESTADOS, false) ?? 'activo',
             estadoRegistro: 'validado',
@@ -225,16 +281,16 @@ class DeportistaService
             $modelo->establecerPeso($this->decimal($datos['peso'], 'peso', 999.99));
         }
         if (array_key_exists('discapacidad', $datos)) {
-            $modelo->establecerDiscapacidad($this->texto($datos['discapacidad'], 'discapacidad', 255, false));
+            $modelo->establecerDiscapacidad(Validador::texto($datos['discapacidad'], 'discapacidad', 255, false));
         }
         if (array_key_exists('telefono', $datos)) {
             $modelo->establecerTelefono($this->telefono($datos['telefono']));
         }
         if (array_key_exists('direccion', $datos)) {
-            $modelo->establecerDireccion($this->texto($datos['direccion'], 'direccion', 150, false));
+            $modelo->establecerDireccion(Validador::texto($datos['direccion'], 'direccion', 150, false));
         }
         if (array_key_exists('correo', $datos)) {
-            $modelo->establecerCorreo($this->correo($datos['correo']));
+            $modelo->establecerCorreo(Validador::correoOpcional($datos['correo']));
         }
 
         $acudienteNuevo = null;
@@ -345,17 +401,17 @@ class DeportistaService
     private function aplicarCamposAdministrativos(DeportistaModel $modelo, array $datos, array $fila, string $correoAdministrativo): void
     {
         if (array_key_exists('nombre', $datos)) {
-            $modelo->establecerNombre($this->texto($datos['nombre'], 'nombre', 150, true));
+            $modelo->establecerNombre(Validador::texto($datos['nombre'], 'nombre', 150, true));
         }
         if (array_key_exists('fecha_nacimiento', $datos)) {
             $modelo->establecerFechaNacimiento($this->fecha($datos['fecha_nacimiento'], 'fecha_nacimiento', true));
         }
         if (array_key_exists('lugar_nacimiento', $datos)) {
-            $modelo->establecerLugarNacimiento($this->texto($datos['lugar_nacimiento'], 'lugar_nacimiento', 100, false));
+            $modelo->establecerLugarNacimiento(Validador::texto($datos['lugar_nacimiento'], 'lugar_nacimiento', 100, false));
         }
         if (array_key_exists('experiencia_previa', $datos)) {
             $modelo->establecerExperienciaPrevia(
-                $this->texto($datos['experiencia_previa'], 'experiencia_previa', self::MAXIMO_EXPERIENCIA_PREVIA, false)
+                Validador::texto($datos['experiencia_previa'], 'experiencia_previa', self::MAXIMO_EXPERIENCIA_PREVIA, false)
             );
         }
         if (array_key_exists('sexo', $datos)) {
@@ -365,13 +421,13 @@ class DeportistaService
             $modelo->establecerEstatura($this->decimal($datos['estatura'], 'estatura', 99.99));
         }
         if (array_key_exists('sede_entrenamiento', $datos)) {
-            $modelo->establecerSedeEntrenamiento($this->texto($datos['sede_entrenamiento'], 'sede_entrenamiento', 100, false));
+            $modelo->establecerSedeEntrenamiento(Validador::texto($datos['sede_entrenamiento'], 'sede_entrenamiento', 100, false));
         }
         if (array_key_exists('autorizacion_datos', $datos)) {
             $modelo->establecerAutorizacionDatos($this->booleano($datos['autorizacion_datos'], 'autorizacion_datos'));
         }
         if (array_key_exists('grado_actual', $datos)) {
-            $modelo->establecerGradoActual($this->texto($datos['grado_actual'], 'grado_actual', 30, false));
+            $modelo->establecerGradoActual(Validador::texto($datos['grado_actual'], 'grado_actual', 30, false));
         }
         if (array_key_exists('fecha_ingreso', $datos)) {
             $modelo->establecerFechaIngreso($this->fecha($datos['fecha_ingreso'], 'fecha_ingreso', true));
@@ -421,7 +477,7 @@ class DeportistaService
 
         $actual = $modelo->obtenerAcudienteDocumento();
         $documentoPedido = array_key_exists('documento', $datosAcudiente)
-            ? $this->texto($datosAcudiente['documento'], 'acudiente.documento', 20, true)
+            ? Validador::texto($datosAcudiente['documento'], 'acudiente.documento', 20, true)
             : null;
 
         if ($documentoPedido !== null && $documentoPedido !== $actual) {
@@ -435,16 +491,16 @@ class DeportistaService
         }
         $acudiente = AcudienteTutorModel::fromArray($this->acudiente->obtenerPorId($actual) ?? []);
         if (array_key_exists('nombre', $datosAcudiente)) {
-            $acudiente->establecerNombre($this->texto($datosAcudiente['nombre'], 'acudiente.nombre', 150, true));
+            $acudiente->establecerNombre(Validador::texto($datosAcudiente['nombre'], 'acudiente.nombre', 150, true));
         }
         if (array_key_exists('relacion', $datosAcudiente)) {
-            $acudiente->establecerRelacion($this->texto($datosAcudiente['relacion'], 'acudiente.relacion', 50, true));
+            $acudiente->establecerRelacion(Validador::texto($datosAcudiente['relacion'], 'acudiente.relacion', 50, true));
         }
         if (array_key_exists('telefono', $datosAcudiente)) {
             $acudiente->establecerTelefono($this->telefono($datosAcudiente['telefono'], 'acudiente.telefono'));
         }
         if (array_key_exists('correo', $datosAcudiente)) {
-            $acudiente->establecerCorreo($this->correo($datosAcudiente['correo'], 'acudiente.correo'));
+            $acudiente->establecerCorreo(Validador::correoOpcional($datosAcudiente['correo'], 'acudiente.correo'));
         }
         return [null, $acudiente];
     }
@@ -475,7 +531,7 @@ class DeportistaService
         }
         $this->rechazarCamposNoPermitidos($datosAcudiente, self::CAMPOS_ACUDIENTE, 400, 'Campos de acudiente no reconocidos');
 
-        $documento = $this->texto($datosAcudiente['documento'] ?? null, 'acudiente.documento', 20, true);
+        $documento = Validador::texto($datosAcudiente['documento'] ?? null, 'acudiente.documento', 20, true);
         if ($documento === $documentoDeportista) {
             throw new ExcepcionNegocio('El deportista no puede ser su propio acudiente.', 400);
         }
@@ -486,10 +542,10 @@ class DeportistaService
 
         return [$documento, new AcudienteTutorModel(
             documento: $documento,
-            nombre: $this->texto($datosAcudiente['nombre'] ?? null, 'acudiente.nombre', 150, true),
-            relacion: $this->texto($datosAcudiente['relacion'] ?? null, 'acudiente.relacion', 50, true),
+            nombre: Validador::texto($datosAcudiente['nombre'] ?? null, 'acudiente.nombre', 150, true),
+            relacion: Validador::texto($datosAcudiente['relacion'] ?? null, 'acudiente.relacion', 50, true),
             telefono: $this->telefono($datosAcudiente['telefono'] ?? null, 'acudiente.telefono'),
-            correo: $this->correo($datosAcudiente['correo'] ?? null, 'acudiente.correo'),
+            correo: Validador::correoOpcional($datosAcudiente['correo'] ?? null, 'acudiente.correo'),
         )];
     }
 
@@ -513,8 +569,34 @@ class DeportistaService
     }
 
     /**
+     * Categoria por peso segun CATEGORIAS_PESO, a partir de la categoria por
+     * edad ya calculada (misma edad). null si no hay categoria por edad
+     * (menor de 8) o si falta el peso.
+     */
+    private function categoriaPorPeso(?string $categoriaEdad, string $sexo, float $peso): ?string
+    {
+        if ($categoriaEdad === null || $peso <= 0) {
+            return null;
+        }
+        foreach (self::CATEGORIAS_PESO as [$categoriasEdad, $cortesPorSexo]) {
+            if (!in_array($categoriaEdad, $categoriasEdad, true) || !isset($cortesPorSexo[$sexo])) {
+                continue;
+            }
+            $cortes = $cortesPorSexo[$sexo];
+            foreach ($cortes as $corte) {
+                if ($peso <= $corte) {
+                    return '-' . $corte;
+                }
+            }
+            return '+' . end($cortes);
+        }
+        return null;
+    }
+
+    /**
      * Forma de un deportista en las respuestas: tipos correctos, sin
-     * estado_animico (reservado, no visible: RN-2.4) y con edad y categoria.
+     * estado_animico (reservado, no visible: RN-2.4) y con edad, categoria
+     * por edad y categoria por peso.
      * validado_por_correo (correo del administrativo que valido) solo sale en
      * el ambito administrativo: la cuenta publica la puede usar cualquier
      * familiar.
@@ -530,6 +612,11 @@ class DeportistaService
         $edad = $this->calcularEdad($deportista['fecha_nacimiento']);
         $deportista['edad'] = $edad;
         $deportista['categoria_edad'] = $this->categoriaPorEdad($edad);
+        $deportista['categoria_peso'] = $this->categoriaPorPeso(
+            $deportista['categoria_edad'],
+            $deportista['sexo'],
+            $deportista['peso']
+        );
 
         return $deportista;
     }
@@ -540,7 +627,7 @@ class DeportistaService
 
     private function documentoDe(array $identificador): string
     {
-        return $this->texto($identificador['documento'] ?? null, 'documento', 20, true);
+        return Validador::texto($identificador['documento'] ?? null, 'documento', 20, true);
     }
 
     /**
@@ -554,24 +641,6 @@ class DeportistaService
         }
     }
 
-    private function texto(mixed $valor, string $campo, int $maximo, bool $obligatorio): ?string
-    {
-        if ($valor === null || (is_string($valor) && trim($valor) === '')) {
-            if ($obligatorio) {
-                throw new ExcepcionNegocio("El campo \"{$campo}\" es obligatorio.", 400);
-            }
-            return null;
-        }
-        if (!is_string($valor) && !is_int($valor)) {
-            throw new ExcepcionNegocio("El campo \"{$campo}\" debe ser texto.", 400);
-        }
-        $texto = trim((string) $valor);
-        if (mb_strlen($texto) > $maximo) {
-            throw new ExcepcionNegocio("El campo \"{$campo}\" admite maximo {$maximo} caracteres.", 400);
-        }
-        return $texto;
-    }
-
     /**
      * Telefono opcional (del deportista o del acudiente; mismo largo de
      * columna, VARCHAR 20): digitos y espacios, con un + inicial opcional
@@ -580,25 +649,11 @@ class DeportistaService
      */
     private function telefono(mixed $valor, string $campo = 'telefono'): ?string
     {
-        $telefono = $this->texto($valor, $campo, 20, false);
+        $telefono = Validador::texto($valor, $campo, 20, false);
         if ($telefono !== null && preg_match('/^\+?[0-9][0-9 ]*$/', $telefono) !== 1) {
             throw new ExcepcionNegocio("El campo \"{$campo}\" solo admite dígitos, espacios y un + inicial.", 400);
         }
         return $telefono;
-    }
-
-    /**
-     * Correo opcional con formato valido (usuario@dominio), del deportista o
-     * del acudiente (mismo largo de columna, VARCHAR 150). Sin indice unico:
-     * hermanos menores pueden compartirlo (RN-1.10).
-     */
-    private function correo(mixed $valor, string $campo = 'correo'): ?string
-    {
-        $correo = $this->texto($valor, $campo, 150, false);
-        if ($correo !== null && filter_var($correo, FILTER_VALIDATE_EMAIL) === false) {
-            throw new ExcepcionNegocio("El campo \"{$campo}\" debe ser un correo electrónico válido.", 400);
-        }
-        return $correo;
     }
 
     /**
