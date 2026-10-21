@@ -126,14 +126,16 @@ class EventoCalendarioModel
      */
     public static function fromArray(array $datos): self
     {
+        // Conversion explicita: con strict_types, un id que llegue como texto
+        // lanzaria TypeError.
         return new self(
-            id: $datos['id'] ?? 0,
-            nombre: $datos['nombre'] ?? '',
-            tipo: $datos['tipo'] ?? '',
-            fecha: $datos['fecha'] ?? '',
-            lugar: $datos['lugar'] ?? '',
-            visibilidad: $datos['visibilidad'] ?? '',
-            observaciones: $datos['observaciones'] ?? null,
+            id: (int) ($datos['id'] ?? 0),
+            nombre: (string) ($datos['nombre'] ?? ''),
+            tipo: (string) ($datos['tipo'] ?? ''),
+            fecha: (string) ($datos['fecha'] ?? ''),
+            lugar: (string) ($datos['lugar'] ?? ''),
+            visibilidad: (string) ($datos['visibilidad'] ?? ''),
+            observaciones: isset($datos['observaciones']) ? (string) $datos['observaciones'] : null,
         );
     }
 }

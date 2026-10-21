@@ -60,6 +60,18 @@ class DeportistaRepository extends BaseRepository
     }
 
     /**
+     * Cambia solo el estado activo/inactivo (RN-1.11), sin reescribir el
+     * resto de la fila.
+     */
+    public function actualizarEstado(string $documento, string $estado): void
+    {
+        $this->ejecutar(
+            'UPDATE deportista SET estado = :estado WHERE documento = :documento',
+            ['estado' => $estado, 'documento' => $documento]
+        );
+    }
+
+    /**
      * Indica si existe un deportista con ese documento (sin leer la fila).
      */
     public function existePorId(string $documento): bool

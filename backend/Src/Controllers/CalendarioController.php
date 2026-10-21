@@ -3,12 +3,15 @@
 declare(strict_types=1);
 
 /**
- * Controller HTTP del modulo Calendario.
- * Eventos generales del calendario (RN-9.x). Comparte la tabla evento_calendario con el modulo Competencia; el Service filtra por evento_calendario.visibilidad.
+ * Controller HTTP del modulo Calendario (RN-9.x).
  *
- * Recibe la solicitud ya autenticada (segun la politica de acceso de
- * Public/api.php), despacha segun la accion solicitada y delega toda
- * logica de negocio a CalendarioService.
+ * Recibe la solicitud ya autenticada (politica 'autenticada' de
+ * Public/api.php), despacha segun la accion y delega toda logica de negocio
+ * a CalendarioService, que decide que ve y que puede hacer cada ambito.
+ *
+ * Acciones: listar, consultar y vista (GET); crear (POST); actualizar
+ * (PUT ?id=); importar (POST multipart, campo "archivo"). No existe
+ * "eliminar": los eventos se crean y se actualizan (RN-9.2).
  */
 class CalendarioController
 {
@@ -37,7 +40,8 @@ class CalendarioController
             'consultar' => $this->manejarConsultar($metodo, $parametros),
             'crear' => $this->manejarCrear($metodo, $parametros),
             'actualizar' => $this->manejarActualizar($metodo, $parametros),
-            'eliminar' => $this->manejarEliminar($metodo, $parametros),
+            'vista' => $this->manejarVista($metodo, $parametros),
+            'importar' => $this->manejarImportar($metodo, $parametros),
             default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
         };
     }
@@ -45,8 +49,7 @@ class CalendarioController
     private function manejarListar(string $metodo, array $parametros): void
     {
         Solicitud::exigirMetodo('GET', $metodo);
-        $resultado = $this->servicio()->listar($parametros);
-        Respuesta::exito($resultado);
+        Respuesta::exito($this->servicio()->listar($parametros));
     }
 
     private function manejarConsultar(string $metodo, array $parametros): void
@@ -62,23 +65,24 @@ class CalendarioController
     private function manejarCrear(string $metodo, array $parametros): void
     {
         Solicitud::exigirMetodo('POST', $metodo);
-        $datos = Solicitud::cuerpoJson();
-        $resultado = $this->servicio()->crear($datos);
-        Respuesta::exito($resultado, 201);
+        Respuesta::exito($this->servicio()->crear(Solicitud::cuerpoJson()), 201);
     }
 
     private function manejarActualizar(string $metodo, array $parametros): void
     {
         Solicitud::exigirMetodo('PUT', $metodo);
-        $datos = Solicitud::cuerpoJson();
-        $resultado = $this->servicio()->actualizar($parametros, $datos);
-        Respuesta::exito($resultado);
+        Respuesta::exito($this->servicio()->actualizar($parametros, Solicitud::cuerpoJson()));
     }
 
-    private function manejarEliminar(string $metodo, array $parametros): void
+    private function manejarVista(string $metodo, array $parametros): void
     {
-        Solicitud::exigirMetodo('DELETE', $metodo);
-        $this->servicio()->eliminar($parametros);
-        Respuesta::exito(['eliminado' => true]);
+        Solicitud::exigirMetodo('GET', $metodo);
+        Respuesta::exito($this->servicio()->vista($parametros));
+    }
+
+    private function manejarImportar(string $metodo, array $parametros): void
+    {
+        Solicitud::exigirMetodo('POST', $metodo);
+        Respuesta::exito($this->servicio()->importar());
     }
 }

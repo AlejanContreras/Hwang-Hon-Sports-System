@@ -120,6 +120,7 @@ class DocumentoService
     public function subir(array $datos): array
     {
         $usuario = $this->usuario();
+        ArchivoSubido::exigirCuerpoDentroDelLimite();
         $documento = $this->documentoDeportista($datos['documento'] ?? null);
         $tipo = $this->tipoDocumento($datos['tipo_documento'] ?? null);
         $esUnico = in_array($tipo, self::TIPOS_UNICOS, true);
@@ -169,6 +170,7 @@ class DocumentoService
     public function reemplazar(array $parametros): array
     {
         $this->exigirAdministrativo('reemplazar documentos');
+        ArchivoSubido::exigirCuerpoDentroDelLimite();
         $fila = $this->documentoExistente($this->idDe($parametros));
 
         $archivo = ArchivoSubido::leer('archivo', self::EXTENSIONES_POR_TIPO[$fila['tipo_documento']], self::TAMANO_MAXIMO_BYTES);
@@ -281,6 +283,7 @@ class DocumentoService
     public function subirGeneral(array $datos): array
     {
         $this->exigirAdministrativo('subir documentos generales');
+        ArchivoSubido::exigirCuerpoDentroDelLimite();
         $titulo = Validador::texto($datos['titulo'] ?? null, 'titulo', self::MAXIMO_TITULO, true);
 
         $archivo = ArchivoSubido::leer('archivo', self::EXTENSIONES_GENERALES, self::TAMANO_MAXIMO_BYTES);
@@ -307,6 +310,7 @@ class DocumentoService
     public function reemplazarGeneral(array $parametros, array $datos): array
     {
         $this->exigirAdministrativo('reemplazar documentos generales');
+        ArchivoSubido::exigirCuerpoDentroDelLimite();
         $fila = $this->generalExistente($this->idDe($parametros));
         $modelo = DocumentoGeneralModel::fromArray($fila);
         if (array_key_exists('titulo', $datos)) {
@@ -540,9 +544,20 @@ class DocumentoService
         return $nombre;
     }
 
+    /**
+     * Borra el archivo del disco. Si el nombre guardado en la base no tiene
+     * la forma esperada (valor alterado), no toca el disco: lo registra en el
+     * log y sigue, porque la fila ya se borró o se actualizó y responder 500
+     * a esa altura no ayuda a nadie.
+     */
     private function borrarArchivo(string $carpeta, string $nombre): void
     {
-        $ruta = $this->rutaSegura($carpeta, $nombre);
+        try {
+            $ruta = $this->rutaSegura($carpeta, $nombre);
+        } catch (RuntimeException $error) {
+            error_log('DocumentoService: no se borró del disco un archivo con nombre no válido en la base de datos: ' . $error->getMessage());
+            return;
+        }
         if (is_file($ruta) && !@unlink($ruta)) {
             error_log("DocumentoService: no se pudo borrar el archivo {$ruta}.");
         }

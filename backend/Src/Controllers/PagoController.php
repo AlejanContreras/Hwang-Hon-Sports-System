@@ -3,12 +3,15 @@
 declare(strict_types=1);
 
 /**
- * Controller HTTP del modulo Pago.
- * Pagos de mensualidad y matricula (RN-8.x).
+ * Controller HTTP del modulo Pagos (RN-8.x).
  *
- * Recibe la solicitud ya autenticada (segun la politica de acceso de
- * Public/api.php), despacha segun la accion solicitada y delega toda
- * logica de negocio a PagoService.
+ * Recibe la solicitud ya autenticada (politica 'autenticada' de
+ * Public/api.php), despacha segun la accion y delega toda logica de negocio
+ * a PagoService, que decide que puede hacer cada ambito.
+ *
+ * Acciones: registrar (POST), anular (DELETE ?id=), estado, deudores,
+ * listar y consultar (GET). No existe "actualizar": un pago no se edita, se
+ * anula y se vuelve a registrar.
  */
 class PagoController
 {
@@ -33,20 +36,45 @@ class PagoController
     public function manejar(string $metodo, string $accion, array $parametros): void
     {
         match ($accion) {
+            'registrar' => $this->manejarRegistrar($metodo, $parametros),
+            'anular' => $this->manejarAnular($metodo, $parametros),
+            'estado' => $this->manejarEstado($metodo, $parametros),
+            'deudores' => $this->manejarDeudores($metodo, $parametros),
             'listar' => $this->manejarListar($metodo, $parametros),
             'consultar' => $this->manejarConsultar($metodo, $parametros),
-            'crear' => $this->manejarCrear($metodo, $parametros),
-            'actualizar' => $this->manejarActualizar($metodo, $parametros),
-            'eliminar' => $this->manejarEliminar($metodo, $parametros),
             default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
         };
+    }
+
+    private function manejarRegistrar(string $metodo, array $parametros): void
+    {
+        Solicitud::exigirMetodo('POST', $metodo);
+        Respuesta::exito($this->servicio()->registrar(Solicitud::cuerpoJson()), 201);
+    }
+
+    private function manejarAnular(string $metodo, array $parametros): void
+    {
+        Solicitud::exigirMetodo('DELETE', $metodo);
+        $this->servicio()->anular($parametros);
+        Respuesta::exito(['eliminado' => true]);
+    }
+
+    private function manejarEstado(string $metodo, array $parametros): void
+    {
+        Solicitud::exigirMetodo('GET', $metodo);
+        Respuesta::exito($this->servicio()->estado($parametros));
+    }
+
+    private function manejarDeudores(string $metodo, array $parametros): void
+    {
+        Solicitud::exigirMetodo('GET', $metodo);
+        Respuesta::exito($this->servicio()->deudores());
     }
 
     private function manejarListar(string $metodo, array $parametros): void
     {
         Solicitud::exigirMetodo('GET', $metodo);
-        $resultado = $this->servicio()->listar($parametros);
-        Respuesta::exito($resultado);
+        Respuesta::exito($this->servicio()->listar($parametros));
     }
 
     private function manejarConsultar(string $metodo, array $parametros): void
@@ -57,28 +85,5 @@ class PagoController
             Respuesta::error(404, 'No encontrado.');
         }
         Respuesta::exito($resultado);
-    }
-
-    private function manejarCrear(string $metodo, array $parametros): void
-    {
-        Solicitud::exigirMetodo('POST', $metodo);
-        $datos = Solicitud::cuerpoJson();
-        $resultado = $this->servicio()->crear($datos);
-        Respuesta::exito($resultado, 201);
-    }
-
-    private function manejarActualizar(string $metodo, array $parametros): void
-    {
-        Solicitud::exigirMetodo('PUT', $metodo);
-        $datos = Solicitud::cuerpoJson();
-        $resultado = $this->servicio()->actualizar($parametros, $datos);
-        Respuesta::exito($resultado);
-    }
-
-    private function manejarEliminar(string $metodo, array $parametros): void
-    {
-        Solicitud::exigirMetodo('DELETE', $metodo);
-        $this->servicio()->eliminar($parametros);
-        Respuesta::exito(['eliminado' => true]);
     }
 }

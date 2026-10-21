@@ -22,6 +22,28 @@ class PagoRepository extends BaseRepository
     protected const ORDEN = 'anio, mes, id';
 
     /**
+     * Semana del ultimo pago de mensualidad de cada deportista, en una sola
+     * consulta. "Ultimo" = mayor (anio, mes), no mayor id (un pago adelantado
+     * registrado antes puede tener un mes posterior).
+     *
+     * @return array<string, int> documento => semana
+     */
+    public function semanasDelUltimoPago(): array
+    {
+        $resultado = [];
+        $filas = $this->consultar(
+            "SELECT p.deportista_documento, p.semana FROM pago p "
+            . "JOIN (SELECT deportista_documento, MAX(anio * 100 + mes) AS periodo FROM pago WHERE tipo = 'mensualidad' GROUP BY deportista_documento) u "
+            . "ON u.deportista_documento = p.deportista_documento AND p.anio * 100 + p.mes = u.periodo "
+            . "WHERE p.tipo = 'mensualidad'"
+        );
+        foreach ($filas as $fila) {
+            $resultado[(string) $fila['deportista_documento']] = (int) $fila['semana'];
+        }
+        return $resultado;
+    }
+
+    /**
      * Obtiene una fila de `pago` por su llave primaria `id`.
      */
     public function obtenerPorId(string|int $id): ?array

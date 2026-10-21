@@ -3,12 +3,15 @@
 declare(strict_types=1);
 
 /**
- * Controller HTTP del modulo Asistencia.
- * Registro de asistencia por fecha (RN-7.x).
+ * Controller HTTP del modulo Asistencia (RN-7.x, RN-1.11).
  *
- * Recibe la solicitud ya autenticada (segun la politica de acceso de
- * Public/api.php), despacha segun la accion solicitada y delega toda
- * logica de negocio a AsistenciaService.
+ * Recibe la solicitud ya autenticada (politica 'autenticada' de
+ * Public/api.php), despacha segun la accion y delega toda logica de negocio
+ * a AsistenciaService, que decide que puede hacer cada ambito.
+ *
+ * Acciones: listarPantalla, listar, consultar, resumenDia y porcentaje (GET);
+ * tomar y revisarInactivos (POST); corregir (PUT ?documento=&fecha=);
+ * eliminarMarca (DELETE ?documento=&fecha=) y eliminarFecha (DELETE ?fecha=).
  */
 class AsistenciaController
 {
@@ -33,20 +36,36 @@ class AsistenciaController
     public function manejar(string $metodo, string $accion, array $parametros): void
     {
         match ($accion) {
+            'tomar' => $this->manejarTomar($metodo, $parametros),
+            'listarPantalla' => $this->manejarListarPantalla($metodo, $parametros),
             'listar' => $this->manejarListar($metodo, $parametros),
             'consultar' => $this->manejarConsultar($metodo, $parametros),
-            'crear' => $this->manejarCrear($metodo, $parametros),
-            'actualizar' => $this->manejarActualizar($metodo, $parametros),
-            'eliminar' => $this->manejarEliminar($metodo, $parametros),
+            'resumenDia' => $this->manejarResumenDia($metodo, $parametros),
+            'corregir' => $this->manejarCorregir($metodo, $parametros),
+            'eliminarMarca' => $this->manejarEliminarMarca($metodo, $parametros),
+            'eliminarFecha' => $this->manejarEliminarFecha($metodo, $parametros),
+            'porcentaje' => $this->manejarPorcentaje($metodo, $parametros),
+            'revisarInactivos' => $this->manejarRevisarInactivos($metodo, $parametros),
             default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
         };
+    }
+
+    private function manejarTomar(string $metodo, array $parametros): void
+    {
+        Solicitud::exigirMetodo('POST', $metodo);
+        Respuesta::exito($this->servicio()->tomar(Solicitud::cuerpoJson()), 201);
+    }
+
+    private function manejarListarPantalla(string $metodo, array $parametros): void
+    {
+        Solicitud::exigirMetodo('GET', $metodo);
+        Respuesta::exito($this->servicio()->listarPantalla($parametros));
     }
 
     private function manejarListar(string $metodo, array $parametros): void
     {
         Solicitud::exigirMetodo('GET', $metodo);
-        $resultado = $this->servicio()->listar($parametros);
-        Respuesta::exito($resultado);
+        Respuesta::exito($this->servicio()->listar($parametros));
     }
 
     private function manejarConsultar(string $metodo, array $parametros): void
@@ -59,26 +78,40 @@ class AsistenciaController
         Respuesta::exito($resultado);
     }
 
-    private function manejarCrear(string $metodo, array $parametros): void
+    private function manejarResumenDia(string $metodo, array $parametros): void
     {
-        Solicitud::exigirMetodo('POST', $metodo);
-        $datos = Solicitud::cuerpoJson();
-        $resultado = $this->servicio()->crear($datos);
-        Respuesta::exito($resultado, 201);
+        Solicitud::exigirMetodo('GET', $metodo);
+        Respuesta::exito($this->servicio()->resumenDia());
     }
 
-    private function manejarActualizar(string $metodo, array $parametros): void
+    private function manejarCorregir(string $metodo, array $parametros): void
     {
         Solicitud::exigirMetodo('PUT', $metodo);
-        $datos = Solicitud::cuerpoJson();
-        $resultado = $this->servicio()->actualizar($parametros, $datos);
-        Respuesta::exito($resultado);
+        Respuesta::exito($this->servicio()->corregir($parametros, Solicitud::cuerpoJson()));
     }
 
-    private function manejarEliminar(string $metodo, array $parametros): void
+    private function manejarEliminarMarca(string $metodo, array $parametros): void
     {
         Solicitud::exigirMetodo('DELETE', $metodo);
-        $this->servicio()->eliminar($parametros);
+        $this->servicio()->eliminarMarca($parametros);
         Respuesta::exito(['eliminado' => true]);
+    }
+
+    private function manejarEliminarFecha(string $metodo, array $parametros): void
+    {
+        Solicitud::exigirMetodo('DELETE', $metodo);
+        Respuesta::exito($this->servicio()->eliminarFecha($parametros));
+    }
+
+    private function manejarPorcentaje(string $metodo, array $parametros): void
+    {
+        Solicitud::exigirMetodo('GET', $metodo);
+        Respuesta::exito($this->servicio()->porcentaje($parametros));
+    }
+
+    private function manejarRevisarInactivos(string $metodo, array $parametros): void
+    {
+        Solicitud::exigirMetodo('POST', $metodo);
+        Respuesta::exito($this->servicio()->revisarInactivos());
     }
 }

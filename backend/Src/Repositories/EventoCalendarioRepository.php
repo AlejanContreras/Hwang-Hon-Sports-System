@@ -19,7 +19,51 @@ class EventoCalendarioRepository extends BaseRepository
         'id', 'nombre', 'tipo', 'fecha', 'lugar', 'visibilidad', 'observaciones',
     ];
 
-    protected const ORDEN = 'fecha, id';
+    protected const ORDEN = 'fecha, nombre, id';
+
+    /**
+     * Eventos con filtros opcionales: rango de fechas (ambos extremos
+     * incluidos), tipo y visibilidad. Columnas fijas; solo los valores vienen
+     * de afuera. Orden por fecha y nombre.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function listarFiltrado(?string $desde, ?string $hasta, ?string $tipo, ?string $visibilidad): array
+    {
+        $condiciones = [];
+        $parametros = [];
+        if ($desde !== null) {
+            $condiciones[] = 'fecha >= :desde';
+            $parametros['desde'] = $desde;
+        }
+        if ($hasta !== null) {
+            $condiciones[] = 'fecha <= :hasta';
+            $parametros['hasta'] = $hasta;
+        }
+        if ($tipo !== null) {
+            $condiciones[] = 'tipo = :tipo';
+            $parametros['tipo'] = $tipo;
+        }
+        if ($visibilidad !== null) {
+            $condiciones[] = 'visibilidad = :visibilidad';
+            $parametros['visibilidad'] = $visibilidad;
+        }
+        $donde = $condiciones === [] ? '' : ' WHERE ' . implode(' AND ', $condiciones);
+        return $this->consultar('SELECT * FROM evento_calendario' . $donde . ' ORDER BY ' . self::ORDEN, $parametros);
+    }
+
+    /**
+     * Indica si ya hay un evento con ese nombre en esa fecha (otro que no
+     * sea $exceptoId). La comparacion la hace la collation de la tabla
+     * (utf8mb4_unicode_ci): no distingue mayusculas ni tildes.
+     */
+    public function existeNombreFecha(string $nombre, string $fecha, int $exceptoId = 0): bool
+    {
+        return $this->existe(
+            'SELECT 1 FROM evento_calendario WHERE nombre = :nombre AND fecha = :fecha AND id <> :excepto LIMIT 1',
+            ['nombre' => $nombre, 'fecha' => $fecha, 'excepto' => $exceptoId]
+        );
+    }
 
     /**
      * Obtiene una fila de `evento_calendario` por su llave primaria `id`.

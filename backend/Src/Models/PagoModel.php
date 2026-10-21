@@ -114,13 +114,15 @@ class PagoModel
      */
     public static function fromArray(array $datos): self
     {
+        // Conversion explicita: con strict_types, un entero que llegue como
+        // texto (o un documento numerico como entero) lanzaria TypeError.
         return new self(
-            id: $datos['id'] ?? 0,
-            deportistaDocumento: $datos['deportista_documento'] ?? '',
-            tipo: $datos['tipo'] ?? '',
-            anio: $datos['anio'] ?? 0,
-            mes: $datos['mes'] ?? 0,
-            semana: $datos['semana'] ?? null,
+            id: (int) ($datos['id'] ?? 0),
+            deportistaDocumento: (string) ($datos['deportista_documento'] ?? ''),
+            tipo: (string) ($datos['tipo'] ?? ''),
+            anio: (int) ($datos['anio'] ?? 0),
+            mes: (int) ($datos['mes'] ?? 0),
+            semana: isset($datos['semana']) ? (int) $datos['semana'] : null,
         );
     }
 }

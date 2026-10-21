@@ -104,6 +104,39 @@ class ArchivoSubido
     }
 
     /**
+     * Si el cuerpo de la peticion supera post_max_size, PHP descarta TODO el
+     * formulario ($_POST y $_FILES llegan vacios) y el error que veria el
+     * usuario seria "falta un campo". Este chequeo va primero y responde 400
+     * con el mensaje real de tamano.
+     */
+    public static function exigirCuerpoDentroDelLimite(): void
+    {
+        $tamanoCuerpo = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+        $limite = self::bytesDeIni((string) ini_get('post_max_size'));
+        if ($limite > 0 && $tamanoCuerpo > $limite) {
+            throw new ExcepcionNegocio(
+                'El archivo supera el tamaño máximo que acepta el servidor (' . round($limite / 1048576, 1) . ' MB).',
+                400
+            );
+        }
+    }
+
+    /**
+     * Convierte un valor de php.ini como "40M" o "512K" a bytes.
+     */
+    private static function bytesDeIni(string $valor): int
+    {
+        $valor = trim($valor);
+        $numero = (int) $valor;
+        return match (strtoupper(substr($valor, -1))) {
+            'G' => $numero * 1073741824,
+            'M' => $numero * 1048576,
+            'K' => $numero * 1024,
+            default => $numero,
+        };
+    }
+
+    /**
      * Tipo MIME con el que se entrega un archivo de esa extension al
      * descargarlo (o application/octet-stream si no es conocida).
      */
