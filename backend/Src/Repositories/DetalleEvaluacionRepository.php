@@ -25,6 +25,97 @@ class DetalleEvaluacionRepository extends BaseRepository
     protected const ORDEN = 'sesion_examen_id, deportista_documento, modalidad';
 
     /**
+     * Filas de detalle de una sesión con el nombre y el grado_actual del
+     * deportista. Con $deportistaDocumento, solo las de ese deportista.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function listarDeSesion(int $sesionExamenId, ?string $deportistaDocumento = null): array
+    {
+        $parametros = ['sesion' => $sesionExamenId];
+        $filtro = '';
+        if ($deportistaDocumento !== null) {
+            $filtro = ' AND de.deportista_documento = :documento';
+            $parametros['documento'] = $deportistaDocumento;
+        }
+        return $this->consultar(
+            'SELECT de.*, d.nombre, d.grado_actual FROM detalle_evaluacion de JOIN deportista d ON d.documento = de.deportista_documento '
+            . 'WHERE de.sesion_examen_id = :sesion' . $filtro . ' ORDER BY d.nombre, de.deportista_documento, de.modalidad',
+            $parametros
+        );
+    }
+
+    /**
+     * Filas de detalle de las sesiones CERRADAS, con los datos de la sesión,
+     * el nombre del deportista y su entrega de cinturón (LEFT JOIN: puede no
+     * haberla). Filtros opcionales: deportista y rango sobre fecha_grado.
+     * Una fila por modalidad: el Service las agrupa por (sesión, deportista).
+     * Orden descendente por fecha_grado.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function listarDeSesionesCerradas(?string $deportistaDocumento, ?string $desde, ?string $hasta): array
+    {
+        $condiciones = ["s.estado = 'cerrada'"];
+        $parametros = [];
+        if ($deportistaDocumento !== null) {
+            $condiciones[] = 'de.deportista_documento = :documento';
+            $parametros['documento'] = $deportistaDocumento;
+        }
+        if ($desde !== null) {
+            $condiciones[] = 's.fecha_grado >= :desde';
+            $parametros['desde'] = $desde;
+        }
+        if ($hasta !== null) {
+            $condiciones[] = 's.fecha_grado <= :hasta';
+            $parametros['hasta'] = $hasta;
+        }
+        return $this->consultar(
+            'SELECT s.id AS sesion_id, s.fecha, s.fecha_grado, s.lugar, de.deportista_documento, d.nombre, '
+            . 'de.modalidad, de.grado_evaluado, de.nota, de.aprobado, de.valor_medible, de.aspectos_fallidos, '
+            . 'de.observaciones, de.recomendaciones, '
+            . 'ec.cinturon_entregado, ec.fecha_entrega, ec.confirmado_por, (ec.sesion_examen_id IS NOT NULL) AS tiene_entrega '
+            . 'FROM detalle_evaluacion de '
+            . 'JOIN sesion_examen s ON s.id = de.sesion_examen_id '
+            . 'JOIN deportista d ON d.documento = de.deportista_documento '
+            . 'LEFT JOIN entrega_cinturon ec ON ec.sesion_examen_id = de.sesion_examen_id AND ec.deportista_documento = de.deportista_documento '
+            . 'WHERE ' . implode(' AND ', $condiciones)
+            . ' ORDER BY s.fecha_grado DESC, s.id DESC, d.nombre, de.deportista_documento, de.modalidad',
+            $parametros
+        );
+    }
+
+    /**
+     * Cambia grado_evaluado en todas las filas de un participante.
+     */
+    public function actualizarGradoEvaluado(int $sesionExamenId, string $deportistaDocumento, string $gradoEvaluado): void
+    {
+        $this->ejecutar(
+            'UPDATE detalle_evaluacion SET grado_evaluado = :grado WHERE sesion_examen_id = :sesion AND deportista_documento = :documento',
+            ['grado' => $gradoEvaluado, 'sesion' => $sesionExamenId, 'documento' => $deportistaDocumento]
+        );
+    }
+
+    /**
+     * Borra todas las filas de un participante en una sesión.
+     */
+    public function eliminarParticipante(int $sesionExamenId, string $deportistaDocumento): void
+    {
+        $this->ejecutar(
+            'DELETE FROM detalle_evaluacion WHERE sesion_examen_id = :sesion AND deportista_documento = :documento',
+            ['sesion' => $sesionExamenId, 'documento' => $deportistaDocumento]
+        );
+    }
+
+    /**
+     * Borra todas las filas de una sesión.
+     */
+    public function eliminarDeSesion(int $sesionExamenId): void
+    {
+        $this->ejecutar('DELETE FROM detalle_evaluacion WHERE sesion_examen_id = :sesion', ['sesion' => $sesionExamenId]);
+    }
+
+    /**
      * Obtiene una fila de `detalle_evaluacion` por su llave primaria compuesta (sesion_examen_id, deportista_documento, modalidad).
      */
     public function obtenerPorId(string|int $sesionExamenId, string|int $deportistaDocumento, string|int $modalidad): ?array

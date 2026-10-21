@@ -102,8 +102,8 @@ class EntregaCinturonModel
     public static function fromArray(array $datos): self
     {
         return new self(
-            sesionExamenId: $datos['sesion_examen_id'] ?? 0,
-            deportistaDocumento: $datos['deportista_documento'] ?? '',
+            sesionExamenId: (int) ($datos['sesion_examen_id'] ?? 0),
+            deportistaDocumento: (string) ($datos['deportista_documento'] ?? ''),
             cinturonEntregado: (bool) ($datos['cinturon_entregado'] ?? false),
             fechaEntrega: $datos['fecha_entrega'] ?? null,
             confirmadoPor: $datos['confirmado_por'] ?? null,

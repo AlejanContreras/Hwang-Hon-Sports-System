@@ -34,6 +34,7 @@ class GeneradorXlsx
     const ESTILO_CELDA_NEUTRA = 9;
     // Celdas de una columna de indice/nombre (sin fondo, con borde).
     const ESTILO_CELDA_INDICE = 10;
+    // Texto libre (nombres, datos digitados): lleva quotePrefix, siempre literal.
     const ESTILO_CELDA_TEXTO = 11;
     // Totales, con fondo destacado.
     const ESTILO_TOTAL_DESTACADO = 12;
@@ -162,6 +163,9 @@ class GeneradorXlsx
 
     private function escaparXml(string $texto): string
     {
+        // Los caracteres de control (salvo tabulador y saltos de linea) no
+        // son validos en XML 1.0: uno solo dejaria el archivo sin abrir.
+        $texto = (string) preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $texto);
         return str_replace(['&', '<', '>'], ['&amp;', '&lt;', '&gt;'], $texto);
     }
 
@@ -274,9 +278,12 @@ class GeneradorXlsx
             . ($sangria ? " indent=\"$sangria\"" : '')
             . '/>';
 
-        $formato = static fn(int $fuente, int $relleno, int $borde, string $aln = ''): string =>
+        // $textoLiteral agrega quotePrefix: Excel trata la celda como texto
+        // incluso si alguien la edita (un "=..." no se convierte en formula).
+        $formato = static fn(int $fuente, int $relleno, int $borde, string $aln = '', bool $textoLiteral = false): string =>
             '<xf xfId="0" numFmtId="0"'
             . " fontId=\"$fuente\" fillId=\"$relleno\" borderId=\"$borde\""
+            . ($textoLiteral ? ' quotePrefix="1"' : '')
             . ($fuente   ? ' applyFont="1"'      : '')
             . ($relleno  > 1 ? ' applyFill="1"'  : '')
             . ($borde ? ' applyBorder="1"'    : '')
@@ -295,7 +302,7 @@ class GeneradorXlsx
              . $formato(2, 8, 1, $alineacion('center', 'center'))                                 // 8 ESTILO_CELDA_NEGATIVA
              . $formato(0, 9, 1, $alineacion('center', 'center'))                                 // 9 ESTILO_CELDA_NEUTRA
              . $formato(0, 0, 1, $alineacion('center', 'center'))                                 // 10 ESTILO_CELDA_INDICE
-             . $formato(0, 0, 1, $alineacion('', 'center', false, '1'))                           // 11 ESTILO_CELDA_TEXTO
+             . $formato(0, 0, 1, $alineacion('', 'center', false, '1'), true)                     // 11 ESTILO_CELDA_TEXTO
              . $formato(2, 10, 1, $alineacion('center', 'center'))                                // 12 ESTILO_TOTAL_DESTACADO
              . $formato(2, 7,  1, $alineacion('center', 'center'))                                // 13 ESTILO_TOTAL_POSITIVO
              . $formato(0, 0, 0)                                                                  // 14 ESTILO_VACIO

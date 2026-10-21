@@ -375,6 +375,17 @@ class CalendarioService
     }
 
     /**
+     * Valida los datos de un evento nuevo con las mismas reglas de crear y
+     * devuelve el modelo, sin guardarlo. La usa Competencias para la
+     * creación excepcional de un torneo (evento + competencia en una
+     * transacción). El duplicado nombre + fecha lo revisa quien guarda.
+     */
+    public function validarEventoNuevo(array $datos): EventoCalendarioModel
+    {
+        return $this->modeloDesdeDatos($datos, true);
+    }
+
+    /**
      * Valida los datos de un evento nuevo (crear o una fila del CSV) y arma
      * el modelo. Una reunión administrativa queda siempre administrativa; al
      * crearla a mano exige además confirmar_confidencial = true (RN-9.9).

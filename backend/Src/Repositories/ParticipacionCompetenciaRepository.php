@@ -39,6 +39,68 @@ class ParticipacionCompetenciaRepository extends BaseRepository
     }
 
     /**
+     * Participaciones de un torneo con el nombre del deportista, por nombre y
+     * modalidad. Con $deportistaDocumento, solo las de ese deportista.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function listarConDeportista(int $competenciaEventoId, ?string $deportistaDocumento = null): array
+    {
+        $parametros = ['evento_id' => $competenciaEventoId];
+        $filtro = '';
+        if ($deportistaDocumento !== null) {
+            $filtro = ' AND p.deportista_documento = :deportista_documento';
+            $parametros['deportista_documento'] = $deportistaDocumento;
+        }
+        return $this->consultar(
+            'SELECT p.*, d.nombre FROM participacion_competencia p JOIN deportista d ON d.documento = p.deportista_documento '
+            . 'WHERE p.competencia_evento_id = :evento_id' . $filtro . ' ORDER BY d.nombre, p.deportista_documento, p.modalidad',
+            $parametros
+        );
+    }
+
+    /**
+     * Participaciones con los datos del torneo y el nombre del deportista,
+     * para el historial y las gráficas. Solo torneos con fecha <= $hasta (el
+     * Service pasa como máximo hoy); con $soloPublicos, solo eventos de
+     * visibilidad pública. participantes_en_modalidad cuenta, en una
+     * subconsulta, los inscritos del club en ese torneo y modalidad. Nunca
+     * selecciona notas_oponente. Orden descendente (fecha más reciente
+     * primero).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function listarHistorial(?string $deportistaDocumento, ?string $desde, string $hasta, bool $soloPublicos): array
+    {
+        $condiciones = ['e.fecha <= :hasta'];
+        $parametros = ['hasta' => $hasta];
+        if ($deportistaDocumento !== null) {
+            $condiciones[] = 'p.deportista_documento = :documento';
+            $parametros['documento'] = $deportistaDocumento;
+        }
+        if ($desde !== null) {
+            $condiciones[] = 'e.fecha >= :desde';
+            $parametros['desde'] = $desde;
+        }
+        if ($soloPublicos) {
+            $condiciones[] = "e.visibilidad = 'publica'";
+        }
+        return $this->consultar(
+            'SELECT e.id AS evento_id, e.nombre AS torneo, e.fecha, e.lugar, c.tipo_torneo, c.plataforma, '
+            . 'p.deportista_documento, d.nombre, p.modalidad, p.categoria_edad, p.categoria_peso, p.puesto, p.resultado, '
+            . 'p.medalla, p.combates_ganados, p.combates_perdidos, '
+            . '(SELECT COUNT(*) FROM participacion_competencia pm WHERE pm.competencia_evento_id = p.competencia_evento_id AND pm.modalidad = p.modalidad) AS participantes_en_modalidad '
+            . 'FROM participacion_competencia p '
+            . 'JOIN competencia c ON c.evento_id = p.competencia_evento_id '
+            . 'JOIN evento_calendario e ON e.id = c.evento_id '
+            . 'JOIN deportista d ON d.documento = p.deportista_documento '
+            . 'WHERE ' . implode(' AND ', $condiciones)
+            . ' ORDER BY e.fecha DESC, e.id DESC, d.nombre, p.deportista_documento, p.modalidad',
+            $parametros
+        );
+    }
+
+    /**
      * Record de combates de un deportista: suma de combates_ganados y
      * combates_perdidos de todas sus participaciones. Una sola consulta
      * agregada sin GROUP BY (valida con ONLY_FULL_GROUP_BY); COALESCE deja 0

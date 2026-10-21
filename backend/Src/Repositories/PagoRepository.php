@@ -44,6 +44,41 @@ class PagoRepository extends BaseRepository
     }
 
     /**
+     * Permanencia por deportista (historial): meses de mensualidad pagados
+     * (pares año-mes distintos; la matrícula no cuenta) y el primer y último
+     * periodo pagado como AAAA*100+MM. La agregación va en una tabla derivada
+     * agrupada por documento y se une con LEFT JOIN, así quien no ha pagado
+     * sale con 0 y es válida con ONLY_FULL_GROUP_BY. Con $documento, ese
+     * deportista (exista o no validado); sin él, todos los validados.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function permanencia(?string $documento, ?string $estado): array
+    {
+        $condiciones = [];
+        $parametros = [];
+        if ($documento !== null) {
+            $condiciones[] = 'd.documento = :documento';
+            $parametros['documento'] = $documento;
+        } else {
+            $condiciones[] = "d.estado_registro = 'validado'";
+        }
+        if ($estado !== null) {
+            $condiciones[] = 'd.estado = :estado';
+            $parametros['estado'] = $estado;
+        }
+        return $this->consultar(
+            'SELECT d.documento, d.nombre, d.estado, d.fecha_ingreso, COALESCE(m.meses, 0) AS meses_pagados, m.primero, m.ultimo '
+            . 'FROM deportista d '
+            . "LEFT JOIN (SELECT deportista_documento, COUNT(DISTINCT anio, mes) AS meses, MIN(anio * 100 + mes) AS primero, MAX(anio * 100 + mes) AS ultimo "
+            . "FROM pago WHERE tipo = 'mensualidad' GROUP BY deportista_documento) m ON m.deportista_documento = d.documento "
+            . 'WHERE ' . implode(' AND ', $condiciones)
+            . ' ORDER BY meses_pagados DESC, d.nombre, d.documento',
+            $parametros
+        );
+    }
+
+    /**
      * Obtiene una fila de `pago` por su llave primaria `id`.
      */
     public function obtenerPorId(string|int $id): ?array

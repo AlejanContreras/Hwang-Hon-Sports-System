@@ -282,7 +282,6 @@ class AsistenciaService
         }
 
         $conteo = $this->asistencia->conteoDesde($documento, $desde);
-        $incompletos = $conteo['sesiones'] < self::MINIMO_SESIONES;
 
         return [
             'documento' => $documento,
@@ -290,7 +289,22 @@ class AsistenciaService
             'desde' => $desde,
             'sesiones' => $conteo['sesiones'],
             'presentes' => $conteo['presentes'],
-            'porcentaje' => $incompletos ? null : round($conteo['presentes'] * 100 / $conteo['sesiones'], 1),
+        ] + self::calcularPorcentaje($conteo['sesiones'], $conteo['presentes']);
+    }
+
+    /**
+     * Regla del porcentaje (RN-7.8), pura y reutilizable (la usa también el
+     * reporte de asistencia, que ya trae los conteos de todos en una sola
+     * consulta): presentes sobre sesiones a 1 decimal; con menos de
+     * MINIMO_SESIONES, porcentaje null y datos incompletos.
+     *
+     * @return array{porcentaje: ?float, datos_incompletos: bool}
+     */
+    public static function calcularPorcentaje(int $sesiones, int $presentes): array
+    {
+        $incompletos = $sesiones < self::MINIMO_SESIONES;
+        return [
+            'porcentaje' => $incompletos ? null : round($presentes * 100 / $sesiones, 1),
             'datos_incompletos' => $incompletos,
         ];
     }

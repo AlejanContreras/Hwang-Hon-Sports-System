@@ -142,6 +142,31 @@ class AsistenciaRepository extends BaseRepository
     }
 
     /**
+     * Filas de asistencia del rango con el nombre del deportista, para la
+     * planilla del reporte (una sola consulta para todos). Solo deportistas
+     * validados; con $estado, solo los de ese estado actual. Orden: nombre,
+     * documento y fecha.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function planillaEnRango(string $desde, string $hasta, ?string $estado): array
+    {
+        $parametros = ['desde' => $desde, 'hasta' => $hasta];
+        $filtro = '';
+        if ($estado !== null) {
+            $filtro = ' AND d.estado = :estado';
+            $parametros['estado'] = $estado;
+        }
+        return $this->consultar(
+            'SELECT a.deportista_documento, d.nombre, a.fecha, a.asistio FROM asistencia a '
+            . 'JOIN deportista d ON d.documento = a.deportista_documento '
+            . "WHERE a.fecha >= :desde AND a.fecha <= :hasta AND d.estado_registro = 'validado'" . $filtro
+            . ' ORDER BY d.nombre, a.deportista_documento, a.fecha',
+            $parametros
+        );
+    }
+
+    /**
      * Borra todas las filas de una fecha y devuelve cuántas borró.
      */
     public function eliminarFecha(string $fecha): int

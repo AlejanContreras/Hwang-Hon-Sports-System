@@ -3,12 +3,15 @@
 declare(strict_types=1);
 
 /**
- * Controller HTTP del modulo Historial.
- * Modulo de agregacion (RN-2.x): compone el historial de un deportista a partir de otros repositorios: no tiene tabla propia.
+ * Controller HTTP del modulo Historial (pestana Registros de "Estadisticas e
+ * historial"; Contexto Base 35.4). Solo lectura.
  *
- * Recibe la solicitud ya autenticada (segun la politica de acceso de
- * Public/api.php), despacha segun la accion solicitada y delega toda
- * logica de negocio a HistorialService.
+ * Acciones (todas GET): torneos y ascensos (?deportista=&desde=&hasta=),
+ * permanencia (?deportista=&estado=). El filtro deportista solo aplica al
+ * ambito administrativo; el publico siempre ve lo propio.
+ *
+ * Recibe la solicitud ya autenticada (politica 'autenticada' de
+ * Public/api.php) y delega toda logica de negocio a HistorialService.
  */
 class HistorialController
 {
@@ -33,18 +36,19 @@ class HistorialController
     public function manejar(string $metodo, string $accion, array $parametros): void
     {
         match ($accion) {
-            'consultar' => $this->manejarConsultar($metodo, $parametros),
+            'torneos' => $this->leer($metodo, fn () => $this->servicio()->torneos($parametros)),
+            'ascensos' => $this->leer($metodo, fn () => $this->servicio()->ascensos($parametros)),
+            'permanencia' => $this->leer($metodo, fn () => $this->servicio()->permanencia($parametros)),
             default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
         };
     }
 
-    private function manejarConsultar(string $metodo, array $parametros): void
+    /**
+     * Exige GET y responde con lo que devuelva el Service.
+     */
+    private function leer(string $metodo, callable $operacion): void
     {
         Solicitud::exigirMetodo('GET', $metodo);
-        $resultado = $this->servicio()->consultar($parametros);
-        if ($resultado === null) {
-            Respuesta::error(404, 'No encontrado.');
-        }
-        Respuesta::exito($resultado);
+        Respuesta::exito($operacion());
     }
 }

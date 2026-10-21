@@ -72,6 +72,18 @@ class DeportistaRepository extends BaseRepository
     }
 
     /**
+     * Cambia solo grado_actual (tras confirmar la entrega del cinturón,
+     * RN-5.7), sin reescribir el resto de la fila.
+     */
+    public function actualizarGradoActual(string $documento, string $grado): void
+    {
+        $this->ejecutar(
+            'UPDATE deportista SET grado_actual = :grado WHERE documento = :documento',
+            ['grado' => $grado, 'documento' => $documento]
+        );
+    }
+
+    /**
      * Indica si existe un deportista con ese documento (sin leer la fila).
      */
     public function existePorId(string $documento): bool

@@ -3,12 +3,15 @@
 declare(strict_types=1);
 
 /**
- * Controller HTTP del modulo Reporte.
- * Modulo de agregacion/exportacion (RN-10.x): reportes, sin tabla propia.
+ * Controller HTTP del modulo Reportes y exportacion (RN-10.x; Contexto Base
+ * 35.13). Solo administrativo (politica 'solo_administrativa' de
+ * Public/api.php).
  *
- * Recibe la solicitud ya autenticada (segun la politica de acceso de
- * Public/api.php), despacha segun la accion solicitada y delega toda
- * logica de negocio a ReporteService.
+ * Acciones (todas GET), que responden con el archivo (Respuesta::archivo) y
+ * no con JSON; los errores si salen como JSON:
+ *   deportistaFicha (?deportista=, PDF), deportistas (?estado=),
+ *   asistencia (?desde=&hasta=&estado=), pagos (?anio=&estado=),
+ *   torneos (?desde=&hasta=) y sesionExamen (?id=), en Excel.
  */
 class ReporteController
 {
@@ -33,15 +36,25 @@ class ReporteController
     public function manejar(string $metodo, string $accion, array $parametros): void
     {
         match ($accion) {
-            'generar' => $this->manejarGenerar($metodo, $parametros),
+            'deportistaFicha' => $this->descargar($metodo, fn () => $this->servicio()->deportistaFicha($parametros)),
+            'deportistas' => $this->descargar($metodo, fn () => $this->servicio()->deportistas($parametros)),
+            'asistencia' => $this->descargar($metodo, fn () => $this->servicio()->asistencia($parametros)),
+            'pagos' => $this->descargar($metodo, fn () => $this->servicio()->pagos($parametros)),
+            'torneos' => $this->descargar($metodo, fn () => $this->servicio()->torneos($parametros)),
+            'sesionExamen' => $this->descargar($metodo, fn () => $this->servicio()->sesionExamen($parametros)),
             default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
         };
     }
 
-    private function manejarGenerar(string $metodo, array $parametros): void
+    /**
+     * Exige GET y envia el archivo que arma el Service. Si el Service lanza
+     * una excepcion, todavia no se ha enviado nada: api.php responde el
+     * error en JSON.
+     */
+    private function descargar(string $metodo, callable $operacion): void
     {
         Solicitud::exigirMetodo('GET', $metodo);
-        $resultado = $this->servicio()->generar($parametros);
-        Respuesta::exito($resultado);
+        $archivo = $operacion();
+        Respuesta::archivo($archivo['contenido'], $archivo['nombre'], $archivo['tipo']);
     }
 }

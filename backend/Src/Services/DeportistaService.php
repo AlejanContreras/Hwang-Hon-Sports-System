@@ -24,7 +24,8 @@ declare(strict_types=1);
  */
 class DeportistaService
 {
-    private const MAYORIA_EDAD = 18;
+    /** Pública: la usa también la ficha PDF de Reportes (acudiente si es menor). */
+    public const MAYORIA_EDAD = 18;
     private const SEXOS = ['masculino', 'femenino'];
     private const ESTADOS = ['activo', 'inactivo'];
     private const ESTADOS_REGISTRO = ['pendiente_validacion', 'validado'];
@@ -555,10 +556,24 @@ class DeportistaService
 
     private function calcularEdad(string $fechaNacimiento): int
     {
-        return (new DateTimeImmutable($fechaNacimiento))->diff(new DateTimeImmutable('today'))->y;
+        return self::edadEnFecha($fechaNacimiento, (new DateTimeImmutable('today'))->format('Y-m-d'));
     }
 
-    private function categoriaPorEdad(int $edad): ?string
+    /**
+     * Edad en años cumplidos a una fecha de referencia (hoy, o la fecha de
+     * un torneo en Competencias, RN-3.8). Público y estático para que otros
+     * módulos lo reutilicen sin duplicar la regla.
+     */
+    public static function edadEnFecha(string $fechaNacimiento, string $fechaReferencia): int
+    {
+        return (new DateTimeImmutable($fechaNacimiento))->diff(new DateTimeImmutable($fechaReferencia))->y;
+    }
+
+    /**
+     * Categoría por edad (RN-3.8) con su nombre para mostrar (ej. "Sénior"),
+     * o null si es menor de 8 años.
+     */
+    public static function categoriaPorEdad(int $edad): ?string
     {
         foreach (self::CATEGORIAS_EDAD as [$minima, $maxima, $nombre]) {
             if ($edad >= $minima && ($maxima === null || $edad <= $maxima)) {
@@ -573,22 +588,35 @@ class DeportistaService
      * edad ya calculada (misma edad). null si no hay categoria por edad
      * (menor de 8) o si falta el peso.
      */
-    private function categoriaPorPeso(?string $categoriaEdad, string $sexo, float $peso): ?string
+    public static function categoriaPorPeso(?string $categoriaEdad, string $sexo, float $peso): ?string
     {
-        if ($categoriaEdad === null || $peso <= 0) {
+        $cortes = self::cortesDePeso($categoriaEdad, $sexo);
+        if ($cortes === null || $peso <= 0) {
+            return null;
+        }
+        foreach ($cortes as $corte) {
+            if ($peso <= $corte) {
+                return '-' . $corte;
+            }
+        }
+        return '+' . end($cortes);
+    }
+
+    /**
+     * Cortes de peso (kg) de CATEGORIAS_PESO para una categoría por edad
+     * (nombre para mostrar) y un sexo, o null si no hay tabla.
+     *
+     * @return array<int, int>|null
+     */
+    public static function cortesDePeso(?string $categoriaEdad, string $sexo): ?array
+    {
+        if ($categoriaEdad === null) {
             return null;
         }
         foreach (self::CATEGORIAS_PESO as [$categoriasEdad, $cortesPorSexo]) {
-            if (!in_array($categoriaEdad, $categoriasEdad, true) || !isset($cortesPorSexo[$sexo])) {
-                continue;
+            if (in_array($categoriaEdad, $categoriasEdad, true)) {
+                return $cortesPorSexo[$sexo] ?? null;
             }
-            $cortes = $cortesPorSexo[$sexo];
-            foreach ($cortes as $corte) {
-                if ($peso <= $corte) {
-                    return '-' . $corte;
-                }
-            }
-            return '+' . end($cortes);
         }
         return null;
     }
@@ -611,8 +639,8 @@ class DeportistaService
 
         $edad = $this->calcularEdad($deportista['fecha_nacimiento']);
         $deportista['edad'] = $edad;
-        $deportista['categoria_edad'] = $this->categoriaPorEdad($edad);
-        $deportista['categoria_peso'] = $this->categoriaPorPeso(
+        $deportista['categoria_edad'] = self::categoriaPorEdad($edad);
+        $deportista['categoria_peso'] = self::categoriaPorPeso(
             $deportista['categoria_edad'],
             $deportista['sexo'],
             $deportista['peso']

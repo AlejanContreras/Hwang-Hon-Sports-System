@@ -23,6 +23,42 @@ class EntregaCinturonRepository extends BaseRepository
     protected const ORDEN = 'sesion_examen_id, deportista_documento';
 
     /**
+     * Lee la fila BLOQUEÁNDOLA hasta el fin de la transacción (SELECT ... FOR
+     * UPDATE): una segunda confirmación simultánea espera y después ve la
+     * entrega ya hecha. Solo tiene efecto dentro de enTransaccion().
+     */
+    public function obtenerParaActualizar(int $sesionExamenId, string $deportistaDocumento): ?array
+    {
+        return $this->consultarUno(
+            'SELECT * FROM entrega_cinturon WHERE sesion_examen_id = :sesion AND deportista_documento = :documento FOR UPDATE',
+            ['sesion' => $sesionExamenId, 'documento' => $deportistaDocumento]
+        );
+    }
+
+    /**
+     * Fecha de la última entrega confirmada de cada deportista (fecha del
+     * último ascenso), en una sola consulta.
+     *
+     * @return array<string, string> documento => fecha
+     */
+    public function ultimasEntregas(): array
+    {
+        $resultado = [];
+        foreach ($this->consultar('SELECT deportista_documento, MAX(fecha_entrega) AS ultima FROM entrega_cinturon WHERE cinturon_entregado = 1 GROUP BY deportista_documento') as $fila) {
+            $resultado[(string) $fila['deportista_documento']] = $fila['ultima'];
+        }
+        return $resultado;
+    }
+
+    /**
+     * Borra todas las filas de una sesión.
+     */
+    public function eliminarDeSesion(int $sesionExamenId): void
+    {
+        $this->ejecutar('DELETE FROM entrega_cinturon WHERE sesion_examen_id = :sesion', ['sesion' => $sesionExamenId]);
+    }
+
+    /**
      * Obtiene una fila de `entrega_cinturon` por su llave primaria compuesta (sesion_examen_id, deportista_documento).
      */
     public function obtenerPorId(string|int $sesionExamenId, string|int $deportistaDocumento): ?array

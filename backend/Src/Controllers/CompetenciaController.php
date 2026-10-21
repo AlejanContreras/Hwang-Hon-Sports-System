@@ -3,12 +3,16 @@
 declare(strict_types=1);
 
 /**
- * Controller HTTP del modulo Competencia.
- * Competencias y participacion de deportistas (RN-3.x). Usa tres tablas relacionadas.
+ * Controller HTTP del modulo Competencias (RN-3.x).
  *
- * Recibe la solicitud ya autenticada (segun la politica de acceso de
- * Public/api.php), despacha segun la accion solicitada y delega toda
- * logica de negocio a CompetenciaService.
+ * Recibe la solicitud ya autenticada (politica 'autenticada' de
+ * Public/api.php), despacha segun la accion y delega toda logica de negocio
+ * a CompetenciaService, que decide que ve y que puede hacer cada ambito.
+ *
+ * Acciones: listar, consultar (?id=), proximo y sugerencia (GET); crear e
+ * inscribir (POST); actualizar (PUT ?id=); actualizarParticipacion (PUT) y
+ * quitarParticipante (DELETE), ambas con ?deportista_documento=
+ * &competencia_evento_id=&modalidad=. No existe "eliminar torneo" (RN-3.9).
  */
 class CompetenciaController
 {
@@ -35,10 +39,13 @@ class CompetenciaController
         match ($accion) {
             'listar' => $this->manejarListar($metodo, $parametros),
             'consultar' => $this->manejarConsultar($metodo, $parametros),
+            'proximo' => $this->manejarProximo($metodo, $parametros),
             'crear' => $this->manejarCrear($metodo, $parametros),
             'actualizar' => $this->manejarActualizar($metodo, $parametros),
-            'eliminar' => $this->manejarEliminar($metodo, $parametros),
-            'registrarParticipacion' => $this->manejarRegistrarParticipacion($metodo, $parametros),
+            'inscribir' => $this->manejarInscribir($metodo, $parametros),
+            'sugerencia' => $this->manejarSugerencia($metodo, $parametros),
+            'actualizarParticipacion' => $this->manejarActualizarParticipacion($metodo, $parametros),
+            'quitarParticipante' => $this->manejarQuitarParticipante($metodo, $parametros),
             default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
         };
     }
@@ -46,8 +53,7 @@ class CompetenciaController
     private function manejarListar(string $metodo, array $parametros): void
     {
         Solicitud::exigirMetodo('GET', $metodo);
-        $resultado = $this->servicio()->listar($parametros);
-        Respuesta::exito($resultado);
+        Respuesta::exito($this->servicio()->listar($parametros));
     }
 
     private function manejarConsultar(string $metodo, array $parametros): void
@@ -60,34 +66,46 @@ class CompetenciaController
         Respuesta::exito($resultado);
     }
 
+    private function manejarProximo(string $metodo, array $parametros): void
+    {
+        Solicitud::exigirMetodo('GET', $metodo);
+        Respuesta::exito($this->servicio()->proximo());
+    }
+
     private function manejarCrear(string $metodo, array $parametros): void
     {
         Solicitud::exigirMetodo('POST', $metodo);
-        $datos = Solicitud::cuerpoJson();
-        $resultado = $this->servicio()->crear($datos);
-        Respuesta::exito($resultado, 201);
+        Respuesta::exito($this->servicio()->crear(Solicitud::cuerpoJson()), 201);
     }
 
     private function manejarActualizar(string $metodo, array $parametros): void
     {
         Solicitud::exigirMetodo('PUT', $metodo);
-        $datos = Solicitud::cuerpoJson();
-        $resultado = $this->servicio()->actualizar($parametros, $datos);
-        Respuesta::exito($resultado);
+        Respuesta::exito($this->servicio()->actualizar($parametros, Solicitud::cuerpoJson()));
     }
 
-    private function manejarEliminar(string $metodo, array $parametros): void
-    {
-        Solicitud::exigirMetodo('DELETE', $metodo);
-        $this->servicio()->eliminar($parametros);
-        Respuesta::exito(['eliminado' => true]);
-    }
-
-    private function manejarRegistrarParticipacion(string $metodo, array $parametros): void
+    private function manejarInscribir(string $metodo, array $parametros): void
     {
         Solicitud::exigirMetodo('POST', $metodo);
-        $datos = Solicitud::cuerpoJson();
-        $resultado = $this->servicio()->registrarParticipacion($datos);
-        Respuesta::exito($resultado, 201);
+        Respuesta::exito($this->servicio()->inscribir(Solicitud::cuerpoJson()), 201);
+    }
+
+    private function manejarSugerencia(string $metodo, array $parametros): void
+    {
+        Solicitud::exigirMetodo('GET', $metodo);
+        Respuesta::exito($this->servicio()->sugerencia($parametros));
+    }
+
+    private function manejarActualizarParticipacion(string $metodo, array $parametros): void
+    {
+        Solicitud::exigirMetodo('PUT', $metodo);
+        Respuesta::exito($this->servicio()->actualizarParticipacion($parametros, Solicitud::cuerpoJson()));
+    }
+
+    private function manejarQuitarParticipante(string $metodo, array $parametros): void
+    {
+        Solicitud::exigirMetodo('DELETE', $metodo);
+        $this->servicio()->quitarParticipante($parametros);
+        Respuesta::exito(['eliminado' => true]);
     }
 }

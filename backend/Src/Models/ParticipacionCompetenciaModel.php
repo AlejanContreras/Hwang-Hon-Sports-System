@@ -182,17 +182,20 @@ class ParticipacionCompetenciaModel
      */
     public static function fromArray(array $datos): self
     {
+        // Conversion explicita: con strict_types, un entero que llegue como
+        // texto (o un documento numerico como entero) lanzaria TypeError.
+        $enteroONulo = fn (mixed $valor): ?int => $valor === null ? null : (int) $valor;
         return new self(
-            deportistaDocumento: $datos['deportista_documento'] ?? '',
-            competenciaEventoId: $datos['competencia_evento_id'] ?? 0,
-            modalidad: $datos['modalidad'] ?? '',
-            categoriaEdad: $datos['categoria_edad'] ?? '',
+            deportistaDocumento: (string) ($datos['deportista_documento'] ?? ''),
+            competenciaEventoId: (int) ($datos['competencia_evento_id'] ?? 0),
+            modalidad: (string) ($datos['modalidad'] ?? ''),
+            categoriaEdad: (string) ($datos['categoria_edad'] ?? ''),
             categoriaPeso: $datos['categoria_peso'] ?? null,
-            puesto: $datos['puesto'] ?? null,
+            puesto: $enteroONulo($datos['puesto'] ?? null),
             resultado: $datos['resultado'] ?? null,
             medalla: $datos['medalla'] ?? null,
-            combatesGanados: $datos['combates_ganados'] ?? null,
-            combatesPerdidos: $datos['combates_perdidos'] ?? null,
+            combatesGanados: $enteroONulo($datos['combates_ganados'] ?? null),
+            combatesPerdidos: $enteroONulo($datos['combates_perdidos'] ?? null),
             notasOponente: $datos['notas_oponente'] ?? null,
         );
     }

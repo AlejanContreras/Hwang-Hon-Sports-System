@@ -3,12 +3,14 @@
 declare(strict_types=1);
 
 /**
- * Controller HTTP del modulo Estadistica.
- * Modulo de agregacion (RN-4.x): estadisticas calculadas, sin tabla propia.
+ * Controller HTTP del modulo Estadistica (pestana Graficas de "Estadisticas e
+ * historial"; Contexto Base 35.4). Solo lectura.
  *
- * Recibe la solicitud ya autenticada (segun la politica de acceso de
- * Public/api.php), despacha segun la accion solicitada y delega toda
- * logica de negocio a EstadisticaService.
+ * Acciones (todas GET): deportista (?deportista=&ventana=) y torneo (?id=,
+ * solo administrativo).
+ *
+ * Recibe la solicitud ya autenticada (politica 'autenticada' de
+ * Public/api.php) y delega toda logica de negocio a EstadisticaService.
  */
 class EstadisticaController
 {
@@ -33,18 +35,18 @@ class EstadisticaController
     public function manejar(string $metodo, string $accion, array $parametros): void
     {
         match ($accion) {
-            'consultar' => $this->manejarConsultar($metodo, $parametros),
+            'deportista' => $this->leer($metodo, fn () => $this->servicio()->deportista($parametros)),
+            'torneo' => $this->leer($metodo, fn () => $this->servicio()->torneo($parametros)),
             default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
         };
     }
 
-    private function manejarConsultar(string $metodo, array $parametros): void
+    /**
+     * Exige GET y responde con lo que devuelva el Service.
+     */
+    private function leer(string $metodo, callable $operacion): void
     {
         Solicitud::exigirMetodo('GET', $metodo);
-        $resultado = $this->servicio()->consultar($parametros);
-        if ($resultado === null) {
-            Respuesta::error(404, 'No encontrado.');
-        }
-        Respuesta::exito($resultado);
+        Respuesta::exito($operacion());
     }
 }

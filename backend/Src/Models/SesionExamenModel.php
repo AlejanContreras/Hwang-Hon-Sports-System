@@ -126,14 +126,16 @@ class SesionExamenModel
      */
     public static function fromArray(array $datos): self
     {
+        // Conversion explicita: con strict_types, un id que llegue como texto
+        // lanzaria TypeError.
         return new self(
-            id: $datos['id'] ?? 0,
-            fecha: $datos['fecha'] ?? '',
-            fechaGrado: $datos['fecha_grado'] ?? '',
-            lugar: $datos['lugar'] ?? '',
-            estado: $datos['estado'] ?? 'abierta',
-            eventoExamenId: $datos['evento_examen_id'] ?? null,
-            eventoGradoId: $datos['evento_grado_id'] ?? null,
+            id: (int) ($datos['id'] ?? 0),
+            fecha: (string) ($datos['fecha'] ?? ''),
+            fechaGrado: (string) ($datos['fecha_grado'] ?? ''),
+            lugar: (string) ($datos['lugar'] ?? ''),
+            estado: (string) ($datos['estado'] ?? 'abierta'),
+            eventoExamenId: isset($datos['evento_examen_id']) ? (int) $datos['evento_examen_id'] : null,
+            eventoGradoId: isset($datos['evento_grado_id']) ? (int) $datos['evento_grado_id'] : null,
         );
     }
 }
