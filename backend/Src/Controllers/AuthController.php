@@ -91,8 +91,15 @@ class AuthController
     {
         Solicitud::exigirMetodo('POST', $metodo);
         $datos = Solicitud::cuerpoJson();
-        $mensaje = $this->servicio()->solicitarRecuperacionContrasena($datos);
-        Respuesta::exito(['mensaje' => $mensaje]);
+        $envio = $this->servicio()->solicitarRecuperacionContrasena($datos);
+        // Primero la respuesta (igual exista o no la cuenta) y después, si
+        // corresponde, el token y el correo: el tiempo de respuesta no revela
+        // qué correos están registrados (RN-T.12).
+        Respuesta::exitoSinTerminar(['mensaje' => AuthService::MENSAJE_RECUPERACION]);
+        if ($envio !== null) {
+            $envio();
+        }
+        exit;
     }
 
     private function manejarRestablecerContrasena(string $metodo, array $parametros): void

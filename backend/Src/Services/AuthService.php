@@ -12,9 +12,14 @@ declare(strict_types=1);
  *   - Público: documento + fecha de nacimiento DEL DEPORTISTA (RN-T.16).
  *   - Bloqueo: 4 fallos consecutivos bloquean 15 minutos, por ámbito e
  *     identificador, exista o no la cuenta (no revela cuáles existen). Un
- *     fallo después de vencido el bloqueo vuelve a contar desde 1 (B.5).
+ *     fallo después de vencido el bloqueo vuelve a contar desde 1 (B.5). El
+ *     intento se reserva de forma atómica ANTES de verificar la clave, así
+ *     peticiones simultáneas no pueden saltarse el límite.
+ *   - Sesión administrativa: guarda la huella de la contraseña; al cambiarla
+ *     (por cualquier vía) las demás sesiones de la cuenta caen.
  *   - Recuperación (RN-T.12): token aleatorio de un solo uso, 1 hora de
- *     vigencia; en la base solo se guarda su SHA-256.
+ *     vigencia; en la base solo se guarda su SHA-256. No se reemplaza un
+ *     enlace vigente, y el correo se envía después de responder.
  *
  * Todas las fechas se calculan en PHP con la hora de Bogotá, nunca con NOW()
  * del servidor de base de datos.
@@ -27,8 +32,8 @@ class AuthService
     // compartidos con UsuarioAdministrativoService.
     /** Vigencia del token de recuperación, en segundos (1 hora, RN-T.12). */
     private const VIGENCIA_TOKEN = 3600;
-    /** Espera mínima entre dos solicitudes de recuperación, en segundos. */
-    private const ESPERA_ENTRE_SOLICITUDES = 300;
+    /** Días que se conservan las filas viejas de intento_acceso (limpieza ocasional). */
+    private const DIAS_RETENCION_INTENTOS = 7;
 
     private const ZONA_HORARIA = 'America/Bogota';
     private const FORMATO_FECHA_HORA = 'Y-m-d H:i:s';
@@ -43,7 +48,7 @@ class AuthService
 
     private const MENSAJE_CREDENCIALES = 'Correo o contraseña incorrectos.';
     private const MENSAJE_CREDENCIALES_PUBLICAS = 'Documento o fecha de nacimiento incorrectos.';
-    private const MENSAJE_RECUPERACION = 'Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña.';
+    public const MENSAJE_RECUPERACION ='Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña.';
     private const MENSAJE_ENLACE_INVALIDO = 'El enlace no es válido o ya venció.';
 
     private UsuarioAdministrativoRepository $usuarioAdministrativo;
@@ -69,18 +74,18 @@ class AuthService
         $correo = Validador::correo($credenciales['correo'] ?? null);
         $contrasena = Validador::contrasenaRecibida($credenciales['contrasena'] ?? null, 'contrasena');
 
-        $this->exigirSinBloqueo('administrativa', $correo);
+        $this->reservarIntento('administrativa', $correo);
 
         $cuenta = $this->usuarioAdministrativo->obtenerParaAutenticacion($correo);
         // Se verifica siempre (con el hash ficticio si la cuenta no existe) para igualar tiempos.
         $claveCorrecta = password_verify($contrasena, $cuenta['contrasena'] ?? self::HASH_FICTICIO);
 
         if ($cuenta === null || !$claveCorrecta || !(bool) $cuenta['activa']) {
-            $this->registrarFallo('administrativa', $correo, self::MENSAJE_CREDENCIALES);
+            $this->rechazarFallo('administrativa', $correo, self::MENSAJE_CREDENCIALES);
         }
 
         $this->intentoAcceso->eliminar('administrativa', $correo);
-        Sesion::iniciar('administrativa', $cuenta['correo']);
+        Sesion::iniciar('administrativa', $cuenta['correo'], Sesion::huellaCredencial($cuenta['contrasena']));
 
         return [
             'ambito' => 'administrativa',
@@ -103,11 +108,11 @@ class AuthService
         $documento = $this->documento($credenciales['documento'] ?? null);
         $fechaNacimiento = $this->fechaNacimiento($credenciales['fecha_nacimiento'] ?? null);
 
-        $this->exigirSinBloqueo('publica', $documento);
+        $this->reservarIntento('publica', $documento);
 
         $deportista = $this->deportista->obtenerPorId($documento);
         if ($deportista === null || $deportista['fecha_nacimiento'] !== $fechaNacimiento) {
-            $this->registrarFallo('publica', $documento, self::MENSAJE_CREDENCIALES_PUBLICAS);
+            $this->rechazarFallo('publica', $documento, self::MENSAJE_CREDENCIALES_PUBLICAS);
         }
 
         $this->intentoAcceso->eliminar('publica', $documento);
@@ -186,51 +191,55 @@ class AuthService
             throw new ExcepcionNegocio('La contraseña actual no es correcta.', 400);
         }
 
+        $hashNuevo = password_hash($nueva, PASSWORD_DEFAULT);
         $modelo = UsuarioAdministrativoModel::fromArray($cuenta);
-        $modelo->establecerContrasena(password_hash($nueva, PASSWORD_DEFAULT));
+        $modelo->establecerContrasena($hashNuevo);
         $modelo->establecerTokenRecuperacion(null);
         $modelo->establecerTokenRecuperacionExpira(null);
         $this->usuarioAdministrativo->actualizarCredenciales($modelo);
+        // Esta sesión sigue con la huella nueva; las demás de la cuenta caen
+        // en su siguiente petición (AuthMiddleware).
+        Sesion::renovarHuella(Sesion::huellaCredencial($hashNuevo));
     }
 
     /**
      * Recuperación de contraseña, paso 1 (RN-T.12). La respuesta es siempre
-     * la misma, exista o no la cuenta. Si la cuenta existe, está activa y no
-     * pidió otro enlace en los últimos 5 minutos, genera un token nuevo
-     * (reemplaza al anterior) y envía el enlace. Un fallo del correo solo
-     * queda en el log.
+     * MENSAJE_RECUPERACION, exista o no la cuenta, y llega en el mismo tiempo:
+     * aquí solo se valida y se lee la cuenta (una consulta en los dos casos);
+     * el token y el correo, lentos, van en la tarea que devuelve este método
+     * y que el Controller ejecuta DESPUÉS de entregar la respuesta
+     * (Respuesta::exitoSinTerminar). null = no hay nada que enviar: la cuenta
+     * no existe, está desactivada o ya tiene un enlace vigente (no se
+     * reemplaza: si no, cualquiera podría invalidar el enlace de otra persona
+     * pidiendo uno nuevo).
      */
-    public function solicitarRecuperacionContrasena(array $datos): string
+    public function solicitarRecuperacionContrasena(array $datos): ?Closure
     {
         $correo = Validador::correo($datos['correo'] ?? null);
 
         $cuenta = $this->usuarioAdministrativo->obtenerParaAutenticacion($correo);
-        if ($cuenta === null || !(bool) $cuenta['activa'] || $this->solicitudReciente($cuenta['token_recuperacion_expira'])) {
-            return self::MENSAJE_RECUPERACION;
+        if ($cuenta === null || !(bool) $cuenta['activa'] || $this->tokenVigente($cuenta['token_recuperacion_expira'])) {
+            return null;
         }
 
-        $token = bin2hex(random_bytes(32));
-        $modelo = UsuarioAdministrativoModel::fromArray($cuenta);
-        $modelo->establecerTokenRecuperacion(hash('sha256', $token));
-        $modelo->establecerTokenRecuperacionExpira(
-            $this->ahora()->modify('+' . self::VIGENCIA_TOKEN . ' seconds')->format(self::FORMATO_FECHA_HORA)
-        );
-        $this->usuarioAdministrativo->actualizarCredenciales($modelo);
+        return function () use ($cuenta): void {
+            // La respuesta ya salió: un error aquí solo puede ir al log.
+            try {
+                $token = bin2hex(random_bytes(32));
+                $modelo = UsuarioAdministrativoModel::fromArray($cuenta);
+                $modelo->establecerTokenRecuperacion(hash('sha256', $token));
+                $modelo->establecerTokenRecuperacionExpira(
+                    $this->ahora()->modify('+' . self::VIGENCIA_TOKEN . ' seconds')->format(self::FORMATO_FECHA_HORA)
+                );
+                $this->usuarioAdministrativo->actualizarCredenciales($modelo);
 
-        // Armar el cuerpo también lee la configuración del correo: si falla
-        // (ej. falta Config/correo.php), solo se registra. Un 500 aquí
-        // revelaría que el correo existe (RN-T.12).
-        try {
-            $enviado = Correo::enviar($cuenta['correo'], 'Restablecer tu contraseña', $this->cuerpoCorreoRecuperacion($token));
-        } catch (Throwable $error) {
-            error_log('AuthService: no se pudo preparar el correo de recuperación: ' . $error->getMessage());
-            $enviado = false;
-        }
-        if (!$enviado) {
-            error_log('AuthService: falló el envío del enlace de recuperación a una cuenta administrativa.');
-        }
-
-        return self::MENSAJE_RECUPERACION;
+                if (!Correo::enviar($cuenta['correo'], 'Restablecer tu contraseña', $this->cuerpoCorreoRecuperacion($token))) {
+                    error_log('AuthService: falló el envío del enlace de recuperación a una cuenta administrativa.');
+                }
+            } catch (Throwable $error) {
+                error_log('AuthService: no se pudo generar o enviar el enlace de recuperación: ' . $error->getMessage());
+            }
+        };
     }
 
     /**
@@ -270,36 +279,40 @@ class AuthService
     // ------------------------------------------------------------------
 
     /**
-     * 429 si el identificador tiene un bloqueo vigente. No evalúa
-     * credenciales: durante el bloqueo, ni la contraseña correcta entra.
+     * Reserva el intento ANTES de verificar la clave, en una sentencia
+     * atómica del Repository: cada petición cuenta aunque lleguen muchas a la
+     * vez, y la que llega al cuarto intento fija el bloqueo. Si ya había un
+     * bloqueo vigente, responde 429 sin evaluar credenciales (durante el
+     * bloqueo ni la contraseña correcta entra). Un acierto borra el contador.
+     * De vez en cuando limpia filas viejas de la tabla.
      */
-    private function exigirSinBloqueo(string $ambito, string $identificador): void
+    private function reservarIntento(string $ambito, string $identificador): void
     {
-        $intento = $this->intentoAcceso->obtenerPorId($ambito, $identificador);
-        $bloqueadoHasta = $intento['bloqueado_hasta'] ?? null;
-        if ($bloqueadoHasta !== null && $bloqueadoHasta > $this->ahora()->format(self::FORMATO_FECHA_HORA)) {
-            $this->rechazarPorBloqueo($bloqueadoHasta);
+        $ahora = $this->ahora();
+        $this->intentoAcceso->limpiarDeVezEnCuando($ahora->modify('-' . self::DIAS_RETENCION_INTENTOS . ' days')->format(self::FORMATO_FECHA_HORA));
+        $reservado = $this->intentoAcceso->reservarIntento(
+            $ambito,
+            $identificador,
+            $ahora->format(self::FORMATO_FECHA_HORA),
+            $ahora->modify('+' . self::MINUTOS_BLOQUEO . ' minutes')->format(self::FORMATO_FECHA_HORA),
+            self::UMBRAL_INTENTOS
+        );
+        if (!$reservado) {
+            $intento = $this->intentoAcceso->obtenerPorId($ambito, $identificador);
+            $this->rechazarPorBloqueo($intento['bloqueado_hasta'] ?? $ahora->modify('+' . self::MINUTOS_BLOQUEO . ' minutes')->format(self::FORMATO_FECHA_HORA));
         }
     }
 
     /**
-     * Suma el fallo (sentencia atómica en el Repository) y, si llegó al
-     * umbral, fija el bloqueo de 15 minutos y responde 429; si no, responde
-     * 401 con el mensaje genérico.
+     * Credenciales erradas: el intento ya se contó al reservarlo. Si con él
+     * quedó bloqueado, responde 429; si no, 401 con el mensaje genérico.
      */
-    private function registrarFallo(string $ambito, string $identificador, string $mensaje): never
+    private function rechazarFallo(string $ambito, string $identificador, string $mensaje): never
     {
-        $ahora = $this->ahora();
-        $this->intentoAcceso->registrarFallo($ambito, $identificador, $ahora->format(self::FORMATO_FECHA_HORA));
-
-        $intento = IntentoAccesoModel::fromArray($this->intentoAcceso->obtenerPorId($ambito, $identificador) ?? []);
-        if ($intento->obtenerIntentosFallidos() >= self::UMBRAL_INTENTOS) {
-            $bloqueadoHasta = $ahora->modify('+' . self::MINUTOS_BLOQUEO . ' minutes')->format(self::FORMATO_FECHA_HORA);
-            $intento->establecerBloqueadoHasta($bloqueadoHasta);
-            $this->intentoAcceso->actualizar($intento);
+        $bloqueadoHasta = $this->intentoAcceso->obtenerPorId($ambito, $identificador)['bloqueado_hasta'] ?? null;
+        if ($bloqueadoHasta !== null && $bloqueadoHasta > $this->ahora()->format(self::FORMATO_FECHA_HORA)) {
             $this->rechazarPorBloqueo($bloqueadoHasta);
         }
-
         throw new ExcepcionNegocio($mensaje, 401);
     }
 
@@ -316,17 +329,11 @@ class AuthService
     // ------------------------------------------------------------------
 
     /**
-     * La fecha de la última solicitud se deriva del vencimiento guardado
-     * (vencimiento - 1 hora); no hay otra columna para ella.
+     * ¿Hay un enlace de recuperación todavía vigente?
      */
-    private function solicitudReciente(?string $tokenExpira): bool
+    private function tokenVigente(?string $tokenExpira): bool
     {
-        if ($tokenExpira === null) {
-            return false;
-        }
-        $ultimaSolicitud = (new DateTimeImmutable($tokenExpira, new DateTimeZone(self::ZONA_HORARIA)))->getTimestamp()
-            - self::VIGENCIA_TOKEN;
-        return $this->ahora()->getTimestamp() - $ultimaSolicitud < self::ESPERA_ENTRE_SOLICITUDES;
+        return $tokenExpira !== null && $tokenExpira > $this->ahora()->format(self::FORMATO_FECHA_HORA);
     }
 
     private function cuerpoCorreoRecuperacion(string $token): string
@@ -377,7 +384,7 @@ class AuthService
      */
     private function fechaNacimiento(mixed $valor): string
     {
-        $fecha = is_string($valor) ? DateTimeImmutable::createFromFormat('!Y-m-d', $valor) : false;
+        $fecha = Validador::esFechaIso($valor) ? DateTimeImmutable::createFromFormat('!Y-m-d', $valor) : false;
         if ($fecha === false || $fecha->format('Y-m-d') !== $valor) {
             throw new ExcepcionNegocio('El campo "fecha_nacimiento" debe ser una fecha válida con formato AAAA-MM-DD.', 400);
         }

@@ -135,15 +135,4 @@ class CompetenciaRepository extends BaseRepository
             $datos
         );
     }
-
-    /**
-     * Elimina una fila de `competencia` por su llave primaria `evento_id`.
-     */
-    public function eliminar(string|int $eventoId): bool
-    {
-        return $this->ejecutar(
-            'DELETE FROM competencia WHERE evento_id = :evento_id',
-            ['evento_id' => $eventoId]
-        );
-    }
 }

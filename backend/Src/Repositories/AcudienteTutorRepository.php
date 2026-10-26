@@ -33,6 +33,32 @@ class AcudienteTutorRepository extends BaseRepository
     }
 
     /**
+     * Acudientes con esos documentos en una sola consulta (carga masiva).
+     * Devuelve documento => fila; lista vacía: no consulta.
+     *
+     * @param array<int, string> $documentos
+     * @return array<string, array<string, mixed>>
+     */
+    public function listarPorDocumentos(array $documentos): array
+    {
+        $documentos = array_values(array_unique($documentos));
+        if ($documentos === []) {
+            return [];
+        }
+        $marcadores = [];
+        $parametros = [];
+        foreach ($documentos as $i => $documento) {
+            $marcadores[] = ":d{$i}";
+            $parametros["d{$i}"] = $documento;
+        }
+        $resultado = [];
+        foreach ($this->consultar('SELECT * FROM acudiente_tutor WHERE documento IN (' . implode(', ', $marcadores) . ')', $parametros) as $fila) {
+            $resultado[(string) $fila['documento']] = $fila;
+        }
+        return $resultado;
+    }
+
+    /**
      * Indica si existe un acudiente con ese documento (sin leer la fila).
      */
     public function existePorId(string $documento): bool

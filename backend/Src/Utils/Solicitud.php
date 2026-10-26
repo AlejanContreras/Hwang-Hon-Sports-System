@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 /**
  * Lectura de la solicitud HTTP entrante, centralizada en un solo lugar.
- * Es la pareja de Respuesta: Solicitud maneja lo que ENTRA (metodo HTTP y
- * cuerpo JSON), Respuesta maneja lo que SALE.
+ * Es la pareja de Respuesta: Solicitud maneja lo que ENTRA (metodo HTTP,
+ * origen y cuerpo JSON), Respuesta maneja lo que SALE.
  *
- * Si algo no es valido, responde el error de una vez (405 o 400) y termina
- * la ejecucion, igual que Respuesta::error().
+ * Si algo no es valido, responde el error de una vez (403, 405, 415 o 400) y
+ * termina la ejecucion, igual que Respuesta::error().
  */
 class Solicitud
 {
@@ -19,13 +19,55 @@ class Solicitud
     public static function exigirMetodo(string $metodoEsperado, string $metodoActual): void
     {
         if ($metodoActual !== $metodoEsperado) {
-            Respuesta::error(405, "Metodo no permitido. Se esperaba {$metodoEsperado}.");
+            Respuesta::error(405, "Método no permitido. Se esperaba {$metodoEsperado}.");
+        }
+    }
+
+    /**
+     * Proteccion CSRF para todo metodo distinto de GET (la cookie de sesion
+     * viaja sola: otro sitio no debe poder disparar una accion con ella):
+     *   - Sec-Fetch-Site cross-site o same-site: 403 (el navegador avisa que
+     *     la peticion la origino otro sitio).
+     *   - Origin presente: su host:puerto debe ser el Host de la solicitud o
+     *     estar en ORIGENES_PERMITIDOS (Config/seguridad.php); si no, 403.
+     *   - Sin ninguna de las dos cabeceras (curl, scripts, pruebas): se acepta;
+     *     los navegadores actuales siempre envian alguna en una peticion POST.
+     */
+    public static function exigirMismoOrigen(string $metodo): void
+    {
+        if ($metodo === 'GET') {
+            return;
+        }
+        $sitio = $_SERVER['HTTP_SEC_FETCH_SITE'] ?? null;
+        if (is_string($sitio) && in_array(strtolower(trim($sitio)), ['cross-site', 'same-site'], true)) {
+            Respuesta::error(403, 'Solicitud rechazada: viene de otro sitio.');
+        }
+        $origen = $_SERVER['HTTP_ORIGIN'] ?? null;
+        if ($origen === null) {
+            return;
+        }
+        $hostOrigen = self::hostPuerto((string) $origen);
+        $permitidos = [strtolower(trim((string) ($_SERVER['HTTP_HOST'] ?? '')))];
+        if (defined('ORIGENES_PERMITIDOS')) {
+            foreach (explode(',', (string) ORIGENES_PERMITIDOS) as $permitido) {
+                $permitido = trim($permitido);
+                if ($permitido !== '') {
+                    $permitidos[] = str_contains($permitido, '://') ? self::hostPuerto($permitido) : strtolower($permitido);
+                }
+            }
+        }
+        if ($hostOrigen === null || $hostOrigen === '' || !in_array($hostOrigen, $permitidos, true)) {
+            Respuesta::error(403, 'Solicitud rechazada: origen no permitido.');
         }
     }
 
     /**
      * Lee y decodifica el cuerpo JSON de la solicitud como arreglo.
-     * Cuerpo vacio: devuelve []. JSON invalido: responde 400.
+     * Cuerpo vacio: devuelve []. Con cuerpo, el Content-Type debe ser
+     * application/json (415): un formulario HTML de otro sitio solo puede
+     * enviar text/plain o form-urlencoded sin permiso del navegador. Las
+     * acciones multipart (subida de archivos) no llaman a este metodo.
+     * JSON invalido: responde 400.
      *
      * @return array<string, mixed>
      */
@@ -35,10 +77,29 @@ class Solicitud
         if ($crudo === false || $crudo === '') {
             return [];
         }
+        $tipo = (string) ($_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? '');
+        if (strtolower(trim(explode(';', $tipo)[0])) !== 'application/json') {
+            Respuesta::error(415, 'Tipo de contenido no soportado: envía el cuerpo como application/json.');
+        }
         $datos = json_decode($crudo, true);
         if (!is_array($datos)) {
-            Respuesta::error(400, 'Cuerpo de la solicitud invalido: se esperaba JSON.');
+            Respuesta::error(400, 'Cuerpo de la solicitud inválido: se esperaba JSON.');
         }
         return $datos;
+    }
+
+    /**
+     * "https://Ejemplo.com:8443/ruta" => "ejemplo.com:8443"; el puerto solo
+     * si viene escrito (igual que en la cabecera Host). null si no se puede
+     * leer (ej. Origin "null").
+     */
+    private static function hostPuerto(string $origen): ?string
+    {
+        $partes = parse_url(trim($origen));
+        if (!is_array($partes) || !isset($partes['host'])) {
+            return null;
+        }
+        $host = strtolower($partes['host']);
+        return isset($partes['port']) ? "{$host}:{$partes['port']}" : $host;
     }
 }

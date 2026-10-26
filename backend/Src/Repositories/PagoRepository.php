@@ -105,18 +105,6 @@ class PagoRepository extends BaseRepository
     }
 
     /**
-     * Actualiza una fila existente de `pago` a partir de un PagoModel.
-     */
-    public function actualizar(PagoModel $modelo): bool
-    {
-        $datos = $modelo->toArray();
-        return $this->ejecutar(
-            'UPDATE pago SET deportista_documento = :deportista_documento, tipo = :tipo, anio = :anio, mes = :mes, semana = :semana WHERE id = :id',
-            $datos
-        );
-    }
-
-    /**
      * Elimina una fila de `pago` por su llave primaria `id`.
      */
     public function eliminar(string|int $id): bool

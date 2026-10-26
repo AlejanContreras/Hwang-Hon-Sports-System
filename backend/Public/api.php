@@ -27,6 +27,11 @@ declare(strict_types=1);
 
 date_default_timezone_set('America/Bogota');
 
+// Endurecimiento: los errores nunca salen en la respuesta (van al log) y no
+// se anuncia la versión de PHP.
+ini_set('display_errors', '0');
+header_remove('X-Powered-By');
+
 define('RUTA_RAIZ', dirname(__DIR__));
 define('RUTA_SRC', RUTA_RAIZ . '/Src');
 
@@ -36,8 +41,9 @@ define('RUTA_SRC', RUTA_RAIZ . '/Src');
  *   1. Utilidades compartidas: Respuesta (respuestas JSON y descargas),
  *      Solicitud (metodo HTTP y cuerpo JSON de entrada), Sesion (usuario
  *      en sesion), ExcepcionNegocio (errores esperados), ArchivoSubido
- *      (archivos recibidos), Correo (envio de correos) y Validador
- *      (validaciones compartidas), que usan las demas capas.
+ *      (archivos recibidos), Correo (envio de correos), Validador
+ *      (validaciones compartidas) y LectorCsv (lectura de CSV), que usan
+ *      las demas capas.
  *   2. Configuracion de la base de datos (database.php).
  *   3. Los Middleware (se usan mas abajo, segun la politica de acceso).
  *   4. BaseRepository, que usa la conexion a la base de datos.
@@ -54,7 +60,9 @@ require_once RUTA_SRC . '/Utils/ExcepcionNegocio.php';
 require_once RUTA_SRC . '/Utils/ArchivoSubido.php';
 require_once RUTA_SRC . '/Utils/Correo.php';
 require_once RUTA_SRC . '/Utils/Validador.php';
+require_once RUTA_SRC . '/Utils/LectorCsv.php';
 require_once RUTA_SRC . '/Config/database.php';
+require_once RUTA_SRC . '/Config/seguridad.php';
 require_once RUTA_SRC . '/Middleware/AuthMiddleware.php';
 require_once RUTA_SRC . '/Middleware/AmbitoMiddleware.php';
 require_once RUTA_SRC . '/Repositories/BaseRepository.php';
@@ -71,6 +79,18 @@ foreach (glob(RUTA_SRC . '/Services/*.php') as $archivoServicio) {
     require_once $archivoServicio;
 }
 
+// Parametros de la URL: cada uno debe ser un solo texto UTF-8 valido. Un
+// arreglo (?recurso[]=x) o bytes invalidos llegaban a codigo que espera
+// texto y terminaban en un error fatal (500).
+foreach ($_GET as $clave => $valor) {
+    if (!is_string($valor)) {
+        Respuesta::error(400, "El parámetro \"{$clave}\" debe ser un solo valor, no una lista.");
+    }
+    if (!mb_check_encoding($valor, 'UTF-8') || !mb_check_encoding((string) $clave, 'UTF-8')) {
+        Respuesta::error(400, "El parámetro \"{$clave}\" tiene caracteres no válidos (se esperaba texto UTF-8).");
+    }
+}
+
 // Health check en la raiz
 $recurso = $_GET['recurso'] ?? null;
 $accion = $_GET['accion'] ?? null;
@@ -80,7 +100,7 @@ if ($recurso === null) {
 }
 
 if ($accion === null) {
-    Respuesta::error(400, 'Falta el parametro "accion".');
+    Respuesta::error(400, 'Falta el parámetro "accion".');
 }
 
 // Tabla de rutas: recurso => [archivo del Controller, nombre de la clase]
@@ -97,6 +117,8 @@ $rutas = [
     'pagos' => ['PagoController.php', 'PagoController'],
     'calendario' => ['CalendarioController.php', 'CalendarioController'],
     'reportes' => ['ReporteController.php', 'ReporteController'],
+    'autorregistro' => ['AutorregistroController.php', 'AutorregistroController'],
+    'importacion-deportistas' => ['ImportacionDeportistaController.php', 'ImportacionDeportistaController'],
 ];
 
 // Tabla de politicas de acceso: recurso => politica
@@ -113,6 +135,10 @@ $politicasAcceso = [
     'pagos' => 'autenticada',
     'calendario' => 'autenticada',
     'reportes' => 'solo_administrativa',
+    // Sin sesion: solo registrar y, con el permiso temporal que abre el
+    // registro, sus documentos (RN-T.14). "deportistas" sigue autenticada.
+    'autorregistro' => 'publica',
+    'importacion-deportistas' => 'solo_administrativa',
 ];
 
 if (!array_key_exists($recurso, $rutas)) {
@@ -154,6 +180,10 @@ $metodo = $_SERVER['REQUEST_METHOD'];
  * cuenta en la base de datos, y un fallo ahi debe salir como el 500 generico.
  */
 try {
+    // Proteccion CSRF: toda peticion que modifica datos (no GET) debe venir
+    // del mismo sitio. Va antes del Middleware y de cualquier lectura del cuerpo.
+    Solicitud::exigirMismoOrigen($metodo);
+
     // Middleware segun la politica de acceso del recurso
     $politica = $politicasAcceso[$recurso] ?? 'solo_administrativa';
 
@@ -168,7 +198,7 @@ try {
             AmbitoMiddleware::verificarAdministrativa();
             break;
         default:
-            Respuesta::error(500, "Politica de acceso no reconocida: {$politica}");
+            Respuesta::error(500, "Política de acceso no reconocida: {$politica}");
     }
 
     $controlador = new $nombreClaseControlador();

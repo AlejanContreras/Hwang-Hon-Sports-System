@@ -24,7 +24,8 @@ class Respuesta
     }
 
     /**
-     * Responde con error: 400, 401, 403, 404, 405, 409 o 500, segun el caso.
+     * Responde con error: 400, 401, 403, 404, 405, 409, 413, 415, 422, 429 o
+     * 500, segun el caso.
      */
     public static function error(int $codigoHttp, string $mensaje): never
     {
@@ -68,7 +69,49 @@ class Respuesta
     {
         http_response_code($codigoHttp);
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($contenido, JSON_UNESCAPED_UNICODE);
+        header('X-Content-Type-Options: nosniff');
+        echo self::json($contenido);
         exit;
+    }
+
+    /**
+     * Responde con éxito y entrega la respuesta completa al cliente SIN
+     * terminar la ejecución, para hacer después un trabajo lento que no debe
+     * notarse en el tiempo de respuesta (ej. enviar el correo de
+     * recuperación: si tardara solo cuando la cuenta existe, revelaría qué
+     * correos están registrados). El llamador termina con exit al acabar.
+     */
+    public static function exitoSinTerminar(mixed $datos, int $codigoHttp = 200): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+        ignore_user_abort(true);
+        $cuerpo = self::json(['exito' => true, 'datos' => $datos]);
+        http_response_code($codigoHttp);
+        header('Content-Type: application/json; charset=utf-8');
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Length: ' . strlen($cuerpo));
+        header('Connection: close');
+        echo $cuerpo;
+        while (ob_get_level() > 0) {
+            ob_end_flush();
+        }
+        flush();
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        }
+    }
+
+    /**
+     * JSON de la respuesta. Un texto con UTF-8 inválido (ej. un parámetro de
+     * la URL repetido en un mensaje) se reemplaza por U+FFFD en vez de hacer
+     * fallar json_encode y dejar la respuesta vacía.
+     *
+     * @param array<string, mixed> $contenido
+     */
+    private static function json(array $contenido): string
+    {
+        return (string) json_encode($contenido, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
     }
 }

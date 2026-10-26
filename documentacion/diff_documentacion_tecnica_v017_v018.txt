@@ -1,0 +1,75 @@
+--- Documentacion_Tecnica_HwangHon_v0_1_7.docx
++++ Documentacion_Tecnica_HwangHon_v0_1_8.docx
+@@ -1,12 +1,12 @@
+ DOCUMENTACIÓN TÉCNICA
+ HwangHon-Sports-System
+-Versión 0.1.7 — documento de trabajo
++Versión 0.1.8 — documento de trabajo
+ Club Deportivo de Hapkido Hwang Hon — Soacha, Cundinamarca
+ Cliente: Aldrin Díaz Herrera (Maestro del club)
+ Autor: John Alejandro Contreras — Ingeniería de Software,
+ Fundación Universitaria Compensar (práctica profesional)
+-16 de octubre de 2026
+-Basado en el Documento Maestro v0.2.6, en Reglas de Negocio v1.0 (documentacion/reglas_negocio/) y en
++23 de octubre de 2026
++Basado en el Documento Maestro v0.2.6, en Reglas de Negocio v1.1 (documentacion/reglas_negocio/) y en
+ el script base_datos/esquema_hwanghon_v4.sql, fuente autoritativa del modelo de datos (sección 13).
+ Etiquetas usadas: [CONFIRMADO] · [PROPUESTA / A DEFINIR] · [PENDIENTE DE RESPUESTA] · [PENDIENTE DE VERIFICACIÓN] · [PENDIENTE DE VALIDACIÓN].
+ Ninguna afirmación sin respaldo se presenta como definitiva.
+@@ -21,6 +21,7 @@
+ v0.1.5 (28/09/2026): sección 10 (Casos de uso y flujos alternativos) ampliada con la lógica ya definida en Especificación de Lógica de Negocio v0.4 y Reglas de Negocio v0.6. Login y creación de cuentas gana la vigencia exacta del token de recuperación (1 hora, RN-T.12) y precisa que el autorregistro no tiene estado "rechazado" — un registro descartado se elimina, no se marca (RN-T.14). Módulo 1 corrige "validación fila por fila" por el mecanismo real, campo por campo (RN-1.7/RN-9.6), y agrega el comportamiento de actualización de deportistas ya registrados con confirmación previa (RN-1.9) y el manejo de correo compartido entre un deportista adulto y su rol de tutor frente a un conflicto real entre dos adultos (RN-1.10). Módulo 5 agrega el mensaje de advertencia por inasistencia al crear una sesión de examen (RN-5.2) y la confirmación manual de entrega física del cinturón, independiente de la aprobación académica (RN-5.7). Módulo 8 agrega la alerta automática de mensualidad vencida desde el primer mes (RN-8.3). Fuentes: Reglas de Negocio v0.1 y Documento Maestro v0.2.1 para el resto de la sección 10, sin cambios.
+ v0.1.6 (09/10/2026): decisión final de John sobre el ámbito público — una sola cuenta por deportista, sin distinción por edad; el acudiente no tiene login propio (ver Reglas de Negocio v0.9). Sección 8: "Vista pública (deportista / acudiente)" pasa a "Vista pública (deportista)" (también en la tabla resumen de la sección 9). Sección 10: se retira "el ingreso es por documento de identidad, sin contraseña" (ya estaba desactualizada) y se agrega [AMPLIADO] con el mecanismo real de RN-T.16 (documento + fecha de nacimiento del deportista, bloqueo de 5 intentos/15 minutos). Sección 13: se agrega la columna sexo a la tabla deportista y la entidad nueva intento_acceso_publico, verificadas directamente contra esquema_hwanghon_v3.sql. Módulo 1 sin cambio.
+ v0.1.7 (16/10/2026): sincronización completa con Reglas de Negocio v1.0, esquema_hwanghon_v4.sql y Especificación de Lógica de Negocio v0.9. Sección 13 reescrita por completo: diccionario de datos de las 14 tablas del esquema v4 (antes 12), con sus 15 llaves foráneas, 3 restricciones CHECK y el procedimiento almacenado cambiar_correo_administrador; se agregan documento_general y entrega_cinturon (antes pendiente, fuera de alcance) y se renombra intento_acceso_publico a intento_acceso (ahora compartida entre los dos ámbitos, llave ambito + identificador). Sección 8: la vista pública edita peso, discapacidad, teléfono, dirección y correo, y confirma la entrega de su cinturón — ya no «solo peso y discapacidad». Sección 9: se corrigen las fechas de examen (ya verificadas) y la categoría Infantil (8 a 11 años, ya resuelta); se retira la atribución a Aldrin de la consecuencia de mora, que depende de una decisión de desarrollo, no del club. Sección 10: login público y administrativo con bloqueo de 4 intentos (antes 5) y tabla intento_acceso compartida; estadísticas e historial en una sola pantalla con dos pestañas; puesto en competencias; sesión de examen abierta/cerrada con nota de 1 a 10; documentos por tipo más documentos generales; asistencia solo fines de semana; pagos con semana habitual y anulación por mes; calendario con tipo grado; seis reportes de la primera versión; desactivación (no baja) de cuentas administrativas por Aldrin y la cuenta Desarrollador; expiración de sesión (2 horas administrativa, 30 minutos pública). Sección 20: referencia el Modelo Relacional v4 y el MER v5 (los PNG se agregarán cuando se generen). Todas las citas del documento se actualizan a Reglas de Negocio v1.0.
++v0.1.8 (23/10/2026): sincronización con Reglas de Negocio v1.1 (RN-3.8): la tabla de categorías de peso para Junior y Juvenil pasa de PROPUESTA a oficial, tomada del Reglamento de Competencia Fedecolhap v3.1 2024, art. 4 — Juvenil deja de compartir la tabla de Mayores y pasa a tener la suya propia. Infantil sigue siendo PROPUESTA del equipo (no existe en el reglamento). Se actualiza la fila "Categoría Infantil" de la sección 9 y la columna categoria_peso de la sección 13 (deportista_participacion); se corrige la nota de módulo 3 en la sección 9, que aún decía "Infantil (5-11 años)" en vez de 8-11.
+ 
+ Contenido
+ 2. Introducción
+@@ -323,7 +324,7 @@
+ Ascensos — tiempos mínimos | Ejemplos recogidos: menores ~2,5 años en total; azul→rojo ~9 meses; violeta→marrón ~1 a 1,5 años. | PENDIENTE DE RESPUESTA
+ Ascensos — criterios oficiales | Transcripción literal de la plantilla oficial de examen cuando Aldrin la envíe (fecha, grado, resultado, criterios, puntajes, aspectos fallidos, observaciones, recomendaciones, aprobado sí/no). | PENDIENTE DE RESPUESTA (plantilla oficial no recibida aún)
+ Fechas de examen | Confirmadas: 26 de abril, 26 de julio y 13 de diciembre de 2026, verificadas contra el Plan de Acción IMRDS 2026 (fuente primaria). | CONFIRMADO
+-Categoría "Infantil" | Infantil: 8 a 11 años (no 5 a 11, como se manejaba antes). Tabla de pesos por categoría: consolidada y en uso, PROPUESTA del equipo de desarrollo (ver sección 13, deportista.peso). | CONFIRMADO (edad); PROPUESTA (pesos, ver sección 13)
++Categoría "Infantil" | Infantil: 8 a 11 años (no 5 a 11, como se manejaba antes). Tabla de pesos por categoría: oficial de Fedecolhap (Reglamento de Competencia v3.1 2024, art. 4) para Junior, Juvenil, Mayores, Sénior y Máster; Infantil sigue siendo PROPUESTA del equipo de desarrollo, porque esa categoría no existe en el reglamento (ver sección 13, deportista_participacion.categoria_peso). | CONFIRMADO (edad; pesos de Junior/Juvenil/Mayores-Sénior-Máster, fuente Fedecolhap); PROPUESTA (pesos de Infantil, ver sección 13)
+ Consentimientos específicos | Por ejemplo, consentimiento de riesgo en combate para menores. | PENDIENTE DE RESPUESTA
+ Evaluación cualitativa periódica | Preguntas base y escala (1-5 o 1-10) para evaluar cualitativamente al deportista. Despriorizada: se construye al final. | PENDIENTE DE RESPUESTA (criterios base)
+ Registro de deportistas | Mediante formulario virtual, o transcripción manual del formulario físico. Se descarta escaneo/OCR automático para el MVP. | CONFIRMADO
+@@ -338,7 +339,7 @@
+ Módulo | Confirmado | Propuesta / a definir | Pendiente de respuesta
+ 2. Historial deportivo | Separación estricta entre historial de exámenes/ascensos e historial de torneos.
+Permanencia calculada desde el historial de pagos de mensualidad.
+Gráficas de evolución (torneos y pruebas físicas).
+Campo de estado anímico/psicológico: estructura confirmada en base de datos, no visible en la interfaz (reserva a futuro). | — | Tiempos mínimos de entrenamiento entre ascensos (ver sección 9).
+ Módulo | Confirmado | Propuesta / a definir | Pendiente de respuesta
+-3. Competencias y torneos | Estructura de información de torneo y participación (fecha, lugar, modalidad, categoría, resultado).
+Plataforma usada = texto libre; sin campo de "ranking".
+Seis modalidades: combate individual, combate en equipo, defensa personal, salto alto, salto largo, formas.
+Fitofan solo para inscripción/validación en tiempo real durante la competencia.
+Notas de oponentes en texto libre (apuntes comparativos del staff, no un cálculo del sistema). | Distancia/tiempo de viaje al torneo — descartado por ahora. | Categoría "Infantil" (5-11 años) a confirmar en la tabla oficial de categorías.
++3. Competencias y torneos | Estructura de información de torneo y participación (fecha, lugar, modalidad, categoría, resultado).
+Plataforma usada = texto libre; sin campo de "ranking".
+Seis modalidades: combate individual, combate en equipo, defensa personal, salto alto, salto largo, formas.
+Fitofan solo para inscripción/validación en tiempo real durante la competencia.
+Notas de oponentes en texto libre (apuntes comparativos del staff, no un cálculo del sistema). | Distancia/tiempo de viaje al torneo — descartado por ahora.
+Categoría "Infantil" (8 a 11 años): tabla de pesos PROPUESTA del equipo, porque no existe en el reglamento de la federación (RN-3.8). | —
+ Módulo | Confirmado | Propuesta / a definir | Pendiente de respuesta
+ 4. Estadísticas y rendimiento | Agregación y consulta de datos ya definidos en otros módulos (vista individual del deportista).
+Cuenta propia del club, independiente de plataformas externas.
+No es un sistema recomendador con IA: solo notas descriptivas de fortalezas/debilidades. | Evaluación cualitativa periódica (preguntas base, escala 1-5 o 1-10) — despriorizada, se construye al final.
+Comparación en paralelo de dos deportistas (vista dividida) — exclusiva del ámbito administrativo, no aplica a vista pública. | Preguntas y criterios base de la evaluación cualitativa.
+ Módulo | Confirmado | Propuesta / a definir | Pendiente de respuesta
+@@ -434,7 +435,7 @@
+ competencia_evento_id | INT | NOT NULL | Competencia en la que participa.
+ modalidad | ENUM('combate_individual', 'combate_equipos', 'defensa_personal', 'salto_alto', 'salto_largo', 'formas') | NOT NULL | Modalidad de participación en la competencia — conjunto cerrado (RN-3.2), a diferencia de la modalidad de examen (ver detalle_evaluacion).
+ categoria_edad | ENUM('infantil', 'junior', 'juvenil', 'mayores', 'senior', 'master') | NOT NULL | [CONFIRMADO] Infantil 8-11, Junior 12-14, Juvenil 15-17, Mayores 18-35, Sénior 36-45, Máster 46+ (RN-3.8).
+-categoria_peso | VARCHAR(30) | NULL | [PROPUESTA] Sugerida por la tabla consolidada del equipo (RN-3.8), que cubre todas las categorías con corte inclusivo; editable; se reemplaza si llega la tabla oficial de la federación (RN-3.1/RN-3.8).
++categoria_peso | VARCHAR(30) | NULL | [CONFIRMADO] Sugerida por la tabla oficial de Fedecolhap (RN-3.8) para Junior, Juvenil, Mayores, Sénior y Máster — excepto Infantil, que sigue siendo PROPUESTA del equipo; con corte inclusivo; editable (RN-3.1/RN-3.8).
+ puesto | TINYINT UNSIGNED | NULL | [CONFIRMADO] Lugar en el torneo; lo digita el staff, no se calcula ni se valida que sea único (dos deportistas pueden compartir puesto); pensado sobre todo para torneos de combate pequeños; nulo hasta después del torneo (RN-3.1, RN-3.3).
+ resultado | VARCHAR(255) | NULL | [CONFIRMADO] Resultado general, texto libre (RN-3.1).
+ medalla | ENUM('oro', 'plata', 'bronce', 'ninguna') | NULL | Medalla obtenida, si aplica.
+@@ -475,5 +476,5 @@
+ identificador | VARCHAR(150) | NOT NULL | Lo digitado al entrar: correo (ámbito administrativo) o documento del deportista (ámbito público). Sin llave foránea a propósito: puede no existir y no debe poder deducirse si existe.
+ intentos_fallidos | INT | NOT NULL, por defecto 0 | [CONFIRMADO] Fallos consecutivos; con 4 se bloquea 15 minutos (antes 5); vuelve a 0 al acertar (RN-T.16).
+ bloqueado_hasta | DATETIME | NULL | [CONFIRMADO] Fin del bloqueo de 15 minutos tras el cuarto fallo (antes quinto); nulo si no está bloqueado (RN-T.16).
+-[HEADER] HwangHon-Sports-System — Documentación Técnica v0.1.7
++[HEADER] HwangHon-Sports-System — Documentación Técnica v0.1.8
+ [FOOTER] Página  de 

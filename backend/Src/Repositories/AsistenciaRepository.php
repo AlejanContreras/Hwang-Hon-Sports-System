@@ -142,7 +142,8 @@ class AsistenciaRepository extends BaseRepository
     }
 
     /**
-     * Filas de asistencia del rango con el nombre del deportista, para la
+     * Filas de asistencia del rango con el nombre y la condición de salud
+     * (discapacidad, RN-7.1) del deportista, para la
      * planilla del reporte (una sola consulta para todos). Solo deportistas
      * validados; con $estado, solo los de ese estado actual. Orden: nombre,
      * documento y fecha.
@@ -158,7 +159,7 @@ class AsistenciaRepository extends BaseRepository
             $parametros['estado'] = $estado;
         }
         return $this->consultar(
-            'SELECT a.deportista_documento, d.nombre, a.fecha, a.asistio FROM asistencia a '
+            'SELECT a.deportista_documento, d.nombre, d.discapacidad, a.fecha, a.asistio FROM asistencia a '
             . 'JOIN deportista d ON d.documento = a.deportista_documento '
             . "WHERE a.fecha >= :desde AND a.fecha <= :hasta AND d.estado_registro = 'validado'" . $filtro
             . ' ORDER BY d.nombre, a.deportista_documento, a.fecha',

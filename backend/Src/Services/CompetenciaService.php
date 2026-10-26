@@ -13,7 +13,7 @@ declare(strict_types=1);
  *     combates se llenan DESPUÉS (nulos mientras tanto) y no se pueden cargar
  *     en un torneo con fecha futura (hoy de Bogotá).
  *   - Categoría de edad sugerida por la edad a la FECHA DEL TORNEO y
- *     categoría de peso sugerida por el peso registrado (tabla PROPUESTA),
+ *     categoría de peso sugerida por el peso registrado (DeportistaService),
  *     ambas siempre editables (RN-3.8); la de peso solo en modalidades de
  *     combate. El cálculo es el de DeportistaService, no se duplica.
  *   - Puesto: lo digita el staff, 1 a 99, puede repetirse; la medalla es
@@ -558,7 +558,7 @@ class CompetenciaService
 
     private function fecha(mixed $valor, string $campo): string
     {
-        $fecha = is_string($valor) ? DateTimeImmutable::createFromFormat('!Y-m-d', $valor) : false;
+        $fecha = Validador::esFechaIso($valor) ? DateTimeImmutable::createFromFormat('!Y-m-d', $valor) : false;
         if ($fecha === false || $fecha->format('Y-m-d') !== $valor) {
             throw new ExcepcionNegocio("El campo \"{$campo}\" debe ser una fecha válida con formato AAAA-MM-DD.", 400);
         }
@@ -608,7 +608,8 @@ class CompetenciaService
         if (!is_string($valor)) {
             throw new ExcepcionNegocio("El campo \"{$campo}\" debe ser texto.", 400);
         }
-        return trim($valor);
+        // Columna TEXT: tope de bytes (si no, un texto enorme era un 500).
+        return Validador::textoLargo($valor, $campo);
     }
 
     /**

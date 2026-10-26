@@ -18,6 +18,8 @@ final class Validador
     private const MINIMO_CONTRASENA = 8;
     /** Límite de bcrypt: ignora en silencio los bytes después del 72. */
     private const MAXIMO_BYTES_CONTRASENA = 72;
+    /** Tope de un campo TEXT (65.535 bytes), con margen. */
+    private const MAXIMO_BYTES_TEXTO = 65000;
 
     private function __construct()
     {
@@ -74,9 +76,38 @@ final class Validador
             throw new ExcepcionNegocio('La contraseña debe tener al menos 8 caracteres.', 400);
         }
         if (strlen($contrasena) > self::MAXIMO_BYTES_CONTRASENA) {
-            throw new ExcepcionNegocio('La contraseña no puede superar 72 caracteres.', 400);
+            throw new ExcepcionNegocio('La contraseña no puede superar 72 bytes (72 caracteres sin tildes; cada tilde, ñ o símbolo especial ocupa 2 o más).', 400);
         }
         return $contrasena;
+    }
+
+    /**
+     * ¿Es una fecha AAAA-MM-DD estricta y real? Rechaza cualquier otra cosa
+     * sin lanzar error: bytes de control (con un NUL, createFromFormat lanza
+     * ValueError y la petición terminaba en 500), un salto de línea al final
+     * (\z, no $) o fechas imposibles (2026-02-30). Cada Service la usa antes
+     * de createFromFormat y conserva su propio mensaje de 400.
+     */
+    public static function esFechaIso(mixed $valor): bool
+    {
+        return is_string($valor)
+            && preg_match('/^(\d{4})-(\d{2})-(\d{2})\z/', $valor, $partes) === 1
+            && checkdate((int) $partes[2], (int) $partes[3], (int) $partes[1]);
+    }
+
+    /**
+     * Texto largo para una columna TEXT (65.535 bytes): máximo
+     * MAXIMO_BYTES_TEXTO bytes (no caracteres: una tilde ocupa 2). Vacío o
+     * null devuelve null (o error si es obligatorio). Sin este tope, un texto
+     * mayor llegaba a la base en modo estricto y terminaba en 500.
+     */
+    public static function textoLargo(mixed $valor, string $campo, bool $obligatorio = false): ?string
+    {
+        $texto = self::texto($valor, $campo, PHP_INT_MAX, $obligatorio);
+        if ($texto !== null && strlen($texto) > self::MAXIMO_BYTES_TEXTO) {
+            throw new ExcepcionNegocio("El campo \"{$campo}\" admite máximo 65.000 bytes (unos 30.000 caracteres con tildes).", 400);
+        }
+        return $texto;
     }
 
     /**
@@ -96,6 +127,10 @@ final class Validador
             throw new ExcepcionNegocio("El campo \"{$campo}\" debe ser texto.", 400);
         }
         $texto = trim((string) $valor);
+        if (!mb_check_encoding($texto, 'UTF-8')) {
+            // Posible en un campo multipart; en la base sería un 500.
+            throw new ExcepcionNegocio("El campo \"{$campo}\" tiene caracteres no válidos (se esperaba texto UTF-8).", 400);
+        }
         if (mb_strlen($texto) > $maximo) {
             throw new ExcepcionNegocio("El campo \"{$campo}\" admite máximo {$maximo} caracteres.", 400);
         }

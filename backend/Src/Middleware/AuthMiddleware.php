@@ -17,7 +17,8 @@ class AuthMiddleware
      * la ejecución si no hay sesión.
      *
      * En el ámbito administrativo consulta además la cuenta en cada petición:
-     * si ya no existe o fue desactivada, cierra la sesión y responde 401
+     * si ya no existe, fue desactivada o su contraseña cambió desde que se
+     * inició la sesión (huella distinta), cierra la sesión y responde 401
      * (RN-T.11: la sesión de una cuenta desactivada deja de valer en la
      * siguiente petición). AmbitoMiddleware pasa por aquí, así que el
      * chequeo vale también para las rutas solo administrativas.
@@ -33,8 +34,14 @@ class AuthMiddleware
         }
 
         if ($usuario['ambito'] === 'administrativa') {
-            $cuenta = (new UsuarioAdministrativoRepository())->obtenerPorId($usuario['identificador']);
-            if ($cuenta === null || !(bool) $cuenta['activa']) {
+            // También compara la huella de la contraseña guardada al iniciar
+            // sesión: si la contraseña cambió (restablecida por quien gestiona
+            // cuentas, recuperada por correo o cambiada desde otra sesión),
+            // esta sesión deja de valer.
+            $cuenta = (new UsuarioAdministrativoRepository())->obtenerParaAutenticacion($usuario['identificador']);
+            $huella = Sesion::huellaActual();
+            if ($cuenta === null || !(bool) $cuenta['activa']
+                || $huella === null || !hash_equals(Sesion::huellaCredencial((string) $cuenta['contrasena']), $huella)) {
                 Sesion::cerrar();
                 Respuesta::error(401, 'Tu sesión ya no es válida.');
             }

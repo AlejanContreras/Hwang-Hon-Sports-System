@@ -9,7 +9,8 @@ declare(strict_types=1);
  *   - Solo se registra asistencia en sábado o domingo, de hoy hacia atrás
  *     (RN-7.4). «Hoy» es la fecha de Bogotá, no la del servidor (RN-7.7).
  *   - Solo presente o ausente (RN-7.5). Tomar una fecha crea una fila por
- *     cada deportista activo, presente o ausente (RN-7.6), en una transacción.
+ *     cada deportista activo, presente o ausente (RN-7.6), en una transacción;
+ *     en una fecha pasada, sin «ausente» para quien aún no había ingresado.
  *   - Reactivación automática (RN-1.11): un inactivo marcado presente (al
  *     tomar o al corregir) vuelve a activo. La desactivación NO es
  *     automática: la dispara el botón «Revisar inactivos» (3 meses sin
@@ -81,10 +82,16 @@ class AsistenciaService
                     if ($deportista['estado'] !== 'activo' && !in_array($documento, $reactivados, true)) {
                         continue;
                     }
+                    $presente = in_array($documento, $presentes, true);
+                    // Fecha pasada: quien aún no había ingresado no tiene
+                    // «ausente» ese día (si viene marcado presente, sí se guarda).
+                    if (!$presente && $deportista['fecha_ingreso'] > $fecha) {
+                        continue;
+                    }
                     $this->asistencia->crear(new AsistenciaModel(
                         deportistaDocumento: $documento,
                         fecha: $fecha,
-                        asistio: in_array($documento, $presentes, true),
+                        asistio: $presente,
                     ));
                     $registrados++;
                 }
@@ -429,7 +436,7 @@ class AsistenciaService
      */
     private function fechaFormato(mixed $valor, string $campo): string
     {
-        $fecha = is_string($valor) ? DateTimeImmutable::createFromFormat('!Y-m-d', $valor, new DateTimeZone(self::ZONA_HORARIA)) : false;
+        $fecha = Validador::esFechaIso($valor) ? DateTimeImmutable::createFromFormat('!Y-m-d', $valor, new DateTimeZone(self::ZONA_HORARIA)) : false;
         if ($fecha === false || $fecha->format('Y-m-d') !== $valor) {
             throw new ExcepcionNegocio("El campo \"{$campo}\" debe ser una fecha válida con formato AAAA-MM-DD.", 400);
         }

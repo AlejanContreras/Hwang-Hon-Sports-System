@@ -18,8 +18,10 @@ declare(strict_types=1);
  *   - Texto digitado por usuarios: siempre como cadena (nunca fórmula) con
  *     el estilo ESTILO_CELDA_TEXTO, que lleva quotePrefix (inyección de
  *     fórmulas neutralizada aunque la celda se edite).
- *   - Nunca se exportan campos excluidos (RN-1.6), notas_oponente,
- *     contraseñas ni datos de salud.
+ *   - Nunca se exportan campos excluidos (RN-1.6: género, grupo étnico,
+ *     víctima del conflicto armado), notas_oponente ni contraseñas. La
+ *     condición de salud (discapacidad) sale solo donde una regla lo pide:
+ *     ficha del deportista (RN-10.3) y planilla de asistencia (RN-7.1).
  *
  * Cada método devuelve {contenido, nombre, tipo}; el Controller lo envía
  * con Respuesta::archivo.
@@ -104,12 +106,17 @@ class ReporteService
         $asistencia90 = $asistencia->porcentaje(['documento' => $documento]);
         $asistenciaTotal = $asistencia->porcentaje(['documento' => $documento, 'ventana' => 'todo']);
 
+        $categoriaEdad = DeportistaService::categoriaPorEdad($edad);
+        $peso = (float) $deportista['peso'];
         $secciones = [
             ['titulo' => 'Perfil', 'pares' => [
                 ['Nombre', $deportista['nombre']],
                 ['Documento', (string) $deportista['documento']],
                 ['Edad', "{$edad} años"],
-                ['Categoría de edad', DeportistaService::categoriaPorEdad($edad) ?? 'Sin categoría (menor de 8 años)'],
+                ['Categoría de edad', $categoriaEdad ?? 'Sin categoría (menor de 8 años)'],
+                ['Peso', number_format($peso, 1, ',', '') . ' kg'],
+                ['Categoría de peso', DeportistaService::categoriaPorPeso($categoriaEdad, (string) $deportista['sexo'], $peso) ?? 'Sin categoría'],
+                ['Condición de salud', $deportista['discapacidad'] ?? 'Ninguna registrada'],
                 ['Grado actual', $deportista['grado_actual'] ?? 'Ingresado (sin cinturón)'],
                 ['Fecha de ingreso', $deportista['fecha_ingreso']],
                 ['Estado', ucfirst($deportista['estado'])],
@@ -222,7 +229,7 @@ class ReporteService
         foreach ($this->asistencia->planillaEnRango($desde, $hasta, $estado) as $registro) {
             $documento = (string) $registro['deportista_documento'];
             $fechas[$registro['fecha']] = true;
-            $deportistas[$documento] ??= ['nombre' => $registro['nombre'], 'marcas' => []];
+            $deportistas[$documento] ??= ['nombre' => $registro['nombre'], 'discapacidad' => $registro['discapacidad'], 'marcas' => []];
             $deportistas[$documento]['marcas'][$registro['fecha']] = (bool) $registro['asistio'];
         }
         $fechas = array_keys($fechas);
@@ -235,29 +242,33 @@ class ReporteService
 
     /**
      * Diseño de la planilla (PROVISIONAL, reemplazable por la plantilla
-     * oficial IMRDS). Sin género, grupo étnico ni víctima (RN-1.6).
+     * oficial IMRDS). Con la condición de salud de cada deportista (RN-7.1:
+     * quien toma la asistencia debe conocerla). Sin género, grupo étnico ni
+     * víctima (RN-1.6).
      *
      * @param array<int, string> $fechas
-     * @param array<string, array{nombre: string, marcas: array<string, bool>}> $deportistas
+     * @param array<string, array{nombre: string, discapacidad: ?string, marcas: array<string, bool>}> $deportistas
      */
     private function hojaPlanillaAsistencia(GeneradorXlsx $x, string $desde, string $hasta, ?string $estado, array $fechas, array $deportistas): void
     {
         $h = $x->agregarHoja('Asistencia');
-        $titulos = array_merge(['N°', 'Documento', 'Nombre'], array_map(fn (string $f): string => $this->diaCorto($f), $fechas), ['Asistió', 'Sesiones', '% asistencia']);
-        $anchos = array_merge([6, 16, 34], array_fill(0, count($fechas), 9), [10, 10, 14]);
+        $titulos = array_merge(['N°', 'Documento', 'Nombre', 'Condición de salud'], array_map(fn (string $f): string => $this->diaCorto($f), $fechas), ['Asistió', 'Sesiones', '% asistencia']);
+        $anchos = array_merge([6, 16, 34, 24], array_fill(0, count($fechas), 9), [10, 10, 14]);
         $subtitulos = ["Rango: {$desde} a {$hasta}" . ($estado === null ? '' : " · Estado: {$estado}"), self::PLANILLA_LEYENDA];
         $fila = $this->encabezado($x, $h, self::PLANILLA_TITULO, $subtitulos, $titulos, $anchos, GeneradorXlsx::ESTILO_COLUMNA_TITULO_AJUSTADO);
         $x->altoFila($h, $fila - 1, 32);
 
-        $columnaTotales = 3 + count($fechas);
+        $primeraFecha = 4; // columnas fijas: N°, Documento, Nombre, Condición de salud
+        $columnaTotales = $primeraFecha + count($fechas);
         $asistentesPorFecha = array_fill_keys($fechas, 0);
         $numero = 1;
         foreach ($deportistas as $documento => $d) {
             $this->numero($x, $h, 0, $fila, $numero++);
             $this->texto($x, $h, 1, $fila, (string) $documento);
             $this->texto($x, $h, 2, $fila, $d['nombre']);
+            $this->texto($x, $h, 3, $fila, $d['discapacidad']);
             foreach ($fechas as $i => $f) {
-                $columna = $x->letraColumna(3 + $i);
+                $columna = $x->letraColumna($primeraFecha + $i);
                 if (!array_key_exists($f, $d['marcas'])) {
                     $x->celda($h, $columna, $fila, '', GeneradorXlsx::ESTILO_CELDA_NEUTRA);
                 } elseif ($d['marcas'][$f]) {
@@ -278,9 +289,9 @@ class ReporteService
 
         // Fila final: asistentes por fecha.
         $x->celda($h, 'A', $fila, 'Asistentes por fecha', GeneradorXlsx::ESTILO_TOTAL_POSITIVO);
-        $x->combinar($h, "A{$fila}", "C{$fila}");
+        $x->combinar($h, "A{$fila}", "D{$fila}");
         foreach ($fechas as $i => $f) {
-            $this->numero($x, $h, 3 + $i, $fila, $asistentesPorFecha[$f], GeneradorXlsx::ESTILO_TOTAL_POSITIVO);
+            $this->numero($x, $h, $primeraFecha + $i, $fila, $asistentesPorFecha[$f], GeneradorXlsx::ESTILO_TOTAL_POSITIVO);
         }
         $this->numero($x, $h, $columnaTotales, $fila, array_sum($asistentesPorFecha), GeneradorXlsx::ESTILO_TOTAL_POSITIVO);
     }
@@ -702,7 +713,7 @@ class ReporteService
                 $fechas[] = null;
                 continue;
             }
-            $fecha = is_string($valor) ? DateTimeImmutable::createFromFormat('!Y-m-d', $valor) : false;
+            $fecha = Validador::esFechaIso($valor) ? DateTimeImmutable::createFromFormat('!Y-m-d', $valor) : false;
             if ($fecha === false || $fecha->format('Y-m-d') !== $valor) {
                 throw new ExcepcionNegocio("El parámetro \"{$campo}\" debe ser una fecha válida con formato AAAA-MM-DD.", 400);
             }

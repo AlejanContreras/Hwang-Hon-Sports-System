@@ -1,0 +1,93 @@
+--- Documento_Maestro_HwangHon_v0_2_6.docx
++++ Documento_Maestro_HwangHon_v0_2_7.docx
+@@ -1,7 +1,7 @@
+ DOCUMENTO MAESTRO
+ HwangHon-Sports-System
+-Análisis y documentación · Versión 0.2.6
+-Sistema de gestión deportiva para el Club Deportivo de Hapkido Hwang Hon. Documento base de análisis (fuente de verdad del proyecto), previo al diseño y al desarrollo. Esta versión (0.2.6) sincroniza este documento con Reglas de Negocio v1.0, esquema_hwanghon_v4.sql y Documentación Técnica v0.1.7 (16/10/2026): se actualizan las secciones 14 y 15 (información gestionada y reglas de negocio conocidas), la sección 23 (información pendiente de validación, ahora con ocho puntos en vez de cuatro) y su Anexo, el reporte prioritario (se retira «aptitud para torneos», RN-10.3), y se corrige la nota de v0.2.4 sobre inactividad (ya no se basa en la mora, sino en la asistencia, RN-1.11). No reemplaza las versiones anteriores.
++Análisis y documentación · Versión 0.2.7
++Sistema de gestión deportiva para el Club Deportivo de Hapkido Hwang Hon. Documento base de análisis (fuente de verdad del proyecto), previo al diseño y al desarrollo. Esta versión (0.2.7) sincroniza este documento con Reglas de Negocio v1.1 (RN-3.8): la tabla de categorías de peso para Junior y Juvenil pasa a ser oficial (Reglamento de Competencia Fedecolhap v3.1 2024, art. 4) en vez de PROPUESTA; Infantil sigue siendo PROPUESTA del club. Se actualiza la sección 14 (información gestionada) y la sección 23 (información pendiente de validación, que pasa de ocho a siete puntos) y su Anexo. No reemplaza las versiones anteriores.
+ Documento interno de trabajo · Borrador para validación			Soacha, Cundinamarca — octubre de 2026
+ 
+ 
+@@ -167,7 +167,7 @@
+  PROPUESTA   Los diez módulos son una propuesta; su inclusión, nombre y contenido se validan con el cliente.
+ 14.  Información gestionada
+ Catálogo preliminar de la información por gestionar, derivado de las fuentes y de la reunión con Aldrin. No constituye un modelo de datos: es un inventario para el análisis.
+-Las categorías oficiales de competencia por edad ya quedaron confirmadas (ver sección 13, módulos 2 y 3). La relación entre categoría de peso y edad ahora tiene una tabla PROPUESTA del equipo que cubre todas las categorías (ver sección 14); queda pendiente la tabla oficial de la federación que la reemplazaría (RN-3.8, ver sección 23).
++Las categorías oficiales de competencia por edad ya quedaron confirmadas (ver sección 13, módulos 2 y 3). La relación entre categoría de peso y edad ahora tiene una tabla oficial de Fedecolhap (Reglamento de Competencia v3.1 2024, art. 4) para Junior, Juvenil, Mayores, Sénior y Máster (ver sección 14); Infantil sigue con una tabla PROPUESTA del equipo, porque esa categoría no existe en el reglamento (RN-3.8).
+ 15.  Reglas de negocio conocidas
+ A partir de la versión 0.2.6, el documento de referencia completo y detallado para las reglas de negocio es Reglas de Negocio — HwangHon Sports System (v1.0) (documentacion/reglas_negocio/Reglas_de_Negocio_HwangHon_v1_0.docx), organizado por los mismos diez módulos funcionales de la sección 13 más una sección Transversal. Ahí cada regla se desarrolla con su contexto, justificación y estado (CONFIRMADO, PROPUESTA, PENDIENTE DE RESPUESTA o PENDIENTE DE VERIFICACIÓN). Para no duplicar contenido entre ambos documentos, esta sección conserva solo un resumen de alto nivel; el detalle completo debe consultarse siempre en ese documento.
+ •  Etapas de formación por edad, seis modalidades de competencia, categorías dependientes de edad y peso, matrícula anual diferenciada de la mensualidad, y registro de asistencia: ver Reglas de Negocio v1.0, módulos 1 a 3, 5 y 8.
+@@ -212,19 +212,19 @@
+ •  9. Despliegue
+ 22.  Riesgos y restricciones
+ 23.  Información pendiente de validación
+-Tras la ronda de revisión de reglas de negocio de v0.2, las novedades sincronizadas en v0.2.2 (ver sección 24) y la sincronización completa con Reglas de Negocio v1.0 en v0.2.6, quedan ocho puntos pendientes. La mayoría dependen del club (Aldrin) o de la federación, pero uno de ellos (tiempos mínimos entre ascensos) depende también de Viviana González Sánchez (secretaria del club), consultada directamente el 23/09/2026:
++Tras la ronda de revisión de reglas de negocio de v0.2, las novedades sincronizadas en v0.2.2 (ver sección 24) y la sincronización completa con Reglas de Negocio v1.0 en v0.2.6, quedan siete puntos pendientes. La mayoría dependen del club (Aldrin) o de la federación, pero uno de ellos (tiempos mínimos entre ascensos) depende también de Viviana González Sánchez (secretaria del club), consultada directamente el 23/09/2026:
+ •  1. Plantilla oficial de examen de ascenso: criterios y puntajes definitivos por grado, y el valor medible de cada prueba física (RN-5.3).
+ •  2. Plantilla del certificado o acta de ascenso (RN-5.8).
+ •  3. Plantilla de asistencia del IMRDS, para exportarla en un formato similar (RN-10.2).
+ •  4. Lista definitiva de qué reportes y exportaciones necesita el club, más allá de los seis de la primera versión (RN-10.2).
+ •  5. Consentimientos o autorizaciones específicas más allá de la autorización general de tratamiento de datos ya identificada (firma del acudiente en el formulario de inscripción) — para torneos de combate y para el examen de ascenso (RN-6.5).
+ •  6. Tiempos mínimos de entrenamiento exigidos entre un ascenso de cinturón y el siguiente — pendiente de Aldrin y de Viviana (RN-2.5).
+-•  7. Tabla oficial de categorías por peso de la federación, que reemplazaría la tabla consolidada PROPUESTA de esta versión (RN-3.8).
+-•  8. Evaluación cualitativa periódica: Aldrin calificaría al deportista periódicamente (por ejemplo, trimestralmente) sobre unas "preguntas base" con una escala (1 a 5, o 1 a 10), graficadas en el tiempo — las preguntas y la escala son subjetivas y propias del club, deben salir de Aldrin, no se inventan (RN-4.4).
++•  7. Evaluación cualitativa periódica: Aldrin calificaría al deportista periódicamente (por ejemplo, trimestralmente) sobre unas "preguntas base" con una escala (1 a 5, o 1 a 10), graficadas en el tiempo — las preguntas y la escala son subjetivas y propias del club, deben salir de Aldrin, no se inventan (RN-4.4).
+  CORREGIDO EN v0.2.2   De los seis puntos pendientes en v0.2.1, dos se resolvieron por completo en v0.2.2 (categorías oficiales por edad y fechas de examen 2026 — ver sección 24) y uno se redujo de alcance (categorías de peso por edad, ahora pendiente de Viviana en vez de Aldrin). Quedan cinco puntos pendientes.
+  CORREGIDO EN v0.2.3   El punto de categorías de peso por edad se resuelve como PROPUESTA (cálculo estimado del equipo de desarrollo, ver RN-3.8, Reglas de Negocio v0.6); ya no depende de una respuesta de Viviana. Además, las etiquetas PENDIENTE DE ALDRIN y PENDIENTE DE VALIDACIÓN usadas en este documento se unifican como PENDIENTE DE RESPUESTA, y se añade el consentimiento del examen de ascenso al punto 2 (antes 3). Quedan cuatro puntos pendientes.
+  CORREGIDO EN v0.2.4   Se retira el punto de consecuencia tras mora prolongada: quedó resuelto el 26/09/2026 (RN-8.7, Reglas de Negocio v0.4, luego v0.6) — tras 3 meses consecutivos sin pago, el deportista pasa automáticamente a estado inactivo (deportista.estado), sin otra consecuencia adicional; permanecía en esta lista por descuido, no por una decisión nueva. Se agrega un punto nuevo: evaluación cualitativa periódica (RN-4.4, Reglas de Negocio v0.6), marcada PENDIENTE DE RESPUESTA en Reglas de Negocio y en Especificación de Lógica de Negocio v0.4 (E.3) — nunca se había incluido en esta lista. RN-8.6 (reglas de mora en general) no entra aquí: sigue PROPUESTA, pero es decisión propia de John, no pendiente de Aldrin (ver Especificación de Lógica de Negocio v0.4, E.6). Quedan cuatro puntos pendientes.
+  CORREGIDO EN v0.2.6   Sincronización con Reglas de Negocio v1.0 (16/10/2026): se agregan cuatro puntos nuevos que surgen de esa versión (plantilla del certificado de ascenso RN-5.8, plantilla de asistencia del IMRDS para exportación RN-10.2, lista definitiva de reportes RN-10.2, y tabla oficial de categorías de peso de la federación RN-3.8); quedan ocho puntos pendientes en vez de cuatro. Además, se corrige la nota de v0.2.4: la regla ahí descrita (RN-8.7, inactivo tras 3 meses consecutivos sin pago) fue retirada en Reglas de Negocio v1.0 y reemplazada por RN-1.11 — la inactividad ya no se basa en el pago, sino en la asistencia (3 meses consecutivos sin asistir, sin importar si pagó o no); la alerta de deuda (RN-8.3) sigue existiendo de forma independiente de ese estado. La nota de v0.2.4 permanece sin cambios como registro histórico de lo que se creía correcto en esa fecha.
++ CORREGIDO EN v0.2.7   El punto 7 (tabla oficial de categorías de peso de la federación) se resuelve con Reglas de Negocio v1.1: el Reglamento de Competencia Fedecolhap v3.1 2024 (art. 4) da la tabla oficial para Junior, Juvenil, Mayores, Sénior y Máster. Infantil no pasa a "Decisiones tomadas" como los demás puntos resueltos: sigue siendo una tabla PROPUESTA permanente del club (esa categoría no existe en el reglamento de la federación), así que no es un punto pendiente de respuesta de nadie — se retira de esta lista sin reemplazo. El punto 8 (evaluación cualitativa periódica) pasa a ser el punto 7. Quedan siete puntos pendientes en vez de ocho.
+ 24.  Decisiones tomadas
+ Decisiones ya adoptadas por el equipo del proyecto y por Aldrin hasta v0.2:
+ •  El alcance inicial se limita al Club Hwang Hon; el IMRDS queda para una posible ampliación futura, salvo el registro puntual de deportistas de escuela representando al club en competencias.
+@@ -276,8 +276,7 @@
+ •  4. Lista definitiva de qué reportes y exportaciones necesita el club, más allá de los seis de la primera versión (RN-10.2).
+ •  5. Consentimientos o autorizaciones específicas más allá de la autorización general de tratamiento de datos ya identificada (firma del acudiente en el formulario de inscripción) — para torneos de combate y para el examen de ascenso (RN-6.5).
+ •  6. Tiempos mínimos de entrenamiento exigidos entre un ascenso de cinturón y el siguiente — pendiente de Aldrin y de Viviana (RN-2.5).
+-•  7. Tabla oficial de categorías por peso de la federación, que reemplazaría la tabla consolidada PROPUESTA de esta versión (RN-3.8).
+-•  8. Evaluación cualitativa periódica: Aldrin calificaría al deportista periódicamente (por ejemplo, trimestralmente) sobre unas "preguntas base" con una escala (1 a 5, o 1 a 10), graficadas en el tiempo — las preguntas y la escala son subjetivas y propias del club, deben salir de Aldrin, no se inventan (RN-4.4).
++•  7. Evaluación cualitativa periódica: Aldrin calificaría al deportista periódicamente (por ejemplo, trimestralmente) sobre unas "preguntas base" con una escala (1 a 5, o 1 a 10), graficadas en el tiempo — las preguntas y la escala son subjetivas y propias del club, deben salir de Aldrin, no se inventan (RN-4.4).
+ PREPARADO POR | CLIENTE
+ John Alejandro Contreras
+Ingeniería de Software
+Fundación Universitaria Compensar · Práctica Profesional | Aldrin Díaz Herrera
+Maestro del club
+Club Deportivo de Hapkido Hwang Hon · Soacha
+ Novedades de la versión 0.2 respecto a v0.1
+• Se corrige el alcance de la asistencia: en v0.1 quedaba fuera del MVP; con la información de Aldrin, la asistencia SÍ queda dentro del alcance (secciones 8, 9, 11 y 13).
+• Se confirman seis modalidades de competencia (antes solo dos estaban documentadas): combate individual, combate en equipo, defensa personal, salto largo, salto alto y formas/katas.
+• Se diferencia la matrícula anual de la mensualidad.
+• Se incorporan dos fuentes documentales nuevas: la planilla de asistencia (formato institucional IMRDS) y una copia adicional de la planilla de mensualidad 2025.
+• Se confirma el número aproximado de deportistas activos del club (~35) y la posibilidad de que deportistas de las escuelas de formación representen al club en competencias.
+• Se refinan los roles administrativos (órgano compuesto por Presidente, Revisor Fiscal, Secretario/Tesorero y Comité disciplinario).
+• El stack tecnológico deja de ser "preliminar" y queda confirmado directamente por el autor del proyecto.
+• Se actualiza la lista de información pendiente de validación con Aldrin.
+@@ -286,12 +285,12 @@
+ Campo | Valor
+ Proyecto | HwangHon-Sports-System
+ Documento | Documento Maestro (análisis y documentación)
+-Versión | 0.2.6 — sincronización con Reglas de Negocio v1.0, esquema_hwanghon_v4.sql y Documentación Técnica v0.1.7 (no reemplaza v0.1, v0.2, v0.2.1, v0.2.2, v0.2.3, v0.2.4 ni v0.2.5)
+-Fecha de elaboración | 16 de octubre de 2026
++Versión | 0.2.7 — sincronización con Reglas de Negocio v1.1 (RN-3.8, tablas oficiales de Fedecolhap) (no reemplaza v0.1 a v0.2.6)
++Fecha de elaboración | 23 de octubre de 2026
+ Autor | John Alejandro Contreras — Ingeniería de Software, Fundación Universitaria Compensar (práctica profesional)
+ Cliente (Maestro) | Aldrin Díaz Herrera
+ Entidad | Club Deportivo de Hapkido Hwang Hon — Soacha, Cundinamarca
+-Fuentes documentales | Formulario de inscripción · Plan de Acción 2026 · Plan metodológico IMRDS · Planilla de mensualidades 2025 (+ copia) · Formato de preparación física · Planilla de asistencia (IMRDS) · Reglas de Negocio HwangHon v1.0 · Plan de Acción IMRDS 2026
++Fuentes documentales | Formulario de inscripción · Plan de Acción 2026 · Plan metodológico IMRDS · Planilla de mensualidades 2025 (+ copia) · Formato de preparación física · Planilla de asistencia (IMRDS) · Reglas de Negocio HwangHon v1.1 · Plan de Acción IMRDS 2026 · Reglamento de Competencia Fedecolhap v3.1 2024
+ Estado del proyecto | Etapa 1 — Análisis y documentación
+ Nota
+Este documento es de análisis. No contiene código, modelo de datos definitivo ni arquitectura técnica cerrada; esos artefactos se elaborarán una vez validado el presente análisis.
+ Dato | Valor | Fuente
+@@ -371,6 +370,7 @@
+ 0.2.4 | 29/09/2026 | John Alejandro Contreras | Corrección puntual de la sección 23 (Información pendiente de validación): se retira el punto de consecuencia tras mora prolongada — se había confirmado el 26/09/2026 (RN-8.7) y quedó en la lista por descuido — y se agrega un punto nuevo, evaluación cualitativa periódica (RN-4.4, PENDIENTE DE RESPUESTA), que nunca se había incluido. Mismo ajuste aplicado en el Anexo (que repite esta misma lista) y en la mención de mora de la sección 11. Quedan cuatro puntos pendientes.
+ 0.2.5 | 09/10/2026 | John Alejandro Contreras | Corrección puntual sobre v0.2.4 — decisión final de John sobre el ámbito público: una sola cuenta por deportista, sin distinción por edad; el acudiente no tiene login propio, solo existe como dato de contacto gestionado por el club (ver Reglas de Negocio v0.9, RN-1.4/RN-T.3/RN-T.4/RN-T.14/RN-T.16). Se actualiza la sección 10: la regla de navegación inicial retira "o del tutor que ingresó", y la tabla de actores retira la distinción mayor/menor de edad en la fila "Vista pública". La sección 23 (información pendiente de validación) no cambia.
+ 0.2.6 | 16/10/2026 | John Alejandro Contreras | Sincronización completa con Reglas de Negocio v1.0, esquema_hwanghon_v4.sql y Documentación Técnica v0.1.7. Se actualizan la sección 10 (tabla de actores: campos editables de la vista pública, ya no solo peso y discapacidad), la sección 14 (información gestionada: categoría, asistencia, evaluación/grado) y la sección 15 (reglas de negocio conocidas, ahora referida a Reglas de Negocio v1.0). La sección 23 (información pendiente de validación) y su Anexo pasan de cuatro a ocho puntos, incorporando los que surgen de Reglas de Negocio v1.0 (plantilla de certificado, plantilla de asistencia IMRDS, lista de reportes, tabla oficial de peso). Se corrige la nota de v0.2.4 sobre inactividad (RN-8.7, retirada): ahora se basa en la asistencia (RN-1.11), no en la mora. Se retira «aptitud para torneos» del reporte prioritario (RN-10.3). Se actualiza la tabla "Control del documento" (versión y fecha, que habían quedado desactualizadas desde v0.2.2).
++0.2.7 | 23/10/2026 | John Alejandro Contreras | Sincronización con Reglas de Negocio v1.1 (RN-3.8): la tabla de categorías de peso para Junior y Juvenil pasa de PROPUESTA a oficial, tomada del Reglamento de Competencia Fedecolhap v3.1 2024, art. 4 — Juvenil deja de compartir la tabla de Mayores. Infantil sigue siendo PROPUESTA permanente del club. Se actualizan la sección 14 (información gestionada) y la tabla "Control del documento"; la sección 23 (información pendiente de validación) y su Anexo pasan de ocho a siete puntos — se retira el punto de la tabla oficial de peso (ya resuelto) y se renumera evaluación cualitativa periódica del punto 8 al 7.
+ Recordatorio
+Hasta validar estos puntos, no se convierten ejemplos ni supuestos en reglas definitivas, y no se inicia la programación.
+-[HEADER] HwangHon-Sports-System — Documento Maestro v0.2.6
++[HEADER] HwangHon-Sports-System — Documento Maestro v0.2.7
+ [FOOTER] Página  de 

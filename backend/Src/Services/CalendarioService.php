@@ -136,6 +136,19 @@ class CalendarioService
             $modelo->establecerObservaciones($this->observaciones($datos['observaciones']));
         }
 
+        // RN-9.2: fecha, lugar y visibilidad de un evento de otro módulo
+        // (sesión de examen o torneo) se editan en ese módulo, que los
+        // mantiene en sintonía con sus propios datos. Solo se consulta si uno
+        // de esos campos realmente cambia.
+        if ($modelo->obtenerFecha() !== $fila['fecha'] || $modelo->obtenerLugar() !== $fila['lugar']
+            || $modelo->obtenerVisibilidad() !== $fila['visibilidad']) {
+            $dueno = $this->evento->moduloDueno($modelo->obtenerId());
+            if ($dueno !== null) {
+                $modulo = $dueno === 'evaluacion' ? 'una sesión de examen: edítalos en Evaluaciones' : 'un torneo: edítalos en Competencias';
+                throw new ExcepcionNegocio("La fecha, el lugar y la visibilidad de este evento pertenecen a {$modulo}.", 409);
+            }
+        }
+
         if ($this->evento->existeNombreFecha($modelo->obtenerNombre(), $modelo->obtenerFecha(), $modelo->obtenerId())) {
             throw new ExcepcionNegocio('Ya existe un evento con ese nombre en esa fecha.', 409);
         }
@@ -199,37 +212,22 @@ class CalendarioService
         ArchivoSubido::exigirCuerpoDentroDelLimite();
         $archivo = ArchivoSubido::leer('archivo', ['csv'], self::TAMANO_MAXIMO_CSV);
 
-        $contenido = (string) file_get_contents($archivo['rutaTemporal']);
-        if (str_starts_with($contenido, "\xEF\xBB\xBF")) {
-            $contenido = substr($contenido, 3);
-        }
-        if (!mb_check_encoding($contenido, 'UTF-8')) {
-            throw new ExcepcionNegocio('El archivo debe estar guardado en UTF-8 (en Excel: «CSV UTF-8»).', 400);
-        }
-
-        $lineas = preg_split('/\r\n|\n|\r/', $contenido);
-        $encabezado = array_shift($lineas) ?? '';
-        $separador = substr_count($encabezado, ';') > substr_count($encabezado, ',') ? ';' : ',';
-        $columnas = array_map(fn (string $c): string => mb_strtolower(trim($c)), str_getcsv($encabezado, $separador, '"', ''));
+        // Lector compartido (Utils/LectorCsv), en su modo por defecto: solo
+        // UTF-8 y una fila por línea física.
+        $csv = LectorCsv::leer((string) file_get_contents($archivo['rutaTemporal']));
+        $columnas = array_map(fn (string $c): string => mb_strtolower(trim($c)), $csv['encabezado']);
         if (count($columnas) !== count(self::COLUMNAS_CSV) || array_diff(self::COLUMNAS_CSV, $columnas) !== []) {
             throw new ExcepcionNegocio('El encabezado debe tener las columnas: ' . implode(', ', self::COLUMNAS_CSV) . '.', 400);
         }
 
-        $filas = [];
-        foreach ($lineas as $indice => $linea) {
-            if (trim($linea) === '') {
-                continue;
-            }
-            $filas[$indice + 2] = $linea; // la línea 1 es el encabezado
-        }
+        $filas = $csv['filas'];
         if (count($filas) > self::MAXIMO_FILAS_CSV) {
             throw new ExcepcionNegocio('El archivo supera el máximo de 500 filas.', 400);
         }
 
         $validos = [];
         $errores = [];
-        foreach ($filas as $numeroLinea => $linea) {
-            $valores = str_getcsv($linea, $separador, '"', '');
+        foreach ($filas as $numeroLinea => $valores) {
             if (count($valores) !== count($columnas)) {
                 $errores[] = ['linea' => $numeroLinea, 'motivo' => 'La fila no tiene ' . count($columnas) . ' columnas.'];
                 continue;
@@ -439,7 +437,7 @@ class CalendarioService
 
     private function fecha(mixed $valor, string $campo = 'fecha'): string
     {
-        $fecha = is_string($valor) ? DateTimeImmutable::createFromFormat('!Y-m-d', $valor) : false;
+        $fecha = Validador::esFechaIso($valor) ? DateTimeImmutable::createFromFormat('!Y-m-d', $valor) : false;
         if ($fecha === false || $fecha->format('Y-m-d') !== $valor) {
             throw new ExcepcionNegocio("El campo \"{$campo}\" debe ser una fecha válida con formato AAAA-MM-DD.", 400);
         }
@@ -466,7 +464,8 @@ class CalendarioService
         if (!is_string($valor)) {
             throw new ExcepcionNegocio('El campo "observaciones" debe ser texto.', 400);
         }
-        return trim($valor);
+        // Columna TEXT: tope de bytes (si no, un texto enorme era un 500).
+        return Validador::textoLargo($valor, 'observaciones');
     }
 
     /**

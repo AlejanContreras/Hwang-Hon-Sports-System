@@ -23,6 +23,20 @@ class EntregaCinturonRepository extends BaseRepository
     protected const ORDEN = 'sesion_examen_id, deportista_documento';
 
     /**
+     * ¿Tiene el deportista una entrega CONFIRMADA en otra sesión cerrada más
+     * reciente que la dada (fecha_grado posterior; a igual fecha, id mayor)?
+     */
+    public function existeEntregaPosterior(string $deportistaDocumento, int $sesionExamenId, string $fechaGrado): bool
+    {
+        return $this->existe(
+            'SELECT 1 FROM entrega_cinturon ec JOIN sesion_examen s ON s.id = ec.sesion_examen_id '
+            . "WHERE ec.deportista_documento = :documento AND ec.cinturon_entregado = 1 AND s.estado = 'cerrada' "
+            . 'AND (s.fecha_grado > :fecha OR (s.fecha_grado = :misma_fecha AND s.id > :sesion)) LIMIT 1',
+            ['documento' => $deportistaDocumento, 'fecha' => $fechaGrado, 'misma_fecha' => $fechaGrado, 'sesion' => $sesionExamenId]
+        );
+    }
+
+    /**
      * Lee la fila BLOQUEÁNDOLA hasta el fin de la transacción (SELECT ... FOR
      * UPDATE): una segunda confirmación simultánea espera y después ve la
      * entrega ya hecha. Solo tiene efecto dentro de enTransaccion().

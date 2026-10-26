@@ -498,8 +498,9 @@ class EvaluacionService
             throw new ExcepcionNegocio('La fecha de entrega no puede ser futura.', 422);
         }
 
+        $aviso = null;
         try {
-            $this->entrega->enTransaccion(function () use ($sesion, $sesionId, $documento, $fechaEntrega, $esAdministrativo): void {
+            $this->entrega->enTransaccion(function () use ($sesion, $sesionId, $documento, $fechaEntrega, $esAdministrativo, &$aviso): void {
                 if ($this->sesion->obtenerPorId($sesionId)['estado'] !== 'cerrada') {
                     throw new ExcepcionNegocio('La entrega se confirma cuando la sesión está cerrada.', 409);
                 }
@@ -521,6 +522,12 @@ class EvaluacionService
                 $modelo->establecerConfirmadoPor($esAdministrativo ? 'administrativo' : 'deportista');
                 $this->entrega->actualizar($modelo);
                 $grado = $this->detalle->listarDeSesion($sesionId, $documento)[0]['grado_evaluado'];
+                // Confirmar tarde la entrega de una sesión antigua no debe
+                // bajar el grado ganado en una sesión posterior ya entregada.
+                if ($this->entrega->existeEntregaPosterior($documento, $sesionId, $sesion['fecha_grado'])) {
+                    $aviso = "Entrega registrada. El grado actual no cambió: el deportista ya recibió un cinturón en una sesión posterior ({$grado} es anterior).";
+                    return;
+                }
                 $this->deportista->actualizarGradoActual($documento, $grado);
             });
         } catch (PDOException $error) {
@@ -536,7 +543,7 @@ class EvaluacionService
             'sesion_id' => $sesionId,
             'deportista_documento' => $documento,
             'grado_actual' => $this->deportista->obtenerPorId($documento)['grado_actual'],
-        ];
+        ] + ($aviso === null ? [] : ['aviso' => $aviso]);
     }
 
     // ------------------------------------------------------------------
@@ -854,7 +861,7 @@ class EvaluacionService
 
     private function fecha(mixed $valor, string $campo): string
     {
-        $fecha = is_string($valor) ? DateTimeImmutable::createFromFormat('!Y-m-d', $valor) : false;
+        $fecha = Validador::esFechaIso($valor) ? DateTimeImmutable::createFromFormat('!Y-m-d', $valor) : false;
         if ($fecha === false || $fecha->format('Y-m-d') !== $valor) {
             throw new ExcepcionNegocio("El campo \"{$campo}\" debe ser una fecha válida con formato AAAA-MM-DD.", 400);
         }
@@ -887,7 +894,8 @@ class EvaluacionService
         if (!is_string($valor)) {
             throw new ExcepcionNegocio("El campo \"{$campo}\" debe ser texto.", 400);
         }
-        return trim($valor);
+        // Columnas TEXT: tope de bytes (si no, un texto enorme era un 500).
+        return Validador::textoLargo($valor, $campo);
     }
 
     /**

@@ -1,0 +1,2 @@
+# Scripts SQL (esquema y datos de prueba): nunca se sirven por HTTP.
+Require all denied

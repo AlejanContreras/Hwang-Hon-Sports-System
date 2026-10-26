@@ -17,7 +17,7 @@ declare(strict_types=1);
  *     administrativo lo registra o lo edita).
  *
  * Edad, categoria por edad y categoria por peso (RN-1.3, RN-3.8,
- * Especificacion A.1; tabla PROPUESTA del Contexto Base 35.5) se calculan al
+ * Especificacion A.1; tabla de peso en CATEGORIAS_PESO) se calculan al
  * leer y nunca se guardan. consultar agrega el record de combates (suma de
  * participacion_competencia); listar no, para no hacer una consulta por fila.
  * buscar (solo administrativo) es el autocompletado por nombre o documento.
@@ -26,6 +26,7 @@ class DeportistaService
 {
     /** Pública: la usa también la ficha PDF de Reportes (acudiente si es menor). */
     public const MAYORIA_EDAD = 18;
+    private const ZONA_HORARIA = 'America/Bogota';
     private const SEXOS = ['masculino', 'femenino'];
     private const ESTADOS = ['activo', 'inactivo'];
     private const ESTADOS_REGISTRO = ['pendiente_validacion', 'validado'];
@@ -44,12 +45,15 @@ class DeportistaService
     ];
 
     /**
-     * Categoria por peso: tabla PROPUESTA (Contexto Base 35.5), provisional y
-     * reemplazable por la oficial de la federacion. Este es el UNICO lugar de
-     * la tabla. Cada entrada: [categorias por edad a las que aplica, cortes en
-     * kg por sexo]. Corte INCLUSIVO: el peso hasta el corte pertenece a esa
-     * categoria ("-35"); por encima del ultimo corte, "+X". Los 15 anos
-     * (Juvenil) usan la tabla de Mayores (PROPUESTA: no tienen tabla propia).
+     * Categoria por peso. Este es el UNICO lugar de la tabla. Cada entrada:
+     * [categorias por edad a las que aplica, cortes en kg por sexo]. Corte
+     * INCLUSIVO: el peso hasta el corte pertenece a esa categoria ("-40");
+     * por encima del ultimo corte, "+X".
+     *   - Junior (12-14) y Juvenil (15-17): OFICIALES, Reglamento de
+     *     Competencia Fedecolhap v3.1 2024, art. 3 y 4.
+     *   - Mayores, Senior y Master: tabla de Mayores (DOCUMENTAL, Contexto
+     *     Base seccion 8).
+     *   - Infantil: PROPUESTA (Contexto Base 35.5), reemplazable.
      */
     private const CATEGORIAS_PESO = [
         [['Infantil'], [
@@ -57,10 +61,14 @@ class DeportistaService
             'femenino' => [20, 25, 30, 35],
         ]],
         [['Junior'], [
-            'masculino' => [35, 40, 45, 50],
-            'femenino' => [35, 40],
+            'masculino' => [40, 45, 50, 55, 60],
+            'femenino' => [38, 43, 48, 53, 58],
         ]],
-        [['Juvenil', 'Mayores', 'Sénior', 'Máster'], [
+        [['Juvenil'], [
+            'masculino' => [45, 50, 55, 60, 65, 70, 75],
+            'femenino' => [43, 48, 53, 58, 63, 68, 73],
+        ]],
+        [['Mayores', 'Sénior', 'Máster'], [
             'masculino' => [55, 60, 65, 70, 75, 80, 85],
             'femenino' => [50, 55, 60, 65, 70, 75, 80],
         ]],
@@ -73,7 +81,8 @@ class DeportistaService
     private const FILTROS_ADMINISTRATIVOS = [
         'estado', 'estado_registro', 'sede_entrenamiento', 'grado_actual', 'acudiente_documento',
     ];
-    private const CAMPOS_CREAR = [
+    /** Campos del formulario de inscripción; público para el autorregistro. */
+    public const CAMPOS_CREAR = [
         'documento', 'nombre', 'fecha_nacimiento', 'lugar_nacimiento', 'sexo', 'estatura', 'peso',
         'telefono', 'direccion', 'correo', 'discapacidad', 'experiencia_previa', 'sede_entrenamiento',
         'autorizacion_datos', 'grado_actual', 'fecha_ingreso', 'estado', 'acudiente',
@@ -182,7 +191,8 @@ class DeportistaService
 
     /**
      * Registra un deportista (solo ambito administrativo; el autorregistro
-     * RN-T.14 va en su propio turno). Queda validado y activo por defecto.
+     * RN-T.14 vive en AutorregistroService y reutiliza modeloAlta,
+     * acudienteAlta y guardarAlta). Queda validado y activo por defecto.
      * Si es menor de edad exige acudiente: reutiliza uno existente sin
      * modificarlo, o lo crea en la misma transaccion.
      */
@@ -191,10 +201,29 @@ class DeportistaService
         $this->exigirAdministrativo('registrar deportistas');
         $this->rechazarCamposNoPermitidos($datos, self::CAMPOS_CREAR, 400, 'Campos no reconocidos');
 
+        $modelo = $this->modeloAlta($datos, 'validado', null);
+        $documento = $modelo->obtenerDocumento();
+        if ($this->deportista->existePorId($documento)) {
+            throw new ExcepcionNegocio("Ya existe un deportista con el documento {$documento}.", 409);
+        }
+        $acudienteNuevo = $this->acudienteAlta($modelo, $datos['acudiente'] ?? null);
+        $this->guardarAlta($modelo, $acudienteNuevo);
+
+        return $this->consultar(['documento' => $documento]);
+    }
+
+    /**
+     * Valida los campos del formulario de inscripción con las reglas de
+     * crear (sin el acudiente y sin tocar la base de datos) y arma el
+     * modelo. La reutilizan el autorregistro (pendiente_validacion) y la
+     * carga masiva (validado por quien la carga).
+     */
+    public function modeloAlta(array $datos, string $estadoRegistro, ?string $validadoPorCorreo): DeportistaModel
+    {
         $documento = Validador::texto($datos['documento'] ?? null, 'documento', 20, true);
         $fechaNacimiento = $this->fecha($datos['fecha_nacimiento'] ?? null, 'fecha_nacimiento', true);
         $fechaIngreso = $this->fecha($datos['fecha_ingreso'] ?? null, 'fecha_ingreso', false)
-            ?? (new DateTimeImmutable('today'))->format('Y-m-d');
+            ?? self::hoy();
         $this->validarFechaIngreso($fechaIngreso, $fechaNacimiento);
 
         $modelo = new DeportistaModel(
@@ -216,25 +245,43 @@ class DeportistaService
             gradoActual: Validador::texto($datos['grado_actual'] ?? null, 'grado_actual', 30, false),
             fechaIngreso: $fechaIngreso,
             estado: $this->opcion($datos['estado'] ?? null, 'estado', self::ESTADOS, false) ?? 'activo',
-            estadoRegistro: 'validado',
+            estadoRegistro: $estadoRegistro,
             acudienteDocumento: null,
-            validadoPorCorreo: null,
+            validadoPorCorreo: $validadoPorCorreo,
         );
 
-        if ($this->deportista->existePorId($documento)) {
-            throw new ExcepcionNegocio("Ya existe un deportista con el documento {$documento}.", 409);
-        }
+        return $modelo;
+    }
 
-        $acudienteNuevo = null;
-        $datosAcudiente = $datos['acudiente'] ?? null;
-        if ($datosAcudiente === null && $this->calcularEdad($fechaNacimiento) < self::MAYORIA_EDAD) {
+    /**
+     * Acudiente del alta: obligatorio si el deportista es menor de edad;
+     * uno existente se reutiliza sin modificarlo, uno nuevo se devuelve para
+     * crearlo con guardarAlta. Asigna su documento al modelo.
+     *
+     * @param array<string, mixed>|null $acudientesExistentes documento => fila, precargados en bloque
+     *        (carga masiva); null = consultar la base de datos.
+     * @param bool $exigirDatosCompletos valida nombre y relación aunque el acudiente ya exista
+     *        (autorregistro: la respuesta no debe revelar si un acudiente existe).
+     */
+    public function acudienteAlta(DeportistaModel $modelo, mixed $datosAcudiente, ?array $acudientesExistentes = null, bool $exigirDatosCompletos = false): ?AcudienteTutorModel
+    {
+        if ($datosAcudiente === null && $this->calcularEdad($modelo->obtenerFechaNacimiento()) < self::MAYORIA_EDAD) {
             throw new ExcepcionNegocio('El deportista es menor de edad: se requiere un acudiente.', 400);
         }
-        if ($datosAcudiente !== null) {
-            [$documentoAcudiente, $acudienteNuevo] = $this->resolverAcudiente($datosAcudiente, $documento);
-            $modelo->establecerAcudienteDocumento($documentoAcudiente);
+        if ($datosAcudiente === null) {
+            return null;
         }
+        [$documentoAcudiente, $acudienteNuevo] = $this->resolverAcudiente($datosAcudiente, $modelo->obtenerDocumento(), $acudientesExistentes, $exigirDatosCompletos);
+        $modelo->establecerAcudienteDocumento($documentoAcudiente);
+        return $acudienteNuevo;
+    }
 
+    /**
+     * Guarda un alta ya validada (y su acudiente nuevo) en una transacción.
+     * Una llave duplicada creada al mismo tiempo responde 409.
+     */
+    public function guardarAlta(DeportistaModel $modelo, ?AcudienteTutorModel $acudienteNuevo): void
+    {
         $this->guardarSinDuplicados(function () use ($modelo, $acudienteNuevo): void {
             $this->deportista->enTransaccion(function () use ($modelo, $acudienteNuevo): void {
                 if ($acudienteNuevo !== null) {
@@ -243,8 +290,6 @@ class DeportistaService
                 $this->deportista->crear($modelo);
             });
         });
-
-        return $this->consultar(['documento' => $documento]);
     }
 
     /**
@@ -266,7 +311,7 @@ class DeportistaService
             throw new ExcepcionNegocio('Deportista no encontrado.', 404);
         }
         if ($datos === []) {
-            throw new ExcepcionNegocio('No se recibio ningun campo para actualizar.', 400);
+            throw new ExcepcionNegocio('No se recibió ningún campo para actualizar.', 400);
         }
 
         $esAdministrativo = $usuario['ambito'] === 'administrativa';
@@ -276,6 +321,23 @@ class DeportistaService
             $this->rechazarCamposNoPermitidos($datos, self::CAMPOS_ACTUALIZAR_PUBLICO, 403, 'Campos que no puede editar');
         }
 
+        $cambios = $this->prepararCambios($fila, $datos, $esAdministrativo ? $usuario['identificador'] : null);
+        $this->guardarCambios($cambios);
+
+        return $this->consultar(['documento' => $documento]);
+    }
+
+    /**
+     * Aplica sobre la fila actual los campos de $datos con las reglas de
+     * actualizar, sin guardar. $correoAdministrativo null = ámbito público
+     * (solo los campos de RN-1.4; el llamador ya rechazó los demás). La
+     * reutiliza la carga masiva con acudientes precargados en bloque.
+     *
+     * @param array<string, mixed>|null $acudientes documento => fila; null = consultar la base de datos
+     * @return array{modelo: DeportistaModel, acudiente_nuevo: ?AcudienteTutorModel, acudiente_editado: ?AcudienteTutorModel, acudiente_anterior: ?string}
+     */
+    public function prepararCambios(array $fila, array $datos, ?string $correoAdministrativo, ?array $acudientes = null): array
+    {
         $modelo = DeportistaModel::fromArray($fila);
 
         if (array_key_exists('peso', $datos)) {
@@ -296,19 +358,35 @@ class DeportistaService
 
         $acudienteNuevo = null;
         $acudienteEditado = null;
-        if ($esAdministrativo) {
-            $this->aplicarCamposAdministrativos($modelo, $datos, $fila, $usuario['identificador']);
+        if ($correoAdministrativo !== null) {
+            $this->aplicarCamposAdministrativos($modelo, $datos, $fila, $correoAdministrativo);
             if (array_key_exists('acudiente', $datos)) {
-                [$acudienteNuevo, $acudienteEditado] = $this->aplicarAcudiente($modelo, $datos['acudiente']);
+                [$acudienteNuevo, $acudienteEditado] = $this->aplicarAcudiente($modelo, $datos['acudiente'], $acudientes);
             }
         }
-        $acudienteAnterior = $fila['acudiente_documento'];
 
         if ($modelo->obtenerAcudienteDocumento() === null
             && $this->calcularEdad($modelo->obtenerFechaNacimiento()) < self::MAYORIA_EDAD) {
             throw new ExcepcionNegocio('El deportista es menor de edad y no tiene acudiente asignado.', 400);
         }
 
+        return [
+            'modelo' => $modelo,
+            'acudiente_nuevo' => $acudienteNuevo,
+            'acudiente_editado' => $acudienteEditado,
+            'acudiente_anterior' => $fila['acudiente_documento'],
+        ];
+    }
+
+    /**
+     * Guarda en una transacción lo que armó prepararCambios; si el acudiente
+     * cambió, borra el anterior si quedó sin deportistas.
+     *
+     * @param array{modelo: DeportistaModel, acudiente_nuevo: ?AcudienteTutorModel, acudiente_editado: ?AcudienteTutorModel, acudiente_anterior: ?string} $cambios
+     */
+    public function guardarCambios(array $cambios): void
+    {
+        ['modelo' => $modelo, 'acudiente_nuevo' => $acudienteNuevo, 'acudiente_editado' => $acudienteEditado, 'acudiente_anterior' => $acudienteAnterior] = $cambios;
         $this->guardarSinDuplicados(function () use ($modelo, $acudienteNuevo, $acudienteEditado, $acudienteAnterior): void {
             $this->deportista->enTransaccion(function () use ($modelo, $acudienteNuevo, $acudienteEditado, $acudienteAnterior): void {
                 if ($acudienteNuevo !== null) {
@@ -323,8 +401,6 @@ class DeportistaService
                 }
             });
         });
-
-        return $this->consultar(['documento' => $documento]);
     }
 
     /**
@@ -345,7 +421,7 @@ class DeportistaService
         }
         if ($fila['estado_registro'] !== 'pendiente_validacion') {
             throw new ExcepcionNegocio(
-                'Solo se eliminan registros pendientes de validacion. Para un deportista validado, cambie su estado a inactivo.',
+                'Solo se eliminan registros pendientes de validación. Para un deportista validado, cambie su estado a inactivo.',
                 409
             );
         }
@@ -370,7 +446,7 @@ class DeportistaService
     {
         $usuario = Sesion::usuarioActual();
         if ($usuario === null) {
-            throw new ExcepcionNegocio('No autenticado. Inicie sesion para continuar.', 401);
+            throw new ExcepcionNegocio('No autenticado. Inicie sesión para continuar.', 401);
         }
         return $usuario;
     }
@@ -378,7 +454,7 @@ class DeportistaService
     private function exigirAdministrativo(string $accion): void
     {
         if ($this->usuario()['ambito'] !== 'administrativa') {
-            throw new ExcepcionNegocio("Solo el ambito administrativo puede {$accion}.", 403);
+            throw new ExcepcionNegocio("Solo el ámbito administrativo puede {$accion}.", 403);
         }
     }
 
@@ -440,7 +516,7 @@ class DeportistaService
             $nuevo = $this->opcion($datos['estado_registro'], 'estado_registro', self::ESTADOS_REGISTRO, true);
             $actual = $fila['estado_registro'];
             if ($actual === 'validado' && $nuevo === 'pendiente_validacion') {
-                throw new ExcepcionNegocio('Un registro validado no puede volver a pendiente de validacion.', 409);
+                throw new ExcepcionNegocio('Un registro validado no puede volver a pendiente de validación.', 409);
             }
             if ($actual === 'pendiente_validacion' && $nuevo === 'validado') {
                 $modelo->establecerEstadoRegistro('validado');
@@ -465,7 +541,7 @@ class DeportistaService
      *
      * @return array{0: ?AcudienteTutorModel, 1: ?AcudienteTutorModel}
      */
-    private function aplicarAcudiente(DeportistaModel $modelo, mixed $datosAcudiente): array
+    private function aplicarAcudiente(DeportistaModel $modelo, mixed $datosAcudiente, ?array $acudientes = null): array
     {
         if ($datosAcudiente === null) {
             $modelo->establecerAcudienteDocumento(null);
@@ -482,15 +558,16 @@ class DeportistaService
             : null;
 
         if ($documentoPedido !== null && $documentoPedido !== $actual) {
-            [$documentoAcudiente, $acudienteNuevo] = $this->resolverAcudiente($datosAcudiente, $modelo->obtenerDocumento());
+            [$documentoAcudiente, $acudienteNuevo] = $this->resolverAcudiente($datosAcudiente, $modelo->obtenerDocumento(), $acudientes);
             $modelo->establecerAcudienteDocumento($documentoAcudiente);
             return [$acudienteNuevo, null];
         }
 
         if ($actual === null) {
-            throw new ExcepcionNegocio('El deportista no tiene acudiente asignado: envie "acudiente.documento" para asignarle uno.', 400);
+            throw new ExcepcionNegocio('El deportista no tiene acudiente asignado: envíe "acudiente.documento" para asignarle uno.', 400);
         }
-        $acudiente = AcudienteTutorModel::fromArray($this->acudiente->obtenerPorId($actual) ?? []);
+        $filaActual = $acudientes === null ? $this->acudiente->obtenerPorId($actual) : ($acudientes[$actual] ?? null);
+        $acudiente = AcudienteTutorModel::fromArray($filaActual ?? []);
         if (array_key_exists('nombre', $datosAcudiente)) {
             $acudiente->establecerNombre(Validador::texto($datosAcudiente['nombre'], 'acudiente.nombre', 150, true));
         }
@@ -522,10 +599,13 @@ class DeportistaService
      * Devuelve [documento del acudiente, modelo a crear o null si ya existe].
      * Un acudiente existente se reutiliza tal cual: los demas datos que
      * traiga la peticion (nombre, relacion, telefono, correo) se ignoran.
+     * Con $exigirDatosCompletos se validan siempre, exista o no (asi la
+     * respuesta no revela si un acudiente existe). $existentes: documento =>
+     * fila precargados en bloque; null = consultar la base de datos.
      *
      * @return array{0: string, 1: ?AcudienteTutorModel}
      */
-    private function resolverAcudiente(mixed $datosAcudiente, string $documentoDeportista): array
+    private function resolverAcudiente(mixed $datosAcudiente, string $documentoDeportista, ?array $existentes = null, bool $exigirDatosCompletos = false): array
     {
         if (!is_array($datosAcudiente)) {
             throw new ExcepcionNegocio('El campo "acudiente" debe ser un objeto con documento, nombre, relación y, opcionalmente, teléfono y correo.', 400);
@@ -537,26 +617,39 @@ class DeportistaService
             throw new ExcepcionNegocio('El deportista no puede ser su propio acudiente.', 400);
         }
 
-        if ($this->acudiente->existePorId($documento)) {
-            return [$documento, null];
-        }
-
-        return [$documento, new AcudienteTutorModel(
+        $nuevo = fn (): AcudienteTutorModel => new AcudienteTutorModel(
             documento: $documento,
             nombre: Validador::texto($datosAcudiente['nombre'] ?? null, 'acudiente.nombre', 150, true),
             relacion: Validador::texto($datosAcudiente['relacion'] ?? null, 'acudiente.relacion', 50, true),
             telefono: $this->telefono($datosAcudiente['telefono'] ?? null, 'acudiente.telefono'),
             correo: Validador::correoOpcional($datosAcudiente['correo'] ?? null, 'acudiente.correo'),
-        )];
+        );
+        $modelo = $exigirDatosCompletos ? $nuevo() : null;
+
+        $existe = $existentes === null ? $this->acudiente->existePorId($documento) : isset($existentes[$documento]);
+        if ($existe) {
+            return [$documento, null];
+        }
+
+        return [$documento, $modelo ?? $nuevo()];
     }
 
     // ------------------------------------------------------------------
     // Calculos (RN-1.3, RN-3.8)
     // ------------------------------------------------------------------
 
+    /**
+     * Fecha de hoy en Bogotá (AAAA-MM-DD), sin depender de la zona por
+     * defecto del servidor.
+     */
+    private static function hoy(): string
+    {
+        return (new DateTimeImmutable('today', new DateTimeZone(self::ZONA_HORARIA)))->format('Y-m-d');
+    }
+
     private function calcularEdad(string $fechaNacimiento): int
     {
-        return self::edadEnFecha($fechaNacimiento, (new DateTimeImmutable('today'))->format('Y-m-d'));
+        return self::edadEnFecha($fechaNacimiento, self::hoy());
     }
 
     /**
@@ -695,11 +788,11 @@ class DeportistaService
             }
             return null;
         }
-        $fecha = is_string($valor) ? DateTimeImmutable::createFromFormat('!Y-m-d', $valor) : false;
+        $fecha = Validador::esFechaIso($valor) ? DateTimeImmutable::createFromFormat('!Y-m-d', $valor) : false;
         if ($fecha === false || $fecha->format('Y-m-d') !== $valor) {
-            throw new ExcepcionNegocio("El campo \"{$campo}\" debe ser una fecha valida con formato AAAA-MM-DD.", 400);
+            throw new ExcepcionNegocio("El campo \"{$campo}\" debe ser una fecha válida con formato AAAA-MM-DD.", 400);
         }
-        if ($fecha > new DateTimeImmutable('today')) {
+        if ($valor > self::hoy()) {
             throw new ExcepcionNegocio("El campo \"{$campo}\" no puede ser una fecha futura.", 400);
         }
         return $valor;
@@ -721,11 +814,11 @@ class DeportistaService
             throw new ExcepcionNegocio("El campo \"{$campo}\" es obligatorio.", 400);
         }
         if (!is_int($valor) && !is_float($valor) && !(is_string($valor) && is_numeric($valor))) {
-            throw new ExcepcionNegocio("El campo \"{$campo}\" debe ser un numero.", 400);
+            throw new ExcepcionNegocio("El campo \"{$campo}\" debe ser un número.", 400);
         }
         $numero = round((float) $valor, 2);
         if ($numero <= 0 || $numero > $maximo) {
-            throw new ExcepcionNegocio("El campo \"{$campo}\" debe ser mayor que 0 y maximo {$maximo}.", 400);
+            throw new ExcepcionNegocio("El campo \"{$campo}\" debe ser mayor que 0 y máximo {$maximo}.", 400);
         }
         return $numero;
     }
@@ -769,7 +862,7 @@ class DeportistaService
             $escritura();
         } catch (PDOException $error) {
             if ((string) $error->getCode() === '23000') {
-                throw new ExcepcionNegocio('La operacion entra en conflicto con datos existentes.', 409);
+                throw new ExcepcionNegocio('La operación entra en conflicto con datos existentes.', 409);
             }
             throw $error;
         }

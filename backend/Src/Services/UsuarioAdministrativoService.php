@@ -193,8 +193,8 @@ class UsuarioAdministrativoService
      * Quien gestiona escribe la contraseña nueva de OTRA cuenta (RN-T.12),
      * con la validación de RN-T.18. Invalida el token de recuperación
      * pendiente y reinicia el contador de intentos de acceso de esa cuenta.
-     * Limitación conocida: no cierra las sesiones que esa cuenta ya tenga
-     * abiertas.
+     * Las sesiones que esa cuenta tenga abiertas caen en su siguiente
+     * petición: la huella de la contraseña ya no coincide (AuthMiddleware).
      */
     public function restablecerContrasena(array $identificador, array $datos): void
     {

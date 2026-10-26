@@ -157,15 +157,4 @@ class UsuarioAdministrativoRepository extends BaseRepository
             ]
         );
     }
-
-    /**
-     * Elimina una fila de `usuario_administrativo` por su llave primaria `correo`.
-     */
-    public function eliminar(string|int $correo): bool
-    {
-        return $this->ejecutar(
-            'DELETE FROM usuario_administrativo WHERE correo = :correo',
-            ['correo' => $correo]
-        );
-    }
 }

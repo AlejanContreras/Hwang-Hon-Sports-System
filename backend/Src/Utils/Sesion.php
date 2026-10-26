@@ -8,7 +8,10 @@ declare(strict_types=1);
  * AuthService escribe la sesion (iniciar/cerrar), los Middleware y los
  * Services la leen (usuarioActual).
  *
- * La sesion guarda tres datos (RN-T.1/RN-T.2/RN-T.3, RN-T.17):
+ * Aparte, el autorregistro (RN-T.14) guarda un permiso temporal sin cuenta
+ * ("autorregistro": documento y vencimiento); ver abrirRegistro().
+ *
+ * La sesion de usuario guarda tres datos (RN-T.1/RN-T.2/RN-T.3, RN-T.17):
  *   - ambito: 'administrativa' o 'publica'.
  *   - identificador: el correo (ambito administrativo) o el documento del
  *     deportista (ambito publico).
@@ -27,6 +30,10 @@ class Sesion
     private const CLAVE_AMBITO = 'ambito';
     private const CLAVE_IDENTIFICADOR = 'identificador';
     private const CLAVE_ULTIMA_ACTIVIDAD = 'ultima_actividad';
+    /** Permiso temporal de documentos del autorregistro (sin cuenta). */
+    private const CLAVE_REGISTRO = 'autorregistro';
+    /** Huella de la contraseña de la cuenta administrativa (ver huellaCredencial). */
+    private const CLAVE_HUELLA = 'huella_credencial';
     private const AMBITOS_VALIDOS = ['administrativa', 'publica'];
 
     /**
@@ -49,7 +56,7 @@ class Sesion
      * anterior, conocido por un atacante, no sirva despues del login
      * (fijacion de sesion).
      */
-    public static function iniciar(string $ambito, string $identificador): void
+    public static function iniciar(string $ambito, string $identificador, ?string $huellaCredencial = null): void
     {
         if (!in_array($ambito, self::AMBITOS_VALIDOS, true)) {
             // Error de programacion: el ambito solo lo fija AuthService.
@@ -62,6 +69,47 @@ class Sesion
         $_SESSION[self::CLAVE_AMBITO] = $ambito;
         $_SESSION[self::CLAVE_IDENTIFICADOR] = $identificador;
         $_SESSION[self::CLAVE_ULTIMA_ACTIVIDAD] = time();
+        if ($huellaCredencial !== null) {
+            $_SESSION[self::CLAVE_HUELLA] = $huellaCredencial;
+        } else {
+            unset($_SESSION[self::CLAVE_HUELLA]);
+        }
+    }
+
+    /**
+     * Huella de la credencial de una cuenta administrativa: SHA-256 del hash
+     * de su contraseña. Se guarda al iniciar sesion y AuthMiddleware la
+     * compara en cada peticion con la de la cuenta: si la contraseña cambio
+     * (cambiar, restablecer o recuperar), las sesiones anteriores dejan de
+     * valer. Nunca se guarda el hash mismo en la sesion.
+     */
+    public static function huellaCredencial(string $hashContrasena): string
+    {
+        return hash('sha256', $hashContrasena);
+    }
+
+    /**
+     * Huella guardada en la sesion activa, o null si no tiene (sesion
+     * publica, o creada antes de este control).
+     */
+    public static function huellaActual(): ?string
+    {
+        if (!self::arrancarSiHayCookie()) {
+            return null;
+        }
+        $huella = $_SESSION[self::CLAVE_HUELLA] ?? null;
+        return is_string($huella) ? $huella : null;
+    }
+
+    /**
+     * Cambia la huella de la sesion actual (tras «cambiar mi contraseña»: esta
+     * sesion sigue y las demas de la cuenta caen) y renueva el id de sesion.
+     */
+    public static function renovarHuella(string $huellaCredencial): void
+    {
+        self::arrancar();
+        session_regenerate_id(true);
+        $_SESSION[self::CLAVE_HUELLA] = $huellaCredencial;
     }
 
     /**
@@ -107,6 +155,11 @@ class Sesion
         $ambito = $_SESSION[self::CLAVE_AMBITO] ?? null;
         $identificador = $_SESSION[self::CLAVE_IDENTIFICADOR] ?? null;
 
+        if ((!is_string($ambito) || !is_string($identificador)) && isset($_SESSION[self::CLAVE_REGISTRO])) {
+            // Sesion de autorregistro (sin cuenta): no hay usuario, pero no se
+            // destruye para no perder el permiso temporal de documentos.
+            return null;
+        }
         if (!is_string($ambito) || !is_string($identificador)) {
             // Cookie de una sesion que ya no existe (cerrada o vencida): con
             // use_strict_mode PHP abrio una vacia; se descarta junto con la
@@ -127,6 +180,62 @@ class Sesion
             'ambito' => $ambito,
             'identificador' => $identificador,
         ];
+    }
+
+    // ------------------------------------------------------------------
+    // Permiso temporal del autorregistro (RN-T.14)
+    // ------------------------------------------------------------------
+
+    /**
+     * Abre el permiso de documentos del autorregistro: ligado a ESTA sesion
+     * de PHP y a un solo documento, sin ambito ni cuenta (no da acceso a
+     * ninguna ruta autenticada). $documento null abre un permiso "vacio"
+     * (respuesta identica sin permiso real: campo trampa o documento ya
+     * registrado). Cambia el id de sesion (fijacion de sesion). Si ya habia
+     * un usuario en la sesion, se conserva.
+     */
+    public static function abrirRegistro(?string $documento, int $vigenciaSegundos): void
+    {
+        self::arrancar();
+        session_regenerate_id(true);
+        $_SESSION[self::CLAVE_REGISTRO] = ['documento' => $documento, 'expira' => time() + $vigenciaSegundos];
+    }
+
+    /**
+     * Permiso de autorregistro vigente {documento, expira}, o null si no hay
+     * o ya vencio (en ese caso lo borra). No arranca sesion sin cookie.
+     *
+     * @return array{documento: ?string, expira: int}|null
+     */
+    public static function registroAbierto(): ?array
+    {
+        if (!self::arrancarSiHayCookie()) {
+            return null;
+        }
+        $registro = $_SESSION[self::CLAVE_REGISTRO] ?? null;
+        if (!is_array($registro) || !is_int($registro['expira'] ?? null)) {
+            return null;
+        }
+        if ($registro['expira'] < time()) {
+            self::cerrarRegistro();
+            return null;
+        }
+        return ['documento' => $registro['documento'] ?? null, 'expira' => $registro['expira']];
+    }
+
+    /**
+     * Cierra el permiso de autorregistro («Guardar cambios», vencimiento o
+     * registro ya validado). Si la sesion no tenia usuario, la cierra entera.
+     */
+    public static function cerrarRegistro(): void
+    {
+        if (!self::arrancarSiHayCookie()) {
+            return;
+        }
+        unset($_SESSION[self::CLAVE_REGISTRO]);
+        if (!isset($_SESSION[self::CLAVE_AMBITO])) {
+            self::cerrar();
+        }
     }
 
     /**
@@ -159,7 +268,12 @@ class Sesion
             return;
         }
 
-        $usaHttps = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+        $usaHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            // Detras de un proxy que termina HTTPS, solo si se confia en el
+            // (TRUST_PROXY en Config/seguridad.php): si no, cualquiera podria
+            // enviar esa cabecera.
+            || (defined('TRUST_PROXY') && TRUST_PROXY === true
+                && strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https');
 
         self::usarCarpetaPropia();
         ini_set('session.use_strict_mode', '1');

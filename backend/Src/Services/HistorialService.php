@@ -215,7 +215,7 @@ class HistorialService
 
     private function fecha(mixed $valor, string $campo): string
     {
-        $fecha = is_string($valor) ? DateTimeImmutable::createFromFormat('!Y-m-d', $valor) : false;
+        $fecha = Validador::esFechaIso($valor) ? DateTimeImmutable::createFromFormat('!Y-m-d', $valor) : false;
         if ($fecha === false || $fecha->format('Y-m-d') !== $valor) {
             throw new ExcepcionNegocio("El parámetro \"{$campo}\" debe ser una fecha válida con formato AAAA-MM-DD.", 400);
         }

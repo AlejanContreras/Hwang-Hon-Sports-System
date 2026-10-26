@@ -66,6 +66,23 @@ class EventoCalendarioRepository extends BaseRepository
     }
 
     /**
+     * Módulo dueño de un evento, en una sola consulta: 'evaluacion' si es el
+     * evento de examen o de grado de una sesion_examen, 'competencia' si es
+     * un torneo, o null si es un evento propio del Calendario.
+     */
+    public function moduloDueno(int $id): ?string
+    {
+        $fila = $this->consultarUno(
+            'SELECT CASE '
+            . 'WHEN EXISTS(SELECT 1 FROM sesion_examen WHERE evento_examen_id = :examen OR evento_grado_id = :grado) THEN \'evaluacion\' '
+            . 'WHEN EXISTS(SELECT 1 FROM competencia WHERE evento_id = :torneo) THEN \'competencia\' '
+            . 'END AS modulo',
+            ['examen' => $id, 'grado' => $id, 'torneo' => $id]
+        );
+        return $fila['modulo'] ?? null;
+    }
+
+    /**
      * Obtiene una fila de `evento_calendario` por su llave primaria `id`.
      */
     public function obtenerPorId(string|int $id): ?array

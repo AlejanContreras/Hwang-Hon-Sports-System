@@ -84,6 +84,67 @@ class DeportistaRepository extends BaseRepository
     }
 
     /**
+     * Filas de los deportistas con esos documentos, en una sola consulta
+     * (carga masiva: se precargan en bloque en vez de consultar por fila).
+     * Devuelve documento => fila.
+     *
+     * @param array<int, string> $documentos
+     * @return array<string, array<string, mixed>>
+     */
+    public function listarPorDocumentos(array $documentos): array
+    {
+        return $this->indexarPorDocumento($this->consultarEnLista('SELECT * FROM deportista WHERE documento IN (%s)', $documentos));
+    }
+
+    /**
+     * Documento, correo y fecha de nacimiento de los deportistas con alguno
+     * de esos correos (conflictos de correo de la carga masiva, RN-1.10). La
+     * collation de la columna ignora mayúsculas.
+     *
+     * @param array<int, string> $correos
+     * @return array<int, array{documento: string, correo: string, fecha_nacimiento: string}>
+     */
+    public function listarPorCorreos(array $correos): array
+    {
+        return $this->consultarEnLista('SELECT documento, correo, fecha_nacimiento FROM deportista WHERE correo IN (%s)', $correos);
+    }
+
+    /**
+     * Ejecuta $sql (con un %s donde va la lista) con un marcador por valor.
+     * Lista vacía: no consulta.
+     *
+     * @param array<int, string> $valores
+     * @return array<int, array<string, mixed>>
+     */
+    private function consultarEnLista(string $sql, array $valores): array
+    {
+        $valores = array_values(array_unique($valores));
+        if ($valores === []) {
+            return [];
+        }
+        $marcadores = [];
+        $parametros = [];
+        foreach ($valores as $i => $valor) {
+            $marcadores[] = ":v{$i}";
+            $parametros["v{$i}"] = $valor;
+        }
+        return $this->consultar(sprintf($sql, implode(', ', $marcadores)), $parametros);
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $filas
+     * @return array<string, array<string, mixed>>
+     */
+    private function indexarPorDocumento(array $filas): array
+    {
+        $resultado = [];
+        foreach ($filas as $fila) {
+            $resultado[(string) $fila['documento']] = $fila;
+        }
+        return $resultado;
+    }
+
+    /**
      * Indica si existe un deportista con ese documento (sin leer la fila).
      */
     public function existePorId(string $documento): bool

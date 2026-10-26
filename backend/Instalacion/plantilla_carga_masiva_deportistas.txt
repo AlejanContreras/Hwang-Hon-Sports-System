@@ -1,0 +1,68 @@
+PLANTILLA DE CARGA MASIVA DE DEPORTISTAS (CSV)
+Club Deportivo de Hapkido Hwang Hon — HwangHon Sports System
+Estado: PROVISIONAL (pendiente de que el Maestro Aldrin valide columnas y formato final)
+Ejemplo listo para abrir en Excel: plantilla_carga_masiva_deportistas.csv (misma carpeta, datos ficticios)
+
+CÓMO SE USA
+1. Llenar la hoja en Excel con UNA fila por deportista y la fila 1 de encabezados.
+2. Guardar como «CSV UTF-8 (delimitado por comas)» o «CSV (delimitado por comas)».
+   Se aceptan los dos: UTF-8 (con o sin BOM) y Windows-1252, separador ; o , (se detecta solo).
+3. En el sistema: Deportistas > Carga masiva > subir el archivo > «Previsualizar».
+   La previsualización NO guarda nada: muestra qué pasaría con cada fila.
+4. Revisar las filas «actualizar» (campo, valor actual → valor nuevo), marcar las que se aprueban
+   y pulsar «Aplicar». Solo se actualizan las marcadas; las altas nuevas se guardan siempre.
+
+LÍMITES: máximo 1 MB y 1.000 filas de datos por archivo.
+
+COLUMNAS (en este orden; el orden no es obligatorio, los encabezados sí)
+Los encabezados no distinguen mayúsculas, tildes ni espacios: «Fecha de nacimiento» = fecha_nacimiento.
+
+ #  Columna              Obligatoria (alta)  Formato / valores
+ 1  documento            Sí                  Texto, máximo 20 caracteres. Nunca se cambia por CSV.
+ 2  nombre               Sí                  Nombre completo, máximo 150.
+ 3  fecha_nacimiento     Sí                  AAAA-MM-DD o DD/MM/AAAA. No futura.
+ 4  lugar_nacimiento     No                  Ciudad o municipio.
+ 5  sexo                 Sí                  masculino / femenino (también M / F).
+ 6  estatura             Sí                  Metros, ej. 1,65 o 1.65.
+ 7  peso                 Sí                  Kilogramos, ej. 45,5 o 45.5.
+ 8  telefono             No                  Dígitos y espacios, + inicial opcional.
+ 9  direccion            No
+10  correo               No                  Correo válido (ver «Correos repetidos»).
+11  discapacidad         No                  Condición de salud relevante (texto).
+12  experiencia_previa   No                  Texto libre.
+13  sede_entrenamiento   No                  Club Hwang Hon / Escuela IMRDS.
+14  autorizacion_datos   No                  si / no (también 1 / 0, x). Vacío = no.
+15  grado_actual         No                  Cinturón, ej. Amarillo. Vacío = Ingresado.
+16  fecha_ingreso        No                  AAAA-MM-DD o DD/MM/AAAA. Vacío = hoy.
+17  estado               No                  activo / inactivo. Vacío = activo.
+18  acudiente_documento  Sí si es menor      Documento del acudiente que firma.
+19  acudiente_nombre     Sí si el acudiente es nuevo
+20  acudiente_relacion   Sí si el acudiente es nuevo   ej. madre, padre, tutor legal.
+21  acudiente_telefono   No
+22  acudiente_correo     No
+
+Alias aceptados: nombres, nombre completo, celular, grado, cinturon, condicion de salud,
+documento acudiente, nombre acudiente, relacion acudiente, telefono acudiente, correo acudiente.
+
+QUÉ HACE EL SISTEMA CON CADA FILA
+- nueva            documento que no existe: se da de alta como deportista VALIDADO.
+- actualizar       documento existente con algún dato distinto: se muestra campo por campo y solo
+                   se aplica si se aprueba. Una celda vacía NO borra el dato actual.
+- sin_cambios      documento existente sin diferencias: no se toca.
+- incompleta       falta un obligatorio (se nombra cuál).
+- invalida         un valor no cumple las reglas (fecha, sexo, peso fuera de rango, etc.).
+- conflicto_correo el mismo correo en dos deportistas ADULTOS distintos (en el archivo o ya
+                   registrados). Hermanos menores con el correo del acudiente, o un adulto que
+                   además es acudiente de un menor, NO es conflicto.
+- duplicada        el mismo documento aparece en dos o más filas: se rechazan todas.
+Una fila con problemas no impide cargar las demás.
+
+COLUMNAS QUE SE IGNORAN (con aviso)
+- Campos excluidos del sistema (RN-1.6): género, grupo étnico, víctima del conflicto armado.
+- Datos que fija el sistema: estado_registro, validado_por.
+- Cualquier otra columna que no esté en la tabla de arriba.
+
+NOTAS
+- El archivo no se guarda en el servidor (contiene datos de menores).
+- Un nombre que empiece por = + - @ se guarda como texto; los reportes en Excel lo muestran
+  como texto y nunca lo ejecutan como fórmula.

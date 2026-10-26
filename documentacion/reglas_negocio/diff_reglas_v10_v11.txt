@@ -1,0 +1,52 @@
+--- Reglas_de_Negocio_HwangHon_v1_0.docx
++++ Reglas_de_Negocio_HwangHon_v1_1.docx
+@@ -1,11 +1,11 @@
+ REGLAS DE NEGOCIO
+ HwangHon-Sports-System
+-Versión 1.0 — documento de trabajo
++Versión 1.1 — documento de trabajo
+ Club Deportivo de Hapkido Hwang Hon — Soacha, Cundinamarca
+ Cliente: Aldrin Díaz Herrera (Maestro del club)
+ Autor: John Alejandro Contreras — Ingeniería de Software, Fundación Universitaria Compensar (práctica profesional)
+-15 de octubre de 2026
+-Basado en el Documento Maestro (v0.2.5), la Bitácora Académica, el registro de dominio del proyecto y las rondas de revisión hasta el 15 de octubre de 2026.
++23 de octubre de 2026
++Basado en el Documento Maestro (v0.2.6), la Bitácora Académica, el registro de dominio del proyecto, las rondas de revisión hasta el 15 de octubre de 2026, y el Reglamento de Competencia Fedecolhap v3.1 2024 (categorías oficiales de peso, RN-3.8).
+ Etiquetas de estado: [CONFIRMADO] · [PROPUESTA] · [PENDIENTE DE RESPUESTA] · [PENDIENTE DE VERIFICACIÓN]. Ninguna regla se presenta sin etiqueta ni sin respaldo en las fuentes.
+ 
+ Contenido
+@@ -31,7 +31,7 @@
+ - [PENDIENTE DE RESPUESTA] — depende de que el club (Aldrin o Viviana, según corresponda) confirme la información o entregue documentación oficial.
+ - [PENDIENTE DE VERIFICACIÓN] — el dato existe en una fuente, pero no se ha verificado directamente contra el documento original.
+ Ninguna regla marcada como PROPUESTA, PENDIENTE DE RESPUESTA o PENDIENTE DE VERIFICACIÓN debe tratarse como definitiva ni implementarse como tal sin la confirmación correspondiente.
+-Fuente: Documento Maestro (v0.2.6); Bitácora Académica; registro de dominio del proyecto (topics/dominio-hwanghon.md); rondas de revisión hasta el 15/10/2026; Plan de Acción IMRDS 2026 (fuente primaria); consulta directa con Viviana González Sánchez (secretaria) y con Aldrin Díaz Herrera; validación directa de John (23/09/2026).
++Fuente: Documento Maestro (v0.2.6); Bitácora Académica; registro de dominio del proyecto (topics/dominio-hwanghon.md); rondas de revisión hasta el 15/10/2026; Plan de Acción IMRDS 2026 (fuente primaria); consulta directa con Viviana González Sánchez (secretaria) y con Aldrin Díaz Herrera; validación directa de John (23/09/2026); Reglamento de Competencia Fedecolhap v3.1 2024 (categorías oficiales de edad y peso, art. 3 y art. 4).
+ 2. Gestión de deportistas
+ Módulo 1 de 10. Cubre el registro y la administración de los deportistas: datos personales, información deportiva, acudiente/representante y documentación relacionada.
+ RN-1.1. Estructura de cuatro secciones
+@@ -147,10 +147,14 @@
+ El propio John la considera de mucho esfuerzo de construcción (cálculo de distancias por ciudad) para el beneficio que aportaría; no se construye por ahora.
+ RN-3.8. Categorías oficiales por edad y peso
+ [CONFIRMADO] Categorías por edad: Infantil (8 a 11 años), Junior (12 a 14 años), Juvenil (15 a 17 años), Mayores (18 a 35 años), Sénior (36 a 45 años), Máster (46 años en adelante). Confirmado tras investigación propia y validación directa de John el 23 de septiembre de 2026.
+-[PROPUESTA] Categorías de peso — tabla consolidada (15/10/2026), reemplaza la estimación de v0.6: corte inclusivo (el peso hasta el corte pertenece a esa categoría; sobre el último corte, categoría abierta «más de X kg», estándar en deportes de combate). Infantil (8 a 11 años), unisex: -20 kg, -25 kg, -30 kg, -35 kg, +35 kg. Junior (12 a 14 años), femenino: -35 kg, -40 kg, +40 kg; masculino: -35 kg, -40 kg, -45 kg, -50 kg, +50 kg. Juvenil, Mayores, Sénior y Máster (16 años en adelante): tabla DOCUMENTAL de Mayores — masculino: -55 kg, -60 kg, -65 kg, -70 kg, -75 kg, -80 kg, -85 kg, +85 kg; femenino: -50 kg, -55 kg, -60 kg, -65 kg, -70 kg, -75 kg, -80 kg, +80 kg.
+-Es un dato provisional y reemplazable: no proviene de una fuente oficial de la federación, es una tabla consolidada por el equipo de desarrollo para dejar el sistema completo mientras no haya una tabla oficial. Si en el futuro se entrega la tabla real, esta se reemplaza directamente. [PROPUESTA] Los 15 años (categoría Juvenil) no tienen tabla oficial ni propia para su edad: se les aplica la tabla de Mayores mientras no exista una tabla específica. Existe otra fuente (instructivo del Ministerio, Juegos Nacionales 2027) con solo 4 divisiones de peso y huecos entre ellas; no se usa mientras la federación no aclare cuál tabla aplica.
++[CONFIRMADO] Categorías de peso — tabla oficial de Fedecolhap (Reglamento de Competencia v3.1 2024, art. 4), con corte inclusivo (el peso hasta el corte pertenece a esa categoría; sobre el último corte, categoría abierta «más de X kg», estándar en deportes de combate). Infantil (8 a 11 años), unisex: -20 kg, -25 kg, -30 kg, -35 kg, +35 kg — esta categoría no existe en el reglamento de la federación, sigue siendo una tabla PROPUESTA del club. Junior (12 a 14 años), masculino: -40 kg, -45 kg, -50 kg, -55 kg, -60 kg, +60 kg; femenino: -38 kg, -43 kg, -48 kg, -53 kg, -58 kg, +58 kg. Juvenil (15 a 17 años), masculino: -45 kg, -50 kg, -55 kg, -60 kg, -65 kg, -70 kg, -75 kg, +75 kg; femenino: -43 kg, -48 kg, -53 kg, -58 kg, -63 kg, -68 kg, -73 kg, +73 kg. Mayores (18 a 35 años), Sénior (36 a 45 años) y Máster (46 años en adelante) comparten una sola tabla, masculino: -55 kg, -60 kg, -65 kg, -70 kg, -75 kg, -80 kg, -85 kg, +85 kg; femenino: -50 kg, -55 kg, -60 kg, -65 kg, -70 kg, -75 kg, -80 kg, +80 kg.
++La tabla de Infantil sigue siendo un dato provisional y reemplazable, construida por el equipo de desarrollo porque esa categoría no existe en el reglamento de la federación; si el club entrega en el futuro una tabla oficial para esa edad, se reemplaza directamente. Las demás categorías (Junior, Juvenil, Mayores, Sénior y Máster) provienen directamente del Reglamento de Competencia de Fedecolhap v3.1 2024 (art. 4) y dejan de ser una estimación del equipo de desarrollo.
+ Esta regla actualiza la de v0.5, donde el conjunto completo estaba pendiente de validación por Viviana (etiqueta que ahora se unifica como PENDIENTE DE RESPUESTA — ver sección 1). Con esta propuesta (v0.6) el punto queda resuelto como estimación provisional del equipo de desarrollo.
+-Precisión (15/10/2026): esta versión reemplaza la tabla de pesos de v0.6-v0.9 (solo Infantil y Junior, en pasos de 5 kg, con el tramo de 15 años sin cubrir) por la tabla consolidada de arriba, que sí cubre los 15 años con la tabla de Mayores como PROPUESTA. La categoría de edad (sugerida por la fecha del torneo) y la categoría de peso (sugerida por el peso registrado y esta tabla) son siempre editables en la participación (RN-3.1): el deportista suele recortar peso — sobre todo agua, unos 2 kg — antes del pesaje oficial. [PROPUESTA, extra] Mensaje de recomendación de peso: si el peso registrado supera el corte de su categoría por poco (~2,5 kg), el sistema puede sugerir bajar de peso; si lo supera por más, puede sugerir mantener el peso para no subir de categoría. Es un mensaje adicional, no bloquea ninguna acción.
++Precisión (15/10/2026): esta versión reemplaza la tabla de pesos de v0.6-v0.9 (solo Infantil y Junior, en pasos de 5 kg, con el tramo de 15 años sin cubrir) por la tabla consolidada de arriba, que sí cubre los 15 años con la tabla de Mayores como PROPUESTA.
++Precisión (23/10/2026): la tabla PROPUESTA de Junior y el uso de la tabla de Mayores para cubrir Juvenil, descritos en la nota anterior, se reemplazan por las tablas oficiales de categorías de peso del Reglamento de Competencia Fedecolhap v3.1 2024 (art. 4): Junior y Juvenil pasan a tener cada una su propia tabla, confirmada — ya no PROPUESTA ni compartida con Mayores (ver arriba). Infantil es la única categoría que sigue siendo una tabla PROPUESTA del club, porque no existe en el reglamento de la federación.
++Anotado, sin implementar (23/10/2026): el parágrafo 2 del art. 3 del Reglamento de Competencia Fedecolhap v3.1 2024 permite que un deportista a menos de 3 meses de cambiar de categoría de edad compita en la categoría siguiente, con autorización escrita del delegado — es coherente con que la categoría de la participación ya sea siempre editable (RN-3.1). No se construye ninguna validación ni flujo de autorización para este caso en esta versión; queda como contexto para una futura iteración.
++La categoría de edad (sugerida por la fecha del torneo) y la categoría de peso (sugerida por el peso registrado y esta tabla) son siempre editables en la participación (RN-3.1): el deportista suele recortar peso — sobre todo agua, unos 2 kg — antes del pesaje oficial.
++[PROPUESTA, extra] Mensaje de recomendación de peso: si el peso registrado supera el corte de su categoría por poco (~2,5 kg), el sistema puede sugerir bajar de peso; si lo supera por más, puede sugerir mantener el peso para no subir de categoría. Es un mensaje adicional, no bloquea ninguna acción.
+ RN-3.9. Selección de competencia: desde el calendario o creación directa
+ [CONFIRMADO] 
+ La competencia a la que se asocia la participación de un deportista se selecciona normalmente de una ya existente en el calendario de eventos (ver RN-9.2). Excepcionalmente, se permite la creación directa de una competencia nueva para casos extraordinarios no programados con anticipación.
+@@ -458,6 +462,5 @@
+ - Lista definitiva de qué reportes y exportaciones necesita el club, más allá de los seis de la primera versión (RN-10.2).
+ - Consentimientos específicos para torneo y para examen de ascenso, más allá de la autorización general de datos (RN-6.5).
+ - Tiempos mínimos de entrenamiento exigidos entre ascensos de cinturón (RN-2.5).
+-- Tabla oficial de categorías por peso de la federación, que reemplazaría la tabla consolidada PROPUESTA de esta versión (RN-3.8).
+-[HEADER] HwangHon-Sports-System — Reglas de Negocio v1.0
++[HEADER] HwangHon-Sports-System — Reglas de Negocio v1.1
+ [FOOTER] Página  de 
