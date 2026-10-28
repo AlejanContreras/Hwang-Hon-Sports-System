@@ -331,3 +331,149 @@ td.acciones-celda .boton { margin-right: 0.3rem; }
 @media (min-width: 801px) {
     .menu-lateral .cuerpo-menu { display: flex; flex-direction: column; gap: 1rem; flex: 1; }
 }
+
+/* ---------- Asistencia y pagos ---------- */
+.rejilla-tarjetas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 0 1rem;
+}
+.cifra { font-size: 1.6rem; font-weight: 700; margin: 0 0 0.25rem; }
+.lista-marcas { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; }
+.lista-marcas li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 0.1rem 0.6rem;
+    padding: 0.45rem 0.25rem;
+    border-bottom: 1px solid var(--color-borde);
+}
+.lista-marcas input[type="checkbox"] { width: 1.25rem; height: 1.25rem; }
+.lista-marcas .salud { grid-column: 2; }
+.salud { color: var(--color-advertencia); font-size: 0.9rem; }
+.formulario-en-linea { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: start; }
+.formulario-en-linea .campo:last-child { padding-top: 1.6rem; }
+.insignia-deuda { background: #fdecea; color: var(--color-peligro); }
+.insignia-vencido { background: #fff4e0; color: var(--color-advertencia); }
+.lista-marcas li.fila-pago { grid-template-columns: auto 1fr 9rem; }
+
+/* El foco que el enrutador pone en <main> (tabindex=-1) no lleva contorno. */
+#contenido:focus { outline: none; }
+
+/* ---------- Menú por grupos (Paso 5) ---------- */
+.menu-lateral .titulo-grupo-menu {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.75;
+    margin: 0.9rem 0.75rem 0.3rem;
+}
+.menu-lateral nav a.deshabilitado { opacity: 0.55; cursor: default; }
+.menu-lateral nav a.deshabilitado:hover { background: none; }
+.proximamente { display: block; font-size: 0.72rem; opacity: 0.9; }
+
+/* ---------- Inicio (dashboard base, Paso 5) ---------- */
+.encabezado-inicio { align-items: baseline; border-bottom: 1px solid var(--color-borde); padding-bottom: 0.75rem; }
+.reloj { margin: 0; color: var(--color-texto-suave); }
+.reloj::first-letter { text-transform: uppercase; }
+.tarjetas-inicio {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 1rem;
+}
+.tarjeta-dato h2 { font-size: 0.95rem; color: var(--color-texto-suave); }
+.tarjeta-dato .ayuda { margin: 0; }
+.dato-destacado { font-weight: 700; margin: 0 0 0.25rem; }
+.rejilla-inicio {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+}
+.panel-central, .calendario-lateral { min-height: 12rem; }
+.accesos-rapidos ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: 0.75rem;
+}
+.acceso {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 4rem;
+    padding: 0.6rem;
+    text-align: center;
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio);
+    background: var(--color-superficie);
+    color: var(--color-primario);
+    font-weight: 600;
+    text-decoration: none;
+}
+a.acceso:not(.deshabilitado):hover { background: #e8eef6; }
+.acceso.deshabilitado { color: var(--color-texto-suave); background: #eceef1; cursor: default; }
+.acceso .proximamente { font-weight: normal; }
+
+/* En celular se ocultan el panel de datos y el calendario (boceto). */
+@media (max-width: 800px) {
+    .rejilla-inicio { display: none; }
+}
+.tarjetas-inicio, .rejilla-inicio { margin-bottom: 1rem; }
+.tarjetas-inicio > .tarjeta, .rejilla-inicio > .tarjeta { margin-bottom: 0; }
+
+/* ---------- Mi perfil (Paso 6) ---------- */
+.columna-principal { min-width: 0; display: flex; flex-direction: column; }
+.cabecera-perfil {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background: var(--color-superficie);
+    border-bottom: 1px solid var(--color-borde);
+}
+.nombre-perfil { font-size: 1.15rem; font-weight: 700; margin: 0; }
+.datos-perfil { margin: 0; color: var(--color-texto-suave); font-size: 0.95rem; }
+@media (max-width: 800px) {
+    .cabecera-perfil { padding: 0.75rem 1rem; }
+}
+@media (max-width: 800px) {
+    /* La barra del menú no se estira: el alto sobrante es para el contenido. */
+    .estructura { grid-template-rows: auto 1fr; }
+}
+
+/* ---------- Torneos (Paso 8) ---------- */
+details.tarjeta > summary, details.participante > summary { cursor: pointer; font-weight: 600; }
+details.participante {
+    border-bottom: 1px solid var(--color-borde);
+    padding: 0.6rem 0.25rem;
+}
+details.participante > summary { font-weight: normal; }
+details.participante[open] > summary { margin-bottom: 0.75rem; }
+.lista-marcas li.fila-inscripcion { grid-template-columns: 1fr auto; }
+
+/* ---------- Autorregistro (Paso 9) ---------- */
+.pagina-registro { max-width: 60rem; margin: 0 auto; }
+.enlace-registro { text-align: center; }
+/* Campo trampa: fuera de la vista y del orden de tabulación (no se usa display:none). */
+.campo-trampa { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+/* ---------- Calendario (Paso 10) ---------- */
+.navegacion-mes { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+.navegacion-mes h2 { margin: 0 0.5rem; min-width: 10rem; text-align: center; }
+.filtros-calendario { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
+.lista-dias { list-style: none; margin: 0; padding: 0; }
+.dia { border-top: 1px solid var(--color-borde); padding: 0.6rem 0; }
+.dia h3 { font-size: 0.95rem; margin: 0 0 0.35rem; }
+.dia::first-letter, .dia h3::first-letter { text-transform: uppercase; }
+.dia-hoy { background: #f2f7fd; }
+.item-calendario { margin: 0.25rem 0; }
+.evento-calendario > summary { cursor: pointer; }
+.evento-calendario[open] { padding-bottom: 0.5rem; }
+.editar-evento > summary { cursor: pointer; color: var(--color-primario); margin: 0.25rem 0; }
+.lista-proximas { list-style: none; margin: 0 0 0.5rem; padding: 0; display: grid; gap: 0.35rem; font-size: 0.92rem; }
+.lista-proximas li { display: grid; grid-template-columns: 3rem 1fr; gap: 0.4rem; }
+.fecha-proxima { color: var(--color-texto-suave); font-variant-numeric: tabular-nums; }

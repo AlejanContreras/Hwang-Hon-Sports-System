@@ -9,3 +9,6 @@ recursos/contexto/*
 backend/Almacenamiento/*
 !backend/Almacenamiento/.htaccess
 backend/Src/Config/correo.php
+
+# Informes de trabajo del front (se envian al chat principal, no al repositorio)
+documentacion/front/INFORME_*.md

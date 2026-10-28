@@ -8,16 +8,32 @@
     <script type="module" src="js/publico.js"></script>
 </head>
 <body>
-    <main class="contenido" id="contenido">
-        <div class="encabezado-vista">
-            <h1>Mi perfil</h1>
-            <button type="button" class="boton boton-secundario" id="boton-salir">Cerrar sesión</button>
+    <a class="enlace-saltar" href="#contenido">Saltar al contenido</a>
+    <div class="estructura">
+        <aside class="menu-lateral" id="menu-lateral">
+            <div class="cabecera-menu">
+                <p class="titulo-sistema">HwangHon</p>
+                <button type="button" class="boton boton-secundario boton-pequeno boton-menu" id="boton-menu"
+                        aria-expanded="false" aria-controls="cuerpo-menu">Menú</button>
+            </div>
+            <div class="cuerpo-menu" id="cuerpo-menu">
+                <!-- Los grupos y secciones se arman desde js/publico.js. -->
+                <nav aria-label="Secciones de mi perfil" id="lista-menu"></nav>
+            </div>
+        </aside>
+
+        <div class="columna-principal">
+            <header class="cabecera-perfil">
+                <div>
+                    <p class="nombre-perfil" id="nombre-usuario"></p>
+                    <p class="datos-perfil" id="datos-perfil"></p>
+                </div>
+                <button type="button" class="boton boton-secundario" id="boton-salir">Salir</button>
+            </header>
+            <main class="contenido" id="contenido" tabindex="-1">
+                <p class="cargando" role="status">Cargando…</p>
+            </main>
         </div>
-        <div class="tarjeta">
-            <p>Sesión de <strong id="nombre-usuario">…</strong></p>
-            <!-- F4: ficha, asistencia, pagos y edición de los datos permitidos. -->
-            <p class="ayuda">La vista del deportista se construye en la fase 4.</p>
-        </div>
-    </main>
+    </div>
 </body>
 </html>

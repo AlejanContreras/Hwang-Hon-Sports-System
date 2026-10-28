@@ -299,6 +299,10 @@ async function cargarPendientes(zona, aviso, pintarPestanas) {
             crear('td', { texto: textoFecha(d.fecha_ingreso) }),
             crear('td', { texto: textoDato(d.sede_entrenamiento) }),
             crear('td', { clase: 'acciones-celda' },
+                crear('a', {
+                    clase: 'boton boton-secundario boton-pequeno', texto: 'Documentos',
+                    atributos: { href: `#documentos/${encodeURIComponent(d.documento)}`, 'aria-label': `Documentos de ${d.nombre}` },
+                }),
                 crear('button', {
                     clase: 'boton boton-exito boton-pequeno', texto: 'Validar',
                     atributos: { type: 'button', 'aria-label': `Validar a ${d.nombre}` },
@@ -313,7 +317,7 @@ async function cargarPendientes(zona, aviso, pintarPestanas) {
         ));
     }
     zona.append(
-        crear('p', { clase: 'ayuda', texto: 'Validar deja el registro activo en el club. Rechazar lo elimina junto con sus documentos; si ya tiene datos en otros módulos, la API no lo permite.' }),
+        crear('p', { clase: 'ayuda', texto: 'Revisa sus documentos antes de validar. Validar deja el registro activo en el club. Rechazar lo elimina junto con sus documentos; si ya tiene datos en otros módulos, la API no lo permite.' }),
         crear('div', { clase: 'contenedor-tabla' },
             crear('table', {},
                 crear('caption', { clase: 'solo-lectores', texto: 'Registros pendientes de validación' }),
@@ -360,6 +364,7 @@ export async function mostrarFicha(contenedor, documento) {
 
     const acciones = [
         crear('a', { clase: 'boton', texto: 'Editar', atributos: { href: `#deportista-editar/${encodeURIComponent(d.documento)}` } }),
+        crear('a', { clase: 'boton boton-secundario', texto: 'Documentos', atributos: { href: `#documentos/${encodeURIComponent(d.documento)}` } }),
         botonPdf,
     ];
     if (pendiente) {
@@ -384,6 +389,24 @@ export async function mostrarFicha(contenedor, documento) {
         ),
         aviso,
         crear('div', { clase: 'acciones', atributos: { style: 'margin: 0 0 1rem' } }, ...acciones),
+        ...seccionesFicha(d),
+    );
+}
+
+// Secciones de solo lectura de la ficha. Las usa también «Mi perfil» (ámbito público):
+// «Validado por» solo aparece si la API lo envía (no lo envía al público).
+export function seccionesFicha(d) {
+    const club = [
+        ['Sede de entrenamiento', d.sede_entrenamiento],
+        ['Grado actual', textoGrado(d.grado_actual)],
+        ['Fecha de ingreso', textoFecha(d.fecha_ingreso)],
+        ['Estado', textoEstado(d.estado)],
+        ['Registro', textoEstadoRegistro(d.estado_registro)],
+        ...(d.validado_por_correo !== undefined ? [['Validado por', d.validado_por_correo]] : []),
+        ['Autorización de datos', d.autorizacion_datos],
+        ['Combates ganados / perdidos', `${textoDato(d.combates_ganados)} / ${textoDato(d.combates_perdidos)}`],
+    ];
+    return [
         seccionFicha('Datos personales', [
             ['Fecha de nacimiento', textoFecha(d.fecha_nacimiento)],
             ['Edad', d.edad === null ? null : `${d.edad} años`],
@@ -399,16 +422,7 @@ export async function mostrarFicha(contenedor, documento) {
             ['Dirección', d.direccion],
             ['Correo', d.correo],
         ]),
-        seccionFicha('Club', [
-            ['Sede de entrenamiento', d.sede_entrenamiento],
-            ['Grado actual', textoGrado(d.grado_actual)],
-            ['Fecha de ingreso', textoFecha(d.fecha_ingreso)],
-            ['Estado', textoEstado(d.estado)],
-            ['Registro', textoEstadoRegistro(d.estado_registro)],
-            ['Validado por', d.validado_por_correo],
-            ['Autorización de datos', d.autorizacion_datos],
-            ['Combates ganados / perdidos', `${textoDato(d.combates_ganados)} / ${textoDato(d.combates_perdidos)}`],
-        ]),
+        seccionFicha('Club', club),
         seccionFicha('Salud y experiencia', [
             ['Condición de salud', d.discapacidad],
             ['Experiencia previa', crear('span', { clase: 'texto-largo', texto: textoDato(d.experiencia_previa) })],
@@ -422,7 +436,7 @@ export async function mostrarFicha(contenedor, documento) {
                 ['Correo', d.acudiente.correo],
             ])
             : crear('section', { clase: 'tarjeta' }, crear('h2', { texto: 'Acudiente' }), crear('p', { texto: 'Sin acudiente registrado.' })),
-    );
+    ];
 }
 
 function seccionFicha(titulo, pares) {

@@ -1,0 +1,7 @@
+# El front se actualiza seguido: el navegador debe revalidar HTML, JS y CSS en cada carga
+# (con ETag, si no cambió el servidor responde 304 sin reenviar el archivo).
+<IfModule mod_headers.c>
+    <FilesMatch "\.(html|js|css)$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+</IfModule>

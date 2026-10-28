@@ -65,7 +65,8 @@ export function notificar(texto, tipo = 'exito') {
 // ---------------------------------------------------------------------------
 // Diálogo de confirmación (devuelve una promesa con true/false)
 // ---------------------------------------------------------------------------
-export function confirmar({ titulo, mensaje, textoAceptar = 'Aceptar', peligroso = false }) {
+// textoConfirmacion: confirmación fuerte; el botón Aceptar se habilita solo al escribir ese texto exacto.
+export function confirmar({ titulo, mensaje, textoAceptar = 'Aceptar', peligroso = false, textoConfirmacion = null }) {
     return new Promise((resolver) => {
         const idTitulo = `dialogo-titulo-${Date.now()}`;
         const botonCancelar = crear('button', { clase: 'boton boton-secundario', texto: 'Cancelar', atributos: { type: 'button' } });
@@ -74,22 +75,37 @@ export function confirmar({ titulo, mensaje, textoAceptar = 'Aceptar', peligroso
             texto: textoAceptar,
             atributos: { type: 'button' },
         });
+        let campoConfirmacion = null;
+        if (textoConfirmacion) {
+            campoConfirmacion = campo({ etiqueta: `Escribe «${textoConfirmacion}» para confirmar`, nombre: 'confirmacion', atributos: { autocomplete: 'off' } });
+            botonAceptar.disabled = true;
+            campoConfirmacion.control.addEventListener('input', () => {
+                botonAceptar.disabled = campoConfirmacion.control.value.trim() !== textoConfirmacion;
+            });
+        }
         const dialogo = crear('dialog', { clase: 'dialogo', atributos: { 'aria-labelledby': idTitulo } },
             crear('h2', { texto: titulo, atributos: { id: idTitulo } }),
             ...[].concat(mensaje).map((parrafo) => crear('p', { texto: parrafo })),
+            campoConfirmacion ? campoConfirmacion.envoltura : null,
             crear('div', { clase: 'acciones' }, botonCancelar, botonAceptar),
         );
 
-        let respuesta = false;
-        botonCancelar.addEventListener('click', () => dialogo.close());
-        botonAceptar.addEventListener('click', () => {
-            respuesta = true;
-            dialogo.close();
-        });
-        dialogo.addEventListener('close', () => {
+        // Se resuelve desde los botones y no solo con el evento «close»: el navegador puede
+        // retrasar ese evento (p. ej. con la pestaña en segundo plano).
+        const focoAnterior = document.activeElement;
+        let terminado = false;
+        const terminar = (respuesta) => {
+            if (terminado) return;
+            terminado = true;
+            if (dialogo.open) dialogo.close();
             dialogo.remove();
+            if (focoAnterior && focoAnterior.isConnected) focoAnterior.focus();
             resolver(respuesta);
-        });
+        };
+        botonCancelar.addEventListener('click', () => terminar(false));
+        botonAceptar.addEventListener('click', () => terminar(true));
+        // Escape cierra el diálogo como «Cancelar».
+        dialogo.addEventListener('close', () => terminar(false));
 
         document.body.append(dialogo);
         dialogo.showModal();
@@ -223,6 +239,55 @@ export function listaDatos(pares) {
         );
     }
     return lista;
+}
+
+// ---------------------------------------------------------------------------
+// Fechas con la hora de Bogotá (A.2), sin depender de la zona del navegador
+// ---------------------------------------------------------------------------
+export function hoyBogota() {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' })
+        .format(new Date());
+}
+
+export function anioActualBogota() {
+    return Number(hoyBogota().slice(0, 4));
+}
+
+// Día de la semana de una fecha AAAA-MM-DD (0 = domingo … 6 = sábado), calculado en UTC.
+export function diaSemana(fecha) {
+    const [anio, mes, dia] = fecha.split('-').map(Number);
+    return new Date(Date.UTC(anio, mes - 1, dia)).getUTCDay();
+}
+
+export function sumarDias(fecha, dias) {
+    const [anio, mes, dia] = fecha.split('-').map(Number);
+    return new Date(Date.UTC(anio, mes - 1, dia + dias)).toISOString().slice(0, 10);
+}
+
+export function esFinDeSemana(fecha) {
+    const dia = diaSemana(fecha);
+    return dia === 0 || dia === 6;
+}
+
+// Último sábado o domingo que no sea futuro (hoy incluido).
+export function ultimoFinDeSemana() {
+    const hoy = hoyBogota();
+    const dia = diaSemana(hoy);
+    return dia === 0 || dia === 6 ? hoy : sumarDias(hoy, -dia);
+}
+
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+export const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+// «sábado 24/10/2026»
+export function textoFechaLarga(fecha) {
+    if (!fecha) return '—';
+    return `${DIAS[diaSemana(fecha)]} ${textoFecha(fecha)}`;
+}
+
+export function nombreMes(mes) {
+    const nombre = MESES[mes - 1] || String(mes);
+    return nombre.charAt(0).toUpperCase() + nombre.slice(1);
 }
 
 export function cargando(contenedor, texto = 'Cargando…') {
