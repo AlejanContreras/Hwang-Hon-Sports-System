@@ -51,7 +51,7 @@ class DocumentoController
             'subirGeneral' => $this->manejarSubirGeneral($metodo, $parametros),
             'reemplazarGeneral' => $this->manejarReemplazarGeneral($metodo, $parametros),
             'eliminarGeneral' => $this->manejarEliminarGeneral($metodo, $parametros),
-            default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
+            default => Respuesta::error(404, "Acción no reconocida: {$accion}"),
         };
     }
 

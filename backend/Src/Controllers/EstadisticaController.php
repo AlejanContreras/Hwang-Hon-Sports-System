@@ -37,7 +37,7 @@ class EstadisticaController
         match ($accion) {
             'deportista' => $this->leer($metodo, fn () => $this->servicio()->deportista($parametros)),
             'torneo' => $this->leer($metodo, fn () => $this->servicio()->torneo($parametros)),
-            default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
+            default => Respuesta::error(404, "Acción no reconocida: {$accion}"),
         };
     }
 

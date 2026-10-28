@@ -42,7 +42,7 @@ class CalendarioController
             'actualizar' => $this->manejarActualizar($metodo, $parametros),
             'vista' => $this->manejarVista($metodo, $parametros),
             'importar' => $this->manejarImportar($metodo, $parametros),
-            default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
+            default => Respuesta::error(404, "Acción no reconocida: {$accion}"),
         };
     }
 

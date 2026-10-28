@@ -42,7 +42,7 @@ class ReporteController
             'pagos' => $this->descargar($metodo, fn () => $this->servicio()->pagos($parametros)),
             'torneos' => $this->descargar($metodo, fn () => $this->servicio()->torneos($parametros)),
             'sesionExamen' => $this->descargar($metodo, fn () => $this->servicio()->sesionExamen($parametros)),
-            default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
+            default => Respuesta::error(404, "Acción no reconocida: {$accion}"),
         };
     }
 

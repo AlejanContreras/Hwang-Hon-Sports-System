@@ -78,6 +78,18 @@ class DocumentoRepository extends BaseRepository
     }
 
     /**
+     * Borra todas las filas de documento de un deportista y devuelve cuántas
+     * borró (rechazo de un registro pendiente; va dentro de su transacción).
+     */
+    public function eliminarDeDeportista(string $deportistaDocumento): int
+    {
+        return $this->ejecutarYContarFilas(
+            'DELETE FROM documento WHERE deportista_documento = :documento',
+            ['documento' => $deportistaDocumento]
+        );
+    }
+
+    /**
      * Elimina una fila de `documento` por su llave primaria `id`.
      */
     public function eliminar(string|int $id): bool

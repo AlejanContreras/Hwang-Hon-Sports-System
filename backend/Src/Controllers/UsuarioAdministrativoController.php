@@ -46,7 +46,7 @@ class UsuarioAdministrativoController
             'desactivar' => $this->manejarDesactivar($metodo, $parametros),
             'reactivar' => $this->manejarReactivar($metodo, $parametros),
             'restablecerContrasena' => $this->manejarRestablecerContrasena($metodo, $parametros),
-            default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
+            default => Respuesta::error(404, "Acción no reconocida: {$accion}"),
         };
     }
 

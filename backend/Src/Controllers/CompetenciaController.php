@@ -46,7 +46,7 @@ class CompetenciaController
             'sugerencia' => $this->manejarSugerencia($metodo, $parametros),
             'actualizarParticipacion' => $this->manejarActualizarParticipacion($metodo, $parametros),
             'quitarParticipante' => $this->manejarQuitarParticipante($metodo, $parametros),
-            default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
+            default => Respuesta::error(404, "Acción no reconocida: {$accion}"),
         };
     }
 

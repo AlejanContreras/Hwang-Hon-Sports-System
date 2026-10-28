@@ -36,7 +36,7 @@ class ImportacionDeportistaController
         match ($accion) {
             'previsualizar' => $this->responder($metodo, fn () => $this->servicio()->previsualizar()),
             'aplicar' => $this->responder($metodo, fn () => $this->servicio()->aplicar($_POST)),
-            default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
+            default => Respuesta::error(404, "Acción no reconocida: {$accion}"),
         };
     }
 

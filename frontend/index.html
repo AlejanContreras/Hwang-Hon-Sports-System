@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ingreso — HwangHon Sports System</title>
+    <link rel="stylesheet" href="css/estilos.css">
+    <script type="module" src="js/ingreso.js"></script>
+</head>
+<body>
+    <main class="pagina-ingreso">
+        <div class="caja-ingreso">
+            <div class="marca">
+                <h1>HwangHon Sports System</h1>
+                <p>Club de taekwondo Hwang Hon</p>
+            </div>
+
+            <div class="tarjeta">
+                <p id="verificando" class="cargando" role="status">Verificando sesión…</p>
+
+                <div id="zona-ingreso" hidden>
+                    <div class="pestanas" role="tablist" aria-label="Tipo de ingreso">
+                        <button type="button" class="pestana" role="tab" id="pestana-administrativa"
+                                aria-controls="panel-administrativa" aria-selected="true">Personal del club</button>
+                        <button type="button" class="pestana" role="tab" id="pestana-publica"
+                                aria-controls="panel-publica" aria-selected="false" tabindex="-1">Deportista o familia</button>
+                    </div>
+
+                    <div id="aviso-ingreso" hidden></div>
+
+                    <section id="panel-administrativa" role="tabpanel" aria-labelledby="pestana-administrativa">
+                        <form id="formulario-administrativo" class="formulario-ingreso" novalidate>
+                            <div class="campo">
+                                <label for="correo">Correo</label>
+                                <input type="email" id="correo" name="correo" autocomplete="username" required maxlength="150">
+                            </div>
+                            <div class="campo">
+                                <label for="contrasena">Contraseña</label>
+                                <input type="password" id="contrasena" name="contrasena" autocomplete="current-password" required>
+                            </div>
+                            <button type="submit" class="boton">Ingresar</button>
+                        </form>
+                    </section>
+
+                    <section id="panel-publica" role="tabpanel" aria-labelledby="pestana-publica" hidden>
+                        <form id="formulario-publico" class="formulario-ingreso" novalidate>
+                            <p class="ayuda">Ingresa con los datos <strong>del deportista</strong>, también si eres su acudiente.</p>
+                            <div class="campo">
+                                <label for="documento">Documento del deportista</label>
+                                <input type="text" id="documento" name="documento" inputmode="numeric" autocomplete="off" required maxlength="20">
+                            </div>
+                            <div class="campo">
+                                <label for="fecha-nacimiento">Fecha de nacimiento del deportista</label>
+                                <input type="date" id="fecha-nacimiento" name="fecha_nacimiento" required>
+                            </div>
+                            <button type="submit" class="boton">Ingresar</button>
+                        </form>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

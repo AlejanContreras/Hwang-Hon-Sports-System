@@ -39,7 +39,7 @@ class HistorialController
             'torneos' => $this->leer($metodo, fn () => $this->servicio()->torneos($parametros)),
             'ascensos' => $this->leer($metodo, fn () => $this->servicio()->ascensos($parametros)),
             'permanencia' => $this->leer($metodo, fn () => $this->servicio()->permanencia($parametros)),
-            default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
+            default => Respuesta::error(404, "Acción no reconocida: {$accion}"),
         };
     }
 

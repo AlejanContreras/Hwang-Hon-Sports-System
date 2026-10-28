@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Panel del club — HwangHon Sports System</title>
+    <link rel="stylesheet" href="css/estilos.css">
+    <script type="module" src="js/administrativo.js"></script>
+</head>
+<body>
+    <a class="enlace-saltar" href="#contenido">Saltar al contenido</a>
+    <div class="estructura">
+        <!-- Menú lateral simple (la navegación por «contexto activo» sigue sin validar). -->
+        <aside class="menu-lateral" id="menu-lateral">
+            <div class="cabecera-menu">
+                <p class="titulo-sistema">HwangHon</p>
+                <button type="button" class="boton boton-secundario boton-pequeno boton-menu" id="boton-menu"
+                        aria-expanded="false" aria-controls="cuerpo-menu">Menú</button>
+            </div>
+            <div class="cuerpo-menu" id="cuerpo-menu">
+                <nav aria-label="Módulos">
+                    <ul id="lista-menu">
+                        <li><a href="#deportistas" data-modulo="deportistas">Deportistas</a></li>
+                        <li><span class="deshabilitado" title="Próxima fase">Asistencia (próximamente)</span></li>
+                        <li><span class="deshabilitado" title="Próxima fase">Pagos (próximamente)</span></li>
+                    </ul>
+                </nav>
+                <div class="usuario">
+                    <p>Sesión de <strong id="nombre-usuario"></strong></p>
+                    <button type="button" class="boton boton-secundario" id="boton-salir">Cerrar sesión</button>
+                </div>
+            </div>
+        </aside>
+
+        <main class="contenido" id="contenido" tabindex="-1">
+            <p class="cargando" role="status">Cargando…</p>
+        </main>
+    </div>
+</body>
+</html>

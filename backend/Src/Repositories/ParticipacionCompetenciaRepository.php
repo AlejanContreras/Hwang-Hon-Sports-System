@@ -101,6 +101,19 @@ class ParticipacionCompetenciaRepository extends BaseRepository
     }
 
     /**
+     * ¿Alguna participación del torneo tiene un resultado registrado (puesto,
+     * resultado, medalla o combates)? Una sola consulta.
+     */
+    public function tieneResultados(int $competenciaEventoId): bool
+    {
+        return $this->existe(
+            'SELECT 1 FROM participacion_competencia WHERE competencia_evento_id = :evento '
+            . 'AND (puesto IS NOT NULL OR resultado IS NOT NULL OR medalla IS NOT NULL OR combates_ganados IS NOT NULL OR combates_perdidos IS NOT NULL) LIMIT 1',
+            ['evento' => $competenciaEventoId]
+        );
+    }
+
+    /**
      * Record de combates de un deportista: suma de combates_ganados y
      * combates_perdidos de todas sus participaciones. Una sola consulta
      * agregada sin GROUP BY (valida con ONLY_FULL_GROUP_BY); COALESCE deja 0

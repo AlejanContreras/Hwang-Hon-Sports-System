@@ -144,7 +144,9 @@ class CalendarioService
             || $modelo->obtenerVisibilidad() !== $fila['visibilidad']) {
             $dueno = $this->evento->moduloDueno($modelo->obtenerId());
             if ($dueno !== null) {
-                $modulo = $dueno === 'evaluacion' ? 'una sesión de examen: edítalos en Evaluaciones' : 'un torneo: edítalos en Competencias';
+                $modulo = $dueno === 'evaluacion'
+                    ? 'una sesión de examen: edítalos en Evaluaciones (actualizar la sesión)'
+                    : 'un torneo: edítalos en Competencias (actualizar el torneo)';
                 throw new ExcepcionNegocio("La fecha, el lugar y la visibilidad de este evento pertenecen a {$modulo}.", 409);
             }
         }

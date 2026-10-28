@@ -43,7 +43,7 @@ class AuthController
             'cambiarContrasena' => $this->manejarCambiarContrasena($metodo, $parametros),
             'solicitarRecuperacionContrasena' => $this->manejarSolicitarRecuperacionContrasena($metodo, $parametros),
             'restablecerContrasena' => $this->manejarRestablecerContrasena($metodo, $parametros),
-            default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
+            default => Respuesta::error(404, "Acción no reconocida: {$accion}"),
         };
     }
 

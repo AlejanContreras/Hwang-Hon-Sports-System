@@ -46,7 +46,7 @@ class AsistenciaController
             'eliminarFecha' => $this->manejarEliminarFecha($metodo, $parametros),
             'porcentaje' => $this->manejarPorcentaje($metodo, $parametros),
             'revisarInactivos' => $this->manejarRevisarInactivos($metodo, $parametros),
-            default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
+            default => Respuesta::error(404, "Acción no reconocida: {$accion}"),
         };
     }
 

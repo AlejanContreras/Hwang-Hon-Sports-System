@@ -39,7 +39,7 @@ class DeportistaController
             'crear' => $this->manejarCrear($metodo, $parametros),
             'actualizar' => $this->manejarActualizar($metodo, $parametros),
             'eliminar' => $this->manejarEliminar($metodo, $parametros),
-            default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
+            default => Respuesta::error(404, "Acción no reconocida: {$accion}"),
         };
     }
 

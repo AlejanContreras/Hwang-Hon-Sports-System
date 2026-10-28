@@ -25,12 +25,14 @@ class ArchivoSubido
      */
     private const TIPOS_POR_EXTENSION = [
         'pdf' => ['application/pdf'],
-        'doc' => ['application/msword', 'application/vnd.ms-office', 'application/CDFV2'],
+        // application/x-ole-storage: así reportan los contenedores OLE las
+        // versiones nuevas de libmagic (p. ej. PHP 8.3); las anteriores, CDFV2.
+        'doc' => ['application/msword', 'application/vnd.ms-office', 'application/CDFV2', 'application/x-ole-storage'],
         'docx' => [
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'application/zip',
         ],
-        'xls' => ['application/vnd.ms-excel', 'application/vnd.ms-office', 'application/CDFV2'],
+        'xls' => ['application/vnd.ms-excel', 'application/vnd.ms-office', 'application/CDFV2', 'application/x-ole-storage'],
         'xlsx' => [
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'application/zip',
@@ -84,14 +86,13 @@ class ArchivoSubido
             throw new ExcepcionNegocio("Tipo de archivo no permitido. Se aceptan: {$lista}.", 400);
         }
 
-        $tiposAceptados = self::TIPOS_POR_EXTENSION[$extension] ?? null;
-        if ($tiposAceptados === null) {
+        if (!isset(self::TIPOS_POR_EXTENSION[$extension])) {
             // Error de programacion: se pidio una extension que esta clase no conoce.
             throw new LogicException("ArchivoSubido no conoce la extension: {$extension}");
         }
 
         $tipoReal = (new finfo(FILEINFO_MIME_TYPE))->file($archivo['tmp_name']);
-        if (!in_array($tipoReal, $tiposAceptados, true)) {
+        if (!self::tipoAceptado($extension, (string) $tipoReal)) {
             throw new ExcepcionNegocio('El contenido del archivo no corresponde a su extensión.', 400);
         }
 
@@ -101,6 +102,16 @@ class ArchivoSubido
             'extension' => $extension,
             'tamanoBytes' => $tamanoBytes,
         ];
+    }
+
+    /**
+     * ¿El tipo real (MIME que detecta fileinfo) corresponde a la extension?
+     * Pura, sin archivo: asi se prueba la lista sin depender de la version de
+     * libmagic instalada.
+     */
+    public static function tipoAceptado(string $extension, string $tipoReal): bool
+    {
+        return in_array($tipoReal, self::TIPOS_POR_EXTENSION[$extension] ?? [], true);
     }
 
     /**

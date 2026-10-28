@@ -407,8 +407,10 @@ class DeportistaService
      * Elimina un registro (solo ambito administrativo y solo si esta en
      * pendiente_validacion: Especificacion B.4, no existe estado "rechazado").
      * Un deportista validado no se elimina: se pasa a inactivo con actualizar.
-     * Si su acudiente queda sin deportistas asociados, se borra en la misma
-     * transaccion.
+     * En la misma transaccion borra sus documentos (los que subio en el
+     * autorregistro) y su acudiente si queda sin deportistas; los archivos se
+     * borran del disco despues del commit. Si tiene pagos, asistencia,
+     * torneos o examenes, responde 409 sin borrar nada.
      */
     public function eliminar(array $identificador): void
     {
@@ -427,12 +429,27 @@ class DeportistaService
         }
 
         $documentoAcudiente = $fila['acudiente_documento'];
-        $this->guardarSinDuplicados(function () use ($documento, $documentoAcudiente): void {
-            $this->deportista->enTransaccion(function () use ($documento, $documentoAcudiente): void {
+        $documentos = new DocumentoRepository();
+        $archivos = array_column($documentos->listar(['deportista_documento' => $documento]), 'archivo');
+        try {
+            // Una transacción: sus documentos (p. ej. los del autorregistro),
+            // el deportista y su acudiente si queda sin deportistas.
+            $this->deportista->enTransaccion(function () use ($documentos, $documento, $documentoAcudiente): void {
+                $documentos->eliminarDeDeportista($documento);
                 $this->deportista->eliminar($documento);
                 $this->eliminarAcudienteSiQuedaHuerfano($documentoAcudiente);
             });
-        });
+        } catch (PDOException $error) {
+            if ((string) $error->getCode() === '23000') {
+                // Otros módulos lo referencian (pagos, asistencia, torneos o
+                // exámenes): esos datos no se borran en silencio.
+                throw new ExcepcionNegocio('El registro ya tiene datos en otros módulos (pagos, asistencia, torneos o exámenes): no se puede eliminar.', 409);
+            }
+            throw $error;
+        }
+        // Los archivos, solo después del commit: si algo falló antes, siguen
+        // en disco junto con sus filas (nunca filas sin archivo).
+        (new DocumentoService())->borrarArchivosDeDocumentos($archivos);
     }
 
     // ------------------------------------------------------------------

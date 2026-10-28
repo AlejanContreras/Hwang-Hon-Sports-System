@@ -52,7 +52,7 @@ class EvaluacionController
             'confirmarEntregaCinturon' => $this->leer('PUT', $metodo, fn () => $this->servicio()->confirmarEntregaCinturon($parametros, Solicitud::cuerpoJson())),
             'quitarParticipante' => $this->manejarBorrado($metodo, fn () => $this->servicio()->quitarParticipante($parametros)),
             'eliminar' => $this->manejarBorrado($metodo, fn () => $this->servicio()->eliminar($parametros)),
-            default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
+            default => Respuesta::error(404, "Acción no reconocida: {$accion}"),
         };
     }
 

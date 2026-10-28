@@ -624,6 +624,20 @@ class DocumentoService
     }
 
     /**
+     * Borra del disco los archivos de documentos cuyas filas ya se borraron
+     * (rechazo de un registro pendiente, después del commit). Un fallo solo
+     * queda en el log: las filas ya no existen y no se revierte nada.
+     *
+     * @param array<int, string> $nombresEnDisco valores de la columna archivo
+     */
+    public function borrarArchivosDeDocumentos(array $nombresEnDisco): void
+    {
+        foreach ($nombresEnDisco as $nombre) {
+            $this->borrarArchivo(self::CARPETA_DOCUMENTOS, (string) $nombre);
+        }
+    }
+
+    /**
      * Borra el archivo del disco. Si el nombre guardado en la base no tiene
      * la forma esperada (valor alterado), no toca el disco: lo registra en el
      * log y sigue, porque la fila ya se borró o se actualizó y responder 500

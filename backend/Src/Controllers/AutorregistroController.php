@@ -44,7 +44,7 @@ class AutorregistroController
                 return ['eliminado' => true];
             }),
             'confirmar' => $this->responder('POST', $metodo, fn () => $this->servicio()->confirmar()),
-            default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
+            default => Respuesta::error(404, "Acción no reconocida: {$accion}"),
         };
     }
 

@@ -1,0 +1,7 @@
+# Salidas y temporales de las baterías (nunca van al repositorio)
+salidas/
+descargas_p11/
+tmp_*.xlsx
+memoria.log
+catalogo/capturas.json
+catalogo/plantilla.md

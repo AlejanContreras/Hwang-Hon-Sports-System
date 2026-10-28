@@ -51,6 +51,11 @@ class CompetenciaService
     private const CAMPOS_RESULTADO = ['puesto', 'resultado', 'medalla', 'combates_ganados', 'combates_perdidos'];
     private const CAMPOS_PARTICIPACION = ['categoria_edad', 'categoria_peso', 'puesto', 'resultado', 'medalla', 'combates_ganados', 'combates_perdidos', 'notas_oponente'];
     private const CAMPOS_EVENTO = ['nombre', 'fecha', 'lugar', 'visibilidad', 'observaciones'];
+    /** Campos de actualizar: los del torneo y los del evento que le pertenecen. */
+    private const CAMPOS_ACTUALIZAR = ['plataforma', 'tipo_torneo', 'fecha', 'lugar', 'visibilidad'];
+    /** Mismos valores y límite que Calendario. */
+    private const VISIBILIDADES = ['administrativa', 'publica'];
+    private const MAXIMO_LUGAR_EVENTO = 150;
 
     private CompetenciaRepository $competencia;
     private ParticipacionCompetenciaRepository $participacion;
@@ -189,8 +194,11 @@ class CompetenciaService
     }
 
     /**
-     * Actualiza solo plataforma y tipo_torneo (los datos del evento se editan
-     * en Calendario).
+     * Actualiza plataforma y tipo_torneo y, del evento del calendario que le
+     * pertenece, fecha, lugar y visibilidad (en Calendario se editan solo
+     * nombre y observaciones). Mismas validaciones que Calendario. Un torneo
+     * con resultados registrados no se mueve a una fecha futura (422). Todo
+     * en una transacción.
      */
     public function actualizar(array $parametros, array $datos): array
     {
@@ -203,7 +211,7 @@ class CompetenciaService
         if ($datos === []) {
             throw new ExcepcionNegocio('No se recibió ningún campo para actualizar.', 400);
         }
-        $this->rechazarCamposNoPermitidos($datos, ['plataforma', 'tipo_torneo'], 'Solo se editan plataforma y tipo_torneo; los datos del evento se editan en Calendario.');
+        $this->rechazarCamposNoPermitidos($datos, self::CAMPOS_ACTUALIZAR, 'Aquí se editan plataforma, tipo_torneo, fecha, lugar y visibilidad; el nombre y las observaciones del evento se editan en Calendario. Campos no permitidos');
 
         $modelo = CompetenciaModel::fromArray($fila);
         if (array_key_exists('plataforma', $datos)) {
@@ -212,7 +220,32 @@ class CompetenciaService
         if (array_key_exists('tipo_torneo', $datos)) {
             $modelo->establecerTipoTorneo($this->opcion($datos['tipo_torneo'], 'tipo_torneo', self::TIPOS_TORNEO));
         }
-        $this->competencia->actualizar($modelo);
+
+        // Datos del evento del calendario que pertenecen al torneo (RN-9.2),
+        // con las mismas validaciones que Calendario.
+        $filaEvento = $this->evento->obtenerPorId($eventoId) ?? [];
+        $evento = EventoCalendarioModel::fromArray($filaEvento);
+        if (array_key_exists('fecha', $datos)) {
+            $evento->establecerFecha($this->fecha($datos['fecha'], 'fecha'));
+        }
+        if (array_key_exists('lugar', $datos)) {
+            $evento->establecerLugar(Validador::texto($datos['lugar'], 'lugar', self::MAXIMO_LUGAR_EVENTO, true));
+        }
+        if (array_key_exists('visibilidad', $datos)) {
+            $evento->establecerVisibilidad($this->opcion($datos['visibilidad'], 'visibilidad', self::VISIBILIDADES));
+        }
+        $cambiaFecha = array_key_exists('fecha', $datos) && $evento->obtenerFecha() !== ($filaEvento['fecha'] ?? null);
+        if ($cambiaFecha && $evento->obtenerFecha() > $this->hoy() && $this->participacion->tieneResultados($eventoId)) {
+            throw new ExcepcionNegocio('El torneo ya tiene resultados registrados: no se puede mover a una fecha futura.', 422);
+        }
+        if ($cambiaFecha && $this->evento->existeNombreFecha($evento->obtenerNombre(), $evento->obtenerFecha(), $eventoId)) {
+            throw new ExcepcionNegocio('Ya existe un evento con ese nombre en esa fecha.', 409);
+        }
+
+        $this->competencia->enTransaccion(function () use ($modelo, $evento): void {
+            $this->competencia->actualizar($modelo);
+            $this->evento->actualizar($evento);
+        });
         return $this->consultar(['id' => (string) $eventoId]);
     }
 

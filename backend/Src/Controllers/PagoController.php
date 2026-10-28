@@ -42,7 +42,7 @@ class PagoController
             'deudores' => $this->manejarDeudores($metodo, $parametros),
             'listar' => $this->manejarListar($metodo, $parametros),
             'consultar' => $this->manejarConsultar($metodo, $parametros),
-            default => Respuesta::error(404, "Accion no reconocida: {$accion}"),
+            default => Respuesta::error(404, "Acción no reconocida: {$accion}"),
         };
     }
 
