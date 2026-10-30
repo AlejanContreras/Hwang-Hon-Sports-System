@@ -7,7 +7,13 @@ import { mostrarInicio } from './vistas/inicio.js';
 import { mostrarDocumentos } from './vistas/documentos.js';
 import { mostrarTorneos, mostrarTorneo, mostrarNuevoTorneo } from './vistas/torneos.js';
 import { mostrarCalendario } from './vistas/calendario.js';
-import { GRUPOS } from './modulos.js';
+import { mostrarEstadisticas } from './vistas/estadisticas.js';
+import { mostrarAscensos, mostrarSesion, mostrarNuevaSesion } from './vistas/ascensos.js';
+import { mostrarExportacion } from './vistas/exportacion.js';
+import { mostrarImportacion } from './vistas/importacion.js';
+import { mostrarCuentas, mostrarCambiarContrasena } from './vistas/cuentas.js';
+import { gruposPara } from './modulos.js';
+import { crear } from './ui.js';
 
 // ruta → { modulo (para marcar el menú), mostrar(contenedor, parametro, sesion) }
 const rutas = {
@@ -24,12 +30,25 @@ const rutas = {
     torneo: { modulo: 'torneos', mostrar: (c, id) => mostrarTorneo(c, id) },
     'torneo-nuevo': { modulo: 'torneos', mostrar: (c) => mostrarNuevoTorneo(c) },
     calendario: { modulo: 'calendario', mostrar: (c) => mostrarCalendario(c, true) },
+    ascensos: { modulo: 'ascensos', mostrar: (c) => mostrarAscensos(c) },
+    ascenso: { modulo: 'ascensos', mostrar: (c, id) => mostrarSesion(c, id) },
+    'ascenso-nuevo': { modulo: 'ascensos', mostrar: (c) => mostrarNuevaSesion(c) },
+    exportacion: { modulo: 'exportacion', mostrar: (c) => mostrarExportacion(c) },
+    importar: { modulo: 'importar', mostrar: (c) => mostrarImportacion(c) },
+    cuentas: { modulo: 'cuentas', mostrar: (c, _p, sesion) => mostrarCuentas(c, sesion) },
+    'mi-contrasena': { modulo: 'mi-contrasena', mostrar: (c) => mostrarCambiarContrasena(c) },
+    estadisticas: { modulo: 'estadisticas', mostrar: (c, documento) => mostrarEstadisticas(c, { esAdministrativo: true, pestanaInicial: 'graficas', documento }) },
+    historial: { modulo: 'historial', mostrar: (c, documento) => mostrarEstadisticas(c, { esAdministrativo: true, pestanaInicial: 'registros', documento }) },
 };
 
 iniciarPagina({
     ambito: 'administrativa',
     rutas,
     rutaInicial: 'inicio',
-    grupos: GRUPOS,
+    grupos: gruposPara,
     inicio: { texto: 'Inicio', ruta: '#inicio', clave: 'inicio' },
+    alIniciar: () => {
+        const datos = document.getElementById('datos-perfil');
+        datos.replaceChildren('Personal del club · ', crear('a', { texto: 'Cambiar mi contraseña', atributos: { href: '#mi-contrasena' } }));
+    },
 });

@@ -2,7 +2,7 @@
 
 Guía para escribir el front **sin leer el backend**. Documenta lo que existe hoy (95 acciones en 14 recursos); no propone cambios.
 
-- **Ejemplos reales.** Cada ejemplo de petición y respuesta se copió de una llamada real hecha el 26/10/2026 contra la base cargada con `base_datos/esquema_hwanghon_v4.sql`, `insercion_datos_prueba.sql` y `cuentas_prueba_locales.sql` (datos ficticios). Las fechas de los ejemplos dependen del día en que se capturaron: «hoy» era 2026-10-26.
+- **Ejemplos reales.** Cada ejemplo de petición y respuesta se copió de una llamada real hecha el 28/10/2026 contra la base cargada con `base_datos/esquema_hwanghon_v4.sql`, `insercion_datos_prueba.sql` y `cuentas_prueba_locales.sql` (datos ficticios). Las fechas de los ejemplos dependen del día en que se capturaron: «hoy» era 2026-10-28.
 - **Listas recortadas.** Si una lista tiene más de 3 elementos, el ejemplo muestra 2 y una línea `"… (N elementos más, omitidos en este ejemplo)"`. Esa línea no la envía la API.
 - **Quién llama.** Cada ficha dice qué sesión hace falta: **sin sesión**, **público** (cuenta de un deportista), **administrativo** (cualquier cuenta del club), **cuenta principal** (administrativo con `es_administrador_principal = true`) o **permiso de autorregistro** (el permiso temporal que abre `autorregistro.registrar`).
 
@@ -13,13 +13,23 @@ Guía para escribir el front **sin leer el backend**. Documenta lo que existe ho
 ### A.1 URL y forma de la ruta
 
 - **Punto de entrada único:** `…/backend/Public/api.php`. En XAMPP local: `http://localhost/HwangHon-Sports-System/backend/Public/api.php`.
-- **Forma:** `api.php?recurso=<recurso>&accion=<accion>[&otros parámetros]`. Ejemplo: `api.php?recurso=deportistas&accion=consultar&documento=1000000101`.
+- **Forma oficial (consulta):** `api.php?recurso=<recurso>&accion=<accion>[&otros parámetros]`. Ejemplo: `api.php?recurso=deportistas&accion=consultar&documento=1000000101`. Es la que usan todas las fichas y funciona en cualquier servidor.
+- **Forma alternativa (ruta), equivalente:** `…/backend/Public/<recurso>/<accion>[?otros parámetros]`. Ejemplo: `…/backend/Public/deportistas/consultar?documento=1000000101`.
+  - Da exactamente la misma respuesta que la forma oficial: mismas acciones, sesiones, permisos, protección CSRF, `415` y errores.
+  - Solo el recurso y la acción van en la ruta. Los demás parámetros (`documento`, `id`, `fecha`…) siguen en la consulta, y el cuerpo no cambia.
+  - Una barra final se ignora (`deportistas/consultar/`). También vale con `api.php` en la ruta: `…/api.php/deportistas/consultar`.
+  - Si la consulta trae `recurso` o `accion`, manda la consulta.
+  - Requiere `mod_rewrite` en Apache (ver `backend/Public/.htaccess`). Si el hosting no lo tiene, solo funciona la forma oficial. Por eso el front debe poder volver a ella con un cambio de configuración.
 - **Método HTTP:** cada acción exige el suyo (GET para leer, POST para crear o enviar, PUT para cambiar, DELETE para borrar). Con otro método responde `405` «Método no permitido. Se esperaba GET.».
 - **Comprobación de salud:** `GET api.php` sin parámetros responde `{"exito":true,"datos":{"mensaje":"HwangHon-Sports-System API activa."}}`.
 - **Errores de ruta:**
   - sin `accion`: `400` «Falta el parámetro "accion".»;
   - recurso que no existe: `404` «Recurso no reconocido: x»;
   - acción que no existe: `404` «Acción no reconocida: x».
+- **Errores propios de la forma por ruta** (siempre `404`, nunca `500`):
+  - sin acción (`…/Public/deportistas`): «Acción no reconocida: falta la acción en la ruta (recurso/accion).»;
+  - segmentos de más (`…/deportistas/consultar/extra`): «Acción no reconocida: consultar/extra»;
+  - segmentos con caracteres fuera de letras, números y guion (o una barra doble): «Recurso no reconocido.» o «Acción no reconocida.».
 - **Parámetros de la URL:** siempre son texto simple. Una lista (`?documento[]=1`) o un texto con UTF-8 inválido responde `400`. Los números van como texto (`id=3`).
 - **Dónde van los datos:**
   - lecturas y filtros: en la URL;

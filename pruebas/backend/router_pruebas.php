@@ -45,5 +45,8 @@ if ($registroMemoria) {
     });
 }
 
+// Como en Apache: api.php queda en la raiz del servidor (/api.php), asi la
+// forma por ruta (/deportistas/consultar) se resuelve igual que con mod_rewrite.
+$_SERVER['SCRIPT_NAME'] = '/api.php';
 chdir($publico);
 require $publico . '/api.php';

@@ -324,7 +324,9 @@ function seccionImportar(recargar) {
 // ===========================================================================
 export async function proximasFechas(limite = 8) {
     const hoy = hoyBogota();
-    const vista = await calendario.vista(hoy, sumarDias(hoy, 30));
+    const [vista, torneos] = await Promise.all([calendario.vista(hoy, sumarDias(hoy, 30)), competencias.listar().catch(() => [])]);
+    // Solo se enlaza un evento de competencia que ya tiene torneo creado.
+    const conTorneo = new Set(torneos.map((t) => t.evento_id));
     const items = [];
     for (const [fecha, del_dia] of agruparPorDia(vista, false)) {
         for (const item of del_dia) {
@@ -332,7 +334,7 @@ export async function proximasFechas(limite = 8) {
             if (item.clase === 'evento') texto = `${textoTipoEvento(item.evento.tipo)}: ${item.evento.nombre}`;
             else if (item.clase === 'cumpleanos') texto = `Cumpleaños: ${nombres(item.deportistas)}`;
             else texto = `Vence mensualidad: ${nombres(item.deportistas)}`;
-            items.push({ fecha, texto, enlace: item.clase === 'evento' && item.evento.tipo === 'competencia' ? `#torneo/${item.evento.id}` : null });
+            items.push({ fecha, texto, enlace: item.clase === 'evento' && conTorneo.has(item.evento.id) ? `#torneo/${item.evento.id}` : null });
         }
     }
     if (items.length === 0) return [crear('p', { texto: 'Nada en los próximos 30 días.' })];

@@ -162,11 +162,16 @@ export async function conBotonOcupado(boton, textoEspera, tarea) {
     const textoOriginal = boton.textContent;
     boton.disabled = true;
     boton.textContent = textoEspera;
+    // aria-busy + clase: el CSS dibuja un indicador de carga junto al texto.
+    boton.setAttribute('aria-busy', 'true');
+    boton.classList.add('boton-ocupado');
     try {
         return await tarea();
     } finally {
         boton.disabled = false;
         boton.textContent = textoOriginal;
+        boton.removeAttribute('aria-busy');
+        boton.classList.remove('boton-ocupado');
     }
 }
 

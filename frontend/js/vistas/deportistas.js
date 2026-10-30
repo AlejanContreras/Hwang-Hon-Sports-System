@@ -93,7 +93,9 @@ export async function mostrarLista(contenedor, pestana) {
     contenedor.append(
         crear('div', { clase: 'encabezado-vista' },
             crear('h1', { texto: 'Deportistas' }),
-            crear('a', { clase: 'boton', texto: 'Nuevo deportista', atributos: { href: '#deportista-nuevo' } }),
+            crear('div', { clase: 'acciones', atributos: { style: 'margin: 0' } },
+                crear('a', { clase: 'boton boton-secundario', texto: 'Importar desde CSV', atributos: { href: '#importar' } }),
+                crear('a', { clase: 'boton', texto: 'Nuevo deportista', atributos: { href: '#deportista-nuevo' } })),
         ),
         zonaPestanas,
         aviso,
@@ -365,6 +367,7 @@ export async function mostrarFicha(contenedor, documento) {
     const acciones = [
         crear('a', { clase: 'boton', texto: 'Editar', atributos: { href: `#deportista-editar/${encodeURIComponent(d.documento)}` } }),
         crear('a', { clase: 'boton boton-secundario', texto: 'Documentos', atributos: { href: `#documentos/${encodeURIComponent(d.documento)}` } }),
+        crear('a', { clase: 'boton boton-secundario', texto: 'Estadísticas', atributos: { href: `#estadisticas/${encodeURIComponent(d.documento)}` } }),
         botonPdf,
     ];
     if (pendiente) {

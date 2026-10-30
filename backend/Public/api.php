@@ -22,7 +22,8 @@ declare(strict_types=1);
  * restringirse a "solo_administrativa").
  *
  * Solicitudes esperadas: /api.php?recurso=<recurso>&accion=<accion>[&...parametros]
- * con el cuerpo (si aplica) en JSON.
+ * (forma oficial) o, con mod_rewrite, /<recurso>/<accion>[?...parametros]
+ * (forma por ruta, equivalente); el cuerpo (si aplica) en JSON.
  */
 
 date_default_timezone_set('America/Bogota');
@@ -91,15 +92,44 @@ foreach ($_GET as $clave => $valor) {
     }
 }
 
-// Health check en la raiz
-$recurso = $_GET['recurso'] ?? null;
-$accion = $_GET['accion'] ?? null;
+/*
+ * Recurso y accion. Dos formas equivalentes:
+ *   - Consulta (la oficial; funciona en cualquier hosting):
+ *     api.php?recurso=deportistas&accion=consultar&documento=1001
+ *   - Ruta (URL limpia; necesita mod_rewrite, ver Public/.htaccess):
+ *     .../Public/deportistas/consultar?documento=1001
+ * Si la consulta trae "recurso" o "accion", manda la consulta. Los demas
+ * parametros van siempre en la consulta. Los segmentos de la ruta solo
+ * admiten letras, numeros y guion; un error de ruta es 404, nunca 500.
+ */
+$errorRuta = null;
+if (isset($_GET['recurso']) || isset($_GET['accion'])) {
+    $recurso = $_GET['recurso'] ?? null;
+    $accion = $_GET['accion'] ?? null;
+} else {
+    $segmentos = Solicitud::segmentosDeRuta($_SERVER['REQUEST_URI'] ?? '', $_SERVER['SCRIPT_NAME'] ?? '');
+    $validos = $segmentos !== null
+        && array_filter($segmentos, fn (string $s): bool => preg_match('/^[A-Za-z0-9-]+$/D', $s) !== 1) === [];
+    if (!$validos && ($segmentos === null || preg_match('/^[A-Za-z0-9-]+$/D', $segmentos[0]) !== 1)) {
+        Respuesta::error(404, 'Recurso no reconocido.');
+    }
+    $recurso = $segmentos[0] ?? null;
+    $accion = $segmentos[1] ?? null;
+    if (!$validos) {
+        $errorRuta = 'Acción no reconocida.';
+    } elseif (count($segmentos) > 2) {
+        $errorRuta = 'Acción no reconocida: ' . implode('/', array_slice($segmentos, 1));
+    } elseif ($recurso !== null && $accion === null) {
+        $errorRuta = 'Acción no reconocida: falta la acción en la ruta (recurso/accion).';
+    }
+}
 
+// Health check en la raiz
 if ($recurso === null) {
     Respuesta::exito(['mensaje' => 'HwangHon-Sports-System API activa.']);
 }
 
-if ($accion === null) {
+if ($accion === null && $errorRuta === null) {
     Respuesta::error(400, 'Falta el parámetro "accion".');
 }
 
@@ -143,6 +173,9 @@ $politicasAcceso = [
 
 if (!array_key_exists($recurso, $rutas)) {
     Respuesta::error(404, "Recurso no reconocido: {$recurso}");
+}
+if ($errorRuta !== null) {
+    Respuesta::error(404, $errorRuta);
 }
 
 [$archivoControlador, $nombreClaseControlador] = $rutas[$recurso];

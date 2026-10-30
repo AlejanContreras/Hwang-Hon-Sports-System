@@ -6,6 +6,8 @@ import { textoGrado, textoEstado, insignia } from './ui.js';
 import { mostrarDatos, mostrarAsistenciaPropia, mostrarPagosPropios } from './vistas/perfil.js';
 import { mostrarDocumentosPropios } from './vistas/documentos.js';
 import { mostrarCalendario } from './vistas/calendario.js';
+import { mostrarEstadisticas } from './vistas/estadisticas.js';
+import { mostrarMisAscensos } from './vistas/ascensos.js';
 
 // Secciones de pasos posteriores: sin ruta, salen «Próximamente».
 const GRUPOS_PUBLICOS = [
@@ -21,8 +23,9 @@ const GRUPOS_PUBLICOS = [
     {
         titulo: 'Seguimiento',
         modulos: [
-            { clave: 'estadisticas', texto: 'Estadísticas', ruta: null },
-            { clave: 'historial', texto: 'Historial', ruta: null },
+            { clave: 'ascensos', texto: 'Ascensos', ruta: '#ascensos' },
+            { clave: 'estadisticas', texto: 'Estadísticas', ruta: '#estadisticas' },
+            { clave: 'historial', texto: 'Historial', ruta: '#historial' },
             { clave: 'calendario', texto: 'Calendario', ruta: '#calendario' },
         ],
     },
@@ -34,6 +37,9 @@ const rutas = {
     pagos: { modulo: 'pagos', mostrar: (c) => mostrarPagosPropios(c) },
     documentos: { modulo: 'documentos', mostrar: (c, _p, sesion) => mostrarDocumentosPropios(c, sesion.identificador) },
     calendario: { modulo: 'calendario', mostrar: (c) => mostrarCalendario(c, false) },
+    ascensos: { modulo: 'ascensos', mostrar: (c, _p, sesion) => mostrarMisAscensos(c, sesion.identificador) },
+    estadisticas: { modulo: 'estadisticas', mostrar: (c) => mostrarEstadisticas(c, { esAdministrativo: false, pestanaInicial: 'graficas' }) },
+    historial: { modulo: 'historial', mostrar: (c) => mostrarEstadisticas(c, { esAdministrativo: false, pestanaInicial: 'registros' }) },
 };
 
 // Cabecera: grado (cinturón) y estado junto al nombre.
@@ -50,6 +56,8 @@ iniciarPagina({
     rutas,
     rutaInicial: 'perfil',
     grupos: GRUPOS_PUBLICOS,
+    etiquetaMenu: 'Secciones de mi perfil',
+    textoSalir: 'Salir',
     alIniciar: async (sesion) => {
         try {
             pintarCabecera(await deportistas.consultar(sesion.identificador));

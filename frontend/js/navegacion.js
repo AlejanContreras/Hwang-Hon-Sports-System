@@ -2,6 +2,7 @@
 // grupos, menú plegable en celular, «Saltar al contenido», salir y enrutado por «#ruta/parámetro».
 import { exigirSesion, cerrarSesion } from './sesion.js';
 import { crear, vaciar } from './ui.js';
+import { montarEstructura } from './componentes/estructura.js';
 
 // inicio: { texto, ruta, clave } opcional, va arriba y fuera de los grupos.
 export function construirMenu(nav, grupos, inicio = null) {
@@ -51,12 +52,9 @@ function leerRuta() {
 }
 
 // rutas: { nombre: { modulo, mostrar(contenedor, parametro, sesion) } }
-// La página necesita: #contenido, #menu-lateral, #boton-menu, #lista-menu, .enlace-saltar,
-// #boton-salir y #nombre-usuario.
-export async function iniciarPagina({ ambito, rutas, rutaInicial, grupos, inicio = null, alIniciar = null }) {
-    const contenido = document.getElementById('contenido');
-    const menuLateral = document.getElementById('menu-lateral');
-    const botonMenu = document.getElementById('boton-menu');
+// La estructura (panel, cabecera y <main>) la monta el componente compartido.
+export async function iniciarPagina({ ambito, rutas, rutaInicial, grupos, inicio = null, alIniciar = null, etiquetaMenu, textoSalir }) {
+    const { panel: menuLateral, contenido, botonMenu } = montarEstructura({ etiquetaMenu, textoSalir });
     const nav = document.getElementById('lista-menu');
 
     const cerrarMenuMovil = () => {
@@ -80,7 +78,8 @@ export async function iniciarPagina({ ambito, rutas, rutaInicial, grupos, inicio
     const sesion = await exigirSesion(ambito);
     if (!sesion) return;
     document.getElementById('nombre-usuario').textContent = sesion.nombre;
-    construirMenu(nav, grupos, inicio);
+    // grupos puede ser una lista o una función de la sesión (p. ej. para ocultar módulos por permiso).
+    construirMenu(nav, typeof grupos === 'function' ? grupos(sesion) : grupos, inicio);
     if (alIniciar) await alIniciar(sesion);
 
     const mostrarRuta = async () => {

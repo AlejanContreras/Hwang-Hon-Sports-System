@@ -1,6 +1,6 @@
 # Pruebas automáticas del backend
 
-Baterías de pruebas del backend de HwangHon Sports System: 20 baterías y **1.704 comprobaciones** (1.686 con `SALTAR_RECUPERACION=1`), todas en verde al 28/10/2026. Usan solo **datos ficticios** y las cuentas de prueba locales de `base_datos/cuentas_prueba_locales.sql` (contraseña de prueba `12345678`, dominio `@hwanghon.local`). No contienen credenciales reales.
+Baterías de pruebas del backend de HwangHon Sports System: 21 baterías y **1.790 comprobaciones con `SALTAR_RECUPERACION=1`**, todas en verde al 30/10/2026. La sección F de Auth suma 18 más (**1.808** en total); la última corrida completa con ella fue el 28/10/2026. Usan solo **datos ficticios** y las cuentas de prueba locales de `base_datos/cuentas_prueba_locales.sql` (contraseña de prueba `12345678`, dominio `@hwanghon.local`). No contienen credenciales reales.
 
 Cada batería deja la base modificada: antes de cada una hay que **recargar la semilla**. `ejecutar_todo.sh` lo hace solo.
 
@@ -95,7 +95,8 @@ Las salidas completas de `ejecutar_todo.sh` quedan en `pruebas/backend/salidas/`
 | `prueba_http_autorregistro.php` | Autorregistro con documentos y carga masiva por CSV | `URL backend` | + cuentas | 142 |
 | `prueba_http_revision.php` | Correcciones de la revisión del 23/10: CSRF, bloqueo paralelo (Apache), huella de sesión, robustez, integridad; eliminar un pendiente con documentos; fecha, lugar y visibilidad de un torneo | `URL http://127.0.0.1:8092 URL_APACHE backend` | + cuentas | 109 |
 | `prueba_recuperacion_diferida.php` | Recuperación de contraseña diferida, con un correo **falso** (nunca envía nada) | `Src` | + cuentas | 7 |
-| **Total** | | | | **1.704** (1.686 con `SALTAR_RECUPERACION=1`) |
+| `prueba_http_urls_limpias.php` | URLs limpias: cada acción con la forma de consulta y la de ruta (`/<recurso>/<accion>`) da la misma respuesta (200, 401, 403, 404, 405, 415, CSRF, multipart y descargas); bordes de la ruta; carpetas internas sin acceso. En php -S **y** en Apache (mod_rewrite real) | `URL URL_APACHE` | + cuentas | 104 |
+| **Total** | | | | **1.790** con `SALTAR_RECUPERACION=1` (1.808 con la sección F) |
 
 `URL_APACHE` = `http://localhost/HwangHon-Sports-System/backend/Public`.
 
@@ -122,4 +123,5 @@ php pruebas/backend/catalogo/generar.php pruebas/backend/catalogo/plantilla.md p
 - **Conexión a la base:** las baterías, el router y `capturar.php` leen `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASS` (las mismas variables que el backend); por defecto `localhost:3306`, base `hwanghon`, usuario `root` sin clave.
 - **Zona horaria:** todas las baterías fijan `America/Bogota`, como el backend.
 - **Word y Excel antiguos:** según la versión de `libmagic`, un `.doc` o `.xls` se detecta como `application/x-ole-storage` o como `CDFV2`; `ArchivoSubido` acepta ambos y la batería de documentos lo comprueba.
+- **URLs limpias:** `router_pruebas.php` fija `SCRIPT_NAME=/api.php`, así la forma por ruta se resuelve igual que en Apache con mod_rewrite. La batería 21 y la de revisión necesitan el Apache de XAMPP encendido (`URL_APACHE`).
 - **Triggers de prueba:** algunas baterías crean triggers temporales que fuerzan fallos (para probar las transacciones) y los borran al terminar. En el log del servidor quedan como «falla forzada»: es lo esperado.

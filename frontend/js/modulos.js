@@ -6,10 +6,11 @@ export const GRUPOS = [
         titulo: 'Gestión deportiva',
         modulos: [
             { clave: 'deportistas', texto: 'Deportistas', ruta: '#deportistas' },
+            { clave: 'importar', texto: 'Carga masiva (CSV)', ruta: '#importar' },
             { clave: 'torneos', texto: 'Torneos', ruta: '#torneos' },
-            { clave: 'ascensos', texto: 'Ascensos', ruta: null },
-            { clave: 'estadisticas', texto: 'Estadísticas', ruta: null },
-            { clave: 'historial', texto: 'Historial', ruta: null },
+            { clave: 'ascensos', texto: 'Ascensos', ruta: '#ascensos' },
+            { clave: 'estadisticas', texto: 'Estadísticas', ruta: '#estadisticas' },
+            { clave: 'historial', texto: 'Historial', ruta: '#historial' },
         ],
     },
     {
@@ -24,9 +25,23 @@ export const GRUPOS = [
         titulo: 'Otros',
         modulos: [
             { clave: 'calendario', texto: 'Calendario', ruta: '#calendario' },
-            { clave: 'exportacion', texto: 'Exportación', ruta: null },
+            { clave: 'exportacion', texto: 'Exportación', ruta: '#exportacion' },
+            // Solo cuentas principales (la API da 403 a las demás): se filtra con la sesión.
+            { clave: 'cuentas', texto: 'Cuentas', ruta: '#cuentas', soloPrincipal: true },
         ],
     },
 ];
 
 export const MODULOS = GRUPOS.flatMap((grupo) => grupo.modulos);
+
+// Grupos visibles para una sesión: oculta los módulos «soloPrincipal» a las cuentas no principales.
+export function gruposPara(sesion) {
+    return GRUPOS.map((grupo) => ({
+        ...grupo,
+        modulos: grupo.modulos.filter((m) => !m.soloPrincipal || sesion.es_administrador_principal),
+    }));
+}
+
+export function modulosPara(sesion) {
+    return gruposPara(sesion).flatMap((grupo) => grupo.modulos);
+}

@@ -236,9 +236,6 @@ textarea { resize: vertical; }
 .menu-lateral nav a:hover { background: rgba(255, 255, 255, 0.12); }
 .menu-lateral nav a[aria-current="page"] { background: rgba(255, 255, 255, 0.2); font-weight: 600; }
 .menu-lateral nav span.deshabilitado { opacity: 0.55; cursor: default; }
-.menu-lateral .usuario { margin-top: auto; font-size: 0.9rem; padding: 0 0.5rem; }
-.menu-lateral .usuario p { margin-bottom: 0.5rem; word-break: break-word; }
-.menu-lateral .boton-secundario { width: 100%; }
 .boton-menu { display: none; }
 
 .contenido {
@@ -477,3 +474,70 @@ details.participante[open] > summary { margin-bottom: 0.75rem; }
 .lista-proximas { list-style: none; margin: 0 0 0.5rem; padding: 0; display: grid; gap: 0.35rem; font-size: 0.92rem; }
 .lista-proximas li { display: grid; grid-template-columns: 3rem 1fr; gap: 0.4rem; }
 .fecha-proxima { color: var(--color-texto-suave); font-variant-numeric: tabular-nums; }
+
+/* ---------- Estadísticas e historial (Paso 11) ---------- */
+.pestanas-vista { max-width: 22rem; }
+.figura-grafico { margin: 0.75rem 0; }
+.grafico { width: 100%; max-width: 32rem; height: auto; display: block; }
+.grafico .guia { stroke: var(--color-borde); stroke-width: 1; }
+.grafico .eje { font-size: 11px; fill: var(--color-texto-suave); }
+.grafico .valor { font-size: 11px; fill: var(--color-texto); font-weight: 600; }
+.grafico .barra { fill: var(--color-primario); }
+.grafico .barra.oro { fill: #c9a227; }
+.grafico .barra.plata { fill: #8f99a3; }
+.grafico .barra.bronce { fill: #a8672f; }
+.grafico .barra.positivo { fill: var(--color-exito); }
+.grafico .barra.negativo { fill: var(--color-peligro); }
+.grafico .linea { fill: none; stroke: var(--color-primario); stroke-width: 2; }
+.grafico .punto { fill: var(--color-primario); }
+.tabla-grafico > summary { cursor: pointer; color: var(--color-primario); font-size: 0.9rem; }
+
+/* ---------- Ascensos (Paso 12) ---------- */
+.modalidad-examen { border-top: 1px solid var(--color-borde); padding: 0.6rem 0; }
+.titulo-modalidad { font-size: 0.95rem; margin: 0 0 0.4rem; }
+
+/* ---------- Botón ocupado (global) ---------- */
+.boton-ocupado { cursor: progress; }
+.boton-ocupado::before {
+    content: "";
+    width: 0.9em;
+    height: 0.9em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: girar 0.8s linear infinite;
+}
+@keyframes girar { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .boton-ocupado::before { animation: none; } }
+
+/* ---------- Exportación (pulido) ---------- */
+.nota-provisional {
+    font-size: 0.92rem;
+    color: var(--color-texto-suave);
+    border-left: 3px solid var(--color-advertencia);
+    padding: 0.35rem 0.75rem;
+    margin-bottom: 1rem;
+}
+.rejilla-reportes {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+@media (min-width: 900px) {
+    .rejilla-reportes { grid-template-columns: 1fr 1fr; }
+}
+.tarjeta-reporte { display: flex; flex-direction: column; margin-bottom: 0; }
+.tarjeta-reporte h2 { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; font-size: 1.1rem; }
+.tarjeta-reporte > form { margin-top: auto; }
+.tarjeta-reporte .rejilla-campos { grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); }
+.tarjeta-reporte .formulario-en-linea { margin-bottom: 0.25rem; }
+
+/* ---------- Carga masiva (Paso 14) ---------- */
+.lista-cambios { margin: 0; padding-left: 1rem; font-size: 0.9rem; }
+.tabla-importacion td { min-width: 6rem; }
+.tabla-importacion td:first-child { min-width: 3rem; }
+input[type="file"] { max-width: 100%; }
+
+/* ---------- Cuentas (Paso 15) ---------- */
+.formulario-angosto { max-width: 28rem; display: grid; gap: 0.9rem; }

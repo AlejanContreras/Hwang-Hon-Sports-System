@@ -93,6 +93,35 @@ class Solicitud
      * si viene escrito (igual que en la cabecera Host). null si no se puede
      * leer (ej. Origin "null").
      */
+    /**
+     * Segmentos de la forma por ruta (URL limpia): .../Public/deportistas/consultar
+     * da ['deportistas', 'consultar']. Toma la ruta de la solicitud sin la
+     * consulta, relativa a la carpeta de api.php ($nombreScript, el
+     * SCRIPT_NAME), y quita "api.php" si viene en la ruta
+     * (.../api.php/deportistas/consultar). Una barra final se ignora; una
+     * barra doble deja un segmento vacio, que api.php rechaza.
+     * Devuelve [] si la ruta es la carpeta o api.php (health check) y null
+     * si la ruta no esta dentro de esa carpeta.
+     *
+     * @return list<string>|null
+     */
+    public static function segmentosDeRuta(string $uri, string $nombreScript): ?array
+    {
+        $ruta = (string) parse_url($uri, PHP_URL_PATH);
+        $base = rtrim(str_replace('\\', '/', dirname($nombreScript)), '/');
+        // Sin distinguir mayusculas: en Windows Apache sirve la carpeta igual.
+        if ($base !== '' && strncasecmp($ruta, $base, strlen($base)) !== 0) {
+            return null;
+        }
+        $resto = substr($ruta, strlen($base));
+        if ($resto !== '' && $resto[0] !== '/') {
+            return null; // .../PublicOtra no es la carpeta de api.php
+        }
+        $resto = preg_replace('#^/' . preg_quote(basename($nombreScript), '#') . '(?=/|$)#i', '', $resto);
+        $resto = rtrim($resto, '/');
+        return $resto === '' ? [] : explode('/', substr($resto, 1));
+    }
+
     private static function hostPuerto(string $origen): ?string
     {
         $partes = parse_url(trim($origen));

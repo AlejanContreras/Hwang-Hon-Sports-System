@@ -8,28 +8,7 @@
     <script type="module" src="js/administrativo.js"></script>
 </head>
 <body>
-    <a class="enlace-saltar" href="#contenido">Saltar al contenido</a>
-    <div class="estructura">
-        <!-- Menú lateral simple (la navegación por «contexto activo» sigue sin validar). -->
-        <aside class="menu-lateral" id="menu-lateral">
-            <div class="cabecera-menu">
-                <p class="titulo-sistema">HwangHon</p>
-                <button type="button" class="boton boton-secundario boton-pequeno boton-menu" id="boton-menu"
-                        aria-expanded="false" aria-controls="cuerpo-menu">Menú</button>
-            </div>
-            <div class="cuerpo-menu" id="cuerpo-menu">
-                <!-- Los grupos y módulos se arman desde js/modulos.js. -->
-                <nav aria-label="Módulos" id="lista-menu"></nav>
-                <div class="usuario">
-                    <p>Sesión de <strong id="nombre-usuario"></strong></p>
-                    <button type="button" class="boton boton-secundario" id="boton-salir">Cerrar sesión</button>
-                </div>
-            </div>
-        </aside>
-
-        <main class="contenido" id="contenido" tabindex="-1">
-            <p class="cargando" role="status">Cargando…</p>
-        </main>
-    </div>
+    <!-- El panel lateral, la cabecera y el contenido los arma js/componentes/estructura.js. -->
+    <p class="cargando" role="status">Cargando…</p>
 </body>
 </html>

@@ -1,0 +1,3 @@
+﻿documento;nombre;fecha_nacimiento;lugar_nacimiento;sexo;estatura;peso;telefono;direccion;correo;discapacidad;experiencia_previa;sede_entrenamiento;autorizacion_datos;grado_actual;fecha_ingreso;estado;acudiente_documento;acudiente_nombre;acudiente_relacion;acudiente_telefono;acudiente_correo
+9000000001;Ejemplo Adulto Ficticio;15/04/1995;Soacha;masculino;1,72;70,5;3000000000;Calle Ficticia 1;adulto.ejemplo@correoficticio.test;;;Club Hwang Hon;si;Amarillo;10/01/2026;activo;;;;;
+9000000002;Ejemplo Menor Ficticio;20/08/2014;Bogotá;femenino;1,40;35;;;;;;Club Hwang Hon;si;;10/01/2026;activo;9000000901;Ejemplo Acudiente Ficticio;madre;3000000001;acudiente.ejemplo@correoficticio.test

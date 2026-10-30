@@ -2,8 +2,8 @@
 // Estructura según el boceto de John (12/10/2026), PROPUESTA aún sin validar con Aldrin:
 // bienvenida, cuatro tarjetas, panel central, calendario lateral y accesos rápidos.
 import { asistencia, competencias, pagos, deportistas } from '../api.js';
-import { crear, vaciar, cargando, textoFecha, textoFechaLarga, anioActualBogota } from '../ui.js';
-import { MODULOS } from '../modulos.js';
+import { crear, vaciar, cargando, textoFecha, textoFechaLarga, anioActualBogota, hoyBogota } from '../ui.js';
+import { modulosPara } from '../modulos.js';
 import { proximasFechas } from './calendario.js';
 
 const formatoFechaHora = new Intl.DateTimeFormat('es-CO', {
@@ -22,13 +22,57 @@ export function mostrarInicio(contenedor, sesion) {
             tarjeta('Pendientes de validación', cargarPendientes),
         ),
         crear('div', { clase: 'rejilla-inicio' },
-            crear('section', { clase: 'tarjeta panel-central', atributos: { 'aria-labelledby': 'titulo-panel-central' } },
-                crear('h2', { texto: 'Evento activo', atributos: { id: 'titulo-panel-central' } }),
-                crear('p', { clase: 'ayuda', texto: 'Aquí irán los datos del torneo o de la evaluación activa (los mejores deportistas o los pendientes). Se llena en un paso posterior.' })),
+            panelEventoActivo(),
             calendarioLateral(),
         ),
-        accesosRapidos(),
+        accesosRapidos(sesion),
     );
+}
+
+// ---------------------------------------------------------------------------
+// «Evento activo»: el próximo torneo con sus inscritos; si no hay, la próxima fecha del calendario.
+// ---------------------------------------------------------------------------
+function diasHasta(fecha) {
+    const [a, m, d] = fecha.split('-').map(Number);
+    const [ah, mh, dh] = hoyBogota().split('-').map(Number);
+    return Math.round((Date.UTC(a, m - 1, d) - Date.UTC(ah, mh - 1, dh)) / 86400000);
+}
+
+async function contenidoEventoActivo() {
+    const torneo = await competencias.proximo();
+    if (torneo) {
+        const detalle = await competencias.consultar(torneo.evento_id);
+        const faltan = diasHasta(torneo.fecha);
+        const inscritos = detalle.participantes;
+        return [
+            crear('p', { clase: 'dato-destacado' }, crear('a', { texto: torneo.nombre, atributos: { href: `#torneo/${torneo.evento_id}` } })),
+            crear('p', { clase: 'ayuda', texto: `${textoFechaLarga(torneo.fecha)} · ${torneo.lugar ?? ''} · ${faltan === 0 ? 'es hoy' : `faltan ${faltan} días`}` }),
+            inscritos.length
+                ? crear('ul', { clase: 'lista-proximas' }, ...inscritos.slice(0, 8).map((p) => crear('li', {},
+                    crear('span', { clase: 'fecha-proxima', texto: p.categoria_peso || '' }),
+                    crear('span', { texto: `${p.nombre} · ${p.modalidad.replace('_', ' ')}` }))))
+                : crear('p', { texto: 'Aún no hay inscritos.' }),
+            inscritos.length > 8 ? crear('p', { clase: 'ayuda', texto: `y ${inscritos.length - 8} más.` }) : null,
+        ].filter(Boolean);
+    }
+    return [crear('p', { texto: 'No hay torneos próximos. Revisa las próximas fechas en el calendario.' })];
+}
+
+function panelEventoActivo() {
+    const cuerpo = crear('div');
+    cargando(cuerpo);
+    contenidoEventoActivo()
+        .then((contenido) => {
+            vaciar(cuerpo);
+            cuerpo.append(...contenido);
+        })
+        .catch((error) => {
+            vaciar(cuerpo);
+            cuerpo.append(crear('p', { clase: 'aviso aviso-error', texto: error.message, atributos: { role: 'alert' } }));
+        });
+    return crear('section', { clase: 'tarjeta panel-central', atributos: { 'aria-labelledby': 'titulo-panel-central' } },
+        crear('h2', { texto: 'Evento activo: próximo torneo', atributos: { id: 'titulo-panel-central' } }),
+        cuerpo);
 }
 
 // ---------------------------------------------------------------------------
@@ -137,10 +181,10 @@ async function cargarPendientes() {
 // ---------------------------------------------------------------------------
 // Accesos rápidos a los diez módulos (los no construidos, deshabilitados)
 // ---------------------------------------------------------------------------
-function accesosRapidos() {
+function accesosRapidos(sesion) {
     return crear('nav', { clase: 'accesos-rapidos', atributos: { 'aria-labelledby': 'titulo-accesos' } },
         crear('h2', { clase: 'solo-lectores', texto: 'Accesos rápidos', atributos: { id: 'titulo-accesos' } }),
-        crear('ul', {}, ...MODULOS.map((modulo) => crear('li', {}, modulo.ruta
+        crear('ul', {}, ...modulosPara(sesion).map((modulo) => crear('li', {}, modulo.ruta
             ? crear('a', { clase: 'acceso', texto: modulo.texto, atributos: { href: modulo.ruta } })
             : crear('a', { clase: 'acceso deshabilitado', atributos: { role: 'link', 'aria-disabled': 'true' } },
                 modulo.texto, crear('span', { clase: 'proximamente', texto: 'Próximamente' }))))),

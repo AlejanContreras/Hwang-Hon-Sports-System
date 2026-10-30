@@ -6,7 +6,7 @@
 #   URL_BASE=http://127.0.0.1:8090    servidor principal (router_pruebas.php)
 #   URL_1M=http://127.0.0.1:8091      servidor con post_max_size=1M (calendario)
 #   URL_LISTA=http://127.0.0.1:8092   servidor con ORIGENES_PERMITIDOS (revisión)
-#   URL_APACHE=http://localhost/HwangHon-Sports-System/backend/Public   (revisión: logins paralelos)
+#   URL_APACHE=http://localhost/HwangHon-Sports-System/backend/Public   (revisión: logins paralelos; urls_limpias: mod_rewrite real)
 #   MEMORIA_LOG=<carpeta>/memoria.log el mismo que se pasó al servidor principal (reportes)
 #   MYSQL="mysql -uroot"              cliente de MariaDB
 #   SALTAR_RECUPERACION=1             si Config/correo.php está en modo smtp (auth, sección F)
@@ -64,5 +64,6 @@ correr reportes cuentas php "$DIR/prueba_http_reportes.php" "$U" "$W/backend" "$
 correr autorregistro cuentas php "$DIR/prueba_http_autorregistro.php" "$U" "$W/backend"
 correr revision cuentas php "$DIR/prueba_http_revision.php" "$U" "$ULISTA" "$UAPACHE" "$W/backend"
 correr recuperacion_diferida cuentas php "$DIR/prueba_recuperacion_diferida.php" "$W/backend/Src"
+correr urls_limpias cuentas php "$DIR/prueba_http_urls_limpias.php" "$U" "$UAPACHE"
 recargar cuentas
 echo "TOTAL: $total comprobaciones OK"

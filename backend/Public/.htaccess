@@ -1,10 +1,22 @@
-RewriteEngine On
-
 # Punto de entrada unico: toda solicitud que no sea un archivo o carpeta
-# existente se redirige al front controller (api.php).
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ api.php [QSA,L]
+# existente se redirige al front controller (api.php), que conserva la
+# consulta (QSA).
+#
+# Requisito: mod_rewrite activo y AllowOverride que permita FileInfo para
+# esta carpeta. Con eso funciona la forma por ruta (URL limpia):
+#   .../backend/Public/deportistas/consultar?documento=1001
+# La forma oficial, api.php?recurso=deportistas&accion=consultar&documento=1001,
+# no depende de este archivo. Si el hosting no tiene mod_rewrite, el bloque
+# <IfModule> se ignora (en vez de responder 500) y la forma oficial sigue
+# funcionando; solo la forma por ruta deja de estar disponible.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ api.php [QSA,L]
+</IfModule>
 
-# Evita listar el contenido de la carpeta si no hay api.php
+# La carpeta sola (.../Public/) responde con api.php (health check) y nunca
+# lista su contenido.
+DirectoryIndex api.php
 Options -Indexes

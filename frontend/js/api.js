@@ -131,6 +131,25 @@ export const auth = {
             avisar401: false,
         }),
     cerrarSesion: () => solicitar('POST', 'auth', 'cerrarSesion', { avisar401: false }),
+    // Solo administrativo. La sesión actual sigue; las demás sesiones de la cuenta caen.
+    cambiarContrasena: (actual, nueva) =>
+        solicitar('POST', 'auth', 'cambiarContrasena', { cuerpo: { contrasena_actual: actual, contrasena_nueva: nueva } }),
+};
+
+// ---------------------------------------------------------------------------
+// B.2 usuarios-administrativos (solo cuenta principal; las demás reciben 403)
+// ---------------------------------------------------------------------------
+export const usuariosAdministrativos = {
+    listar: () => solicitar('GET', 'usuarios-administrativos', 'listar'),
+    consultar: (correo) => solicitar('GET', 'usuarios-administrativos', 'consultar', { parametros: { correo } }),
+    // datos: { correo, nombre, rol?, contrasena }
+    crear: (datos) => solicitar('POST', 'usuarios-administrativos', 'crear', { cuerpo: datos }),
+    // cambios parciales: nombre, rol y correo (el correo nuevo)
+    actualizar: (correo, cambios) => solicitar('PUT', 'usuarios-administrativos', 'actualizar', { parametros: { correo }, cuerpo: cambios }),
+    desactivar: (correo) => solicitar('PUT', 'usuarios-administrativos', 'desactivar', { parametros: { correo } }),
+    reactivar: (correo) => solicitar('PUT', 'usuarios-administrativos', 'reactivar', { parametros: { correo } }),
+    restablecerContrasena: (correo, nueva) =>
+        solicitar('PUT', 'usuarios-administrativos', 'restablecerContrasena', { parametros: { correo }, cuerpo: { contrasena_nueva: nueva } }),
 };
 
 // ---------------------------------------------------------------------------
@@ -147,9 +166,6 @@ export const deportistas = {
     eliminar: (documento) => solicitar('DELETE', 'deportistas', 'eliminar', { parametros: { documento } }),
 };
 
-// ---------------------------------------------------------------------------
-// B.6 documentos
-// ---------------------------------------------------------------------------
 function formularioArchivo(campos) {
     const datos = new FormData();
     for (const [clave, valor] of Object.entries(campos)) {
@@ -157,6 +173,22 @@ function formularioArchivo(campos) {
     }
     return datos;
 }
+
+// ---------------------------------------------------------------------------
+// B.5 importacion-deportistas (carga masiva por CSV; las dos acciones reciben el mismo archivo)
+// ---------------------------------------------------------------------------
+export const importacion = {
+    // No escribe nada: clasifica cada fila.
+    previsualizar: (archivo) => solicitar('POST', 'importacion-deportistas', 'previsualizar', { formulario: formularioArchivo({ archivo }) }),
+    // documentosAprobados: documentos de las filas «actualizar» que el administrativo aprobó.
+    aplicar: (archivo, documentosAprobados) => solicitar('POST', 'importacion-deportistas', 'aplicar', {
+        formulario: formularioArchivo({ archivo, confirmar_actualizacion: documentosAprobados.join(',') }),
+    }),
+};
+
+// ---------------------------------------------------------------------------
+// B.6 documentos
+// ---------------------------------------------------------------------------
 
 export const documentos = {
     // El público puede omitir el documento: se usan los suyos.
@@ -278,9 +310,66 @@ export const competencias = {
 };
 
 // ---------------------------------------------------------------------------
+// B.11 evaluaciones (exámenes de ascenso)
+// ---------------------------------------------------------------------------
+function claveParticipante(sesionId, documento) {
+    return { sesion_id: sesionId, deportista_documento: documento };
+}
+
+export const evaluaciones = {
+    // Solo uno: { sesion_id } o { fecha } (fecha de inicio, antes de crear la sesión).
+    candidatos: (filtro) => solicitar('GET', 'evaluaciones', 'candidatos', { parametros: filtro }),
+    // datos: { fecha, fecha_grado, lugar, participantes?: [{ deportista_documento, grado_evaluado? }] }
+    crear: (datos) => solicitar('POST', 'evaluaciones', 'crear', { cuerpo: datos }),
+    inscribir: (sesionId, participantes) => solicitar('POST', 'evaluaciones', 'inscribir', { parametros: { sesion_id: sesionId }, cuerpo: { participantes } }),
+    // filtros: estado, desde, hasta, deportista (el público ve solo las suyas)
+    listar: (filtros = {}) => solicitar('GET', 'evaluaciones', 'listar', { parametros: filtros }),
+    consultar: (id) => solicitar('GET', 'evaluaciones', 'consultar', { parametros: { id } }),
+    actualizar: (id, cambios) => solicitar('PUT', 'evaluaciones', 'actualizar', { parametros: { id }, cuerpo: cambios }),
+    eliminar: (id) => solicitar('DELETE', 'evaluaciones', 'eliminar', { parametros: { id } }),
+    cerrar: (id) => solicitar('PUT', 'evaluaciones', 'cerrar', { parametros: { id } }),
+    reabrir: (id) => solicitar('PUT', 'evaluaciones', 'reabrir', { parametros: { id } }),
+    actualizarParticipante: (sesionId, documento, gradoEvaluado) => solicitar('PUT', 'evaluaciones', 'actualizarParticipante', {
+        parametros: claveParticipante(sesionId, documento), cuerpo: { grado_evaluado: gradoEvaluado },
+    }),
+    calificar: (sesionId, documento, modalidad, cambios) => solicitar('PUT', 'evaluaciones', 'calificar', {
+        parametros: { ...claveParticipante(sesionId, documento), modalidad }, cuerpo: cambios,
+    }),
+    quitarParticipante: (sesionId, documento) => solicitar('DELETE', 'evaluaciones', 'quitarParticipante', { parametros: claveParticipante(sesionId, documento) }),
+    // cuerpo: {} o { fecha_entrega } (solo el administrativo)
+    confirmarEntregaCinturon: (sesionId, documento, cuerpo = {}) => solicitar('PUT', 'evaluaciones', 'confirmarEntregaCinturon', {
+        parametros: claveParticipante(sesionId, documento), cuerpo,
+    }),
+};
+
+// ---------------------------------------------------------------------------
+// B.12 historial (pestaña «Registros») y B.13 estadísticas (pestaña «Gráficas»)
+// El público omite el deportista: la API usa el suyo.
+// ---------------------------------------------------------------------------
+export const historial = {
+    // filtros: deportista, desde, hasta
+    torneos: (filtros = {}) => solicitar('GET', 'historial', 'torneos', { parametros: filtros }),
+    ascensos: (filtros = {}) => solicitar('GET', 'historial', 'ascensos', { parametros: filtros }),
+    // filtros: deportista, estado
+    permanencia: (filtros = {}) => solicitar('GET', 'historial', 'permanencia', { parametros: filtros }),
+};
+
+export const estadisticas = {
+    deportista: (documento, ventana) => solicitar('GET', 'estadisticas', 'deportista', { parametros: { deportista: documento, ventana } }),
+    torneo: (id) => solicitar('GET', 'estadisticas', 'torneo', { parametros: { id } }),
+};
+
+// ---------------------------------------------------------------------------
 // B.14 reportes (archivos)
 // ---------------------------------------------------------------------------
 export const reportes = {
     deportistaFicha: (documento) =>
         descargar('reportes', 'deportistaFicha', { deportista: documento }, `ficha_${documento}.pdf`),
+    // estado opcional: activo o inactivo (sin filtro: todos los validados)
+    deportistas: (estado) => descargar('reportes', 'deportistas', { estado }, 'deportistas.xlsx'),
+    // desde y hasta obligatorios (máximo 366 días)
+    asistencia: (desde, hasta, estado) => descargar('reportes', 'asistencia', { desde, hasta, estado }, 'asistencia.xlsx'),
+    pagos: (anio, estado) => descargar('reportes', 'pagos', { anio, estado }, 'pagos.xlsx'),
+    torneos: (desde, hasta) => descargar('reportes', 'torneos', { desde, hasta }, 'torneos.xlsx'),
+    sesionExamen: (id) => descargar('reportes', 'sesionExamen', { id }, `sesion_examen_${id}.xlsx`),
 };
