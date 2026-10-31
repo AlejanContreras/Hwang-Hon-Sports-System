@@ -1,7 +1,9 @@
-// Cuentas administrativas — catálogo B.2 (solo cuenta principal) y «Cambiar mi contraseña» (B.1).
-// La API decide el permiso: una cuenta no principal recibe 403 y se muestra su mensaje tal cual.
+// Cuentas — «Mi cuenta» (B.1: cambiar contraseña y cerrar sesión) y, para la cuenta principal,
+// las cuentas del club (B.2).
 import { usuariosAdministrativos, auth } from '../api.js';
 import { crear, vaciar, mostrarAviso, limpiarAviso, notificar, confirmar, campo, conBotonOcupado, cargando, textoDato, insignia } from '../ui.js';
+import { cerrarSesion } from '../sesion.js';
+import { crear as crearIcono } from '../componentes/iconos.js';
 
 const MINIMO_CONTRASENA = 8;
 
@@ -18,15 +20,19 @@ function campoContrasena(etiqueta, nombre, autocompletar = 'new-password') {
 }
 
 // ===========================================================================
-// Cuentas (#cuentas)
+// Cuentas (#cuentas): «Mi cuenta» para cualquier cuenta administrativa y, debajo, «Cuentas del
+// club» solo para la cuenta principal (las demás ni la piden: la API les daría 403).
 // ===========================================================================
 export async function mostrarCuentas(contenedor, sesion) {
-    const avisoGeneral = avisoNuevo();
-    const zona = crear('div');
     contenedor.append(
-        crear('div', { clase: 'encabezado-vista' }, crear('h1', { texto: 'Cuentas administrativas' })),
+        crear('div', { clase: 'encabezado-vista' }, crear('h1', { texto: 'Cuentas' })),
+        seccionMiCuenta(sesion));
+    if (!sesion.es_administrador_principal) return;
+
+    const zona = crear('div', { atributos: { id: 'cuentas-del-club' } });
+    contenedor.append(
+        crear('h2', { clase: 'titulo-seccion', texto: 'Cuentas del club' }),
         crear('p', { clase: 'ayuda', texto: 'Las cuentas nunca se borran: se desactivan. Las cuentas principales no se desactivan desde la aplicación.' }),
-        avisoGeneral,
         zona);
 
     const recargar = async () => {
@@ -35,7 +41,6 @@ export async function mostrarCuentas(contenedor, sesion) {
         try {
             lista = await usuariosAdministrativos.listar();
         } catch (error) {
-            // 403 para cuentas no principales: mensaje de la API tal cual, sin formularios.
             vaciar(zona);
             zona.append(crear('div', { clase: 'aviso aviso-advertencia', texto: error.message, atributos: { role: 'alert' } }));
             return;
@@ -43,11 +48,38 @@ export async function mostrarCuentas(contenedor, sesion) {
         vaciar(zona);
         zona.append(
             crear('section', { clase: 'tarjeta', atributos: { 'aria-labelledby': 'titulo-lista-cuentas' } },
-                crear('h2', { texto: `Cuentas (${lista.length})`, atributos: { id: 'titulo-lista-cuentas' } }),
+                crear('h3', { texto: `Cuentas (${lista.length})`, atributos: { id: 'titulo-lista-cuentas' } }),
                 ...lista.map((cuenta) => tarjetaCuenta(cuenta, sesion, recargar))),
             formularioCrear(recargar));
+        // El rol de la cuenta propia solo se conoce con la lista (sesionActual no lo trae).
+        const propia = lista.find((c) => c.correo === sesion.identificador);
+        const rol = document.getElementById('mi-cuenta-rol');
+        if (propia && rol) rol.textContent = textoDato(propia.rol);
     };
     await recargar();
+}
+
+// «Mi cuenta»: nombre, correo, rol, cambiar contraseña y cerrar sesión.
+function seccionMiCuenta(sesion) {
+    const salir = crear('button', { clase: 'boton boton-secundario', atributos: { type: 'button', id: 'boton-cerrar-sesion', 'data-prueba': 'cerrar-sesion' } },
+        crearIcono('log-out', { tamano: 18 }), crear('span', { texto: 'Cerrar sesión' }));
+    salir.addEventListener('click', () => {
+        salir.disabled = true;
+        cerrarSesion();
+    });
+    const lista = crear('dl', { clase: 'lista-datos' },
+        crear('div', { clase: 'par' }, crear('dt', { texto: 'Nombre' }), crear('dd', { texto: sesion.nombre })),
+        crear('div', { clase: 'par' }, crear('dt', { texto: 'Correo' }), crear('dd', { texto: sesion.identificador })),
+        crear('div', { clase: 'par' }, crear('dt', { texto: 'Rol' }), crear('dd', {
+            texto: sesion.es_administrador_principal ? '…' : 'Cuenta administrativa', atributos: { id: 'mi-cuenta-rol' },
+        })),
+        crear('div', { clase: 'par' }, crear('dt', { texto: 'Tipo' }), crear('dd', {}, sesion.es_administrador_principal ? insignia('Principal', 'pendiente') : 'No principal')));
+    return crear('section', { clase: 'tarjeta', atributos: { 'aria-labelledby': 'titulo-mi-cuenta', id: 'mi-cuenta' } },
+        crear('h2', { texto: 'Mi cuenta', atributos: { id: 'titulo-mi-cuenta' } }),
+        lista,
+        crear('div', { clase: 'acciones' },
+            crear('a', { clase: 'boton', texto: 'Cambiar mi contraseña', atributos: { href: '#mi-contrasena', 'data-prueba': 'cambiar-contrasena' } }),
+            salir));
 }
 
 function tarjetaCuenta(cuenta, sesion, recargar) {
@@ -202,6 +234,8 @@ export function mostrarCambiarContrasena(contenedor) {
         }
         return undefined;
     });
-    contenedor.append(crear('div', { clase: 'encabezado-vista' }, crear('h1', { texto: 'Cambiar mi contraseña' })), formulario);
+    contenedor.append(
+        crear('p', { clase: 'miga' }, crear('a', { texto: '← Cuentas', atributos: { href: '#cuentas' } })),
+        crear('div', { clase: 'encabezado-vista' }, crear('h1', { texto: 'Cambiar mi contraseña' })), formulario);
     actual.control.focus();
 }

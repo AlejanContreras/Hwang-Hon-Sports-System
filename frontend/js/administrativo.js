@@ -12,8 +12,7 @@ import { mostrarAscensos, mostrarSesion, mostrarNuevaSesion } from './vistas/asc
 import { mostrarExportacion } from './vistas/exportacion.js';
 import { mostrarImportacion } from './vistas/importacion.js';
 import { mostrarCuentas, mostrarCambiarContrasena } from './vistas/cuentas.js';
-import { gruposPara } from './modulos.js';
-import { crear } from './ui.js';
+import { GRUPOS } from './modulos.js';
 
 // ruta → { modulo (para marcar el menú), mostrar(contenedor, parametro, sesion) }
 const rutas = {
@@ -36,7 +35,7 @@ const rutas = {
     exportacion: { modulo: 'exportacion', mostrar: (c) => mostrarExportacion(c) },
     importar: { modulo: 'importar', mostrar: (c) => mostrarImportacion(c) },
     cuentas: { modulo: 'cuentas', mostrar: (c, _p, sesion) => mostrarCuentas(c, sesion) },
-    'mi-contrasena': { modulo: 'mi-contrasena', mostrar: (c) => mostrarCambiarContrasena(c) },
+    'mi-contrasena': { modulo: 'cuentas', mostrar: (c) => mostrarCambiarContrasena(c) },
     estadisticas: { modulo: 'estadisticas', mostrar: (c, documento) => mostrarEstadisticas(c, { esAdministrativo: true, pestanaInicial: 'graficas', documento }) },
     historial: { modulo: 'historial', mostrar: (c, documento) => mostrarEstadisticas(c, { esAdministrativo: true, pestanaInicial: 'registros', documento }) },
 };
@@ -45,10 +44,5 @@ iniciarPagina({
     ambito: 'administrativa',
     rutas,
     rutaInicial: 'inicio',
-    grupos: gruposPara,
-    inicio: { texto: 'Inicio', ruta: '#inicio', clave: 'inicio' },
-    alIniciar: () => {
-        const datos = document.getElementById('datos-perfil');
-        datos.replaceChildren('Personal del club · ', crear('a', { texto: 'Cambiar mi contraseña', atributos: { href: '#mi-contrasena' } }));
-    },
+    grupos: GRUPOS,
 });

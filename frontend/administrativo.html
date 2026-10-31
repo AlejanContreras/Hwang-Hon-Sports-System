@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
     <title>Panel del club — HwangHon Sports System</title>
+    <!-- Tema elegido en el panel, aplicado antes de pintar (evita el parpadeo blanco). -->
+    <script>try { var t = localStorage.getItem('hwanghon_tema'); if (t === 'claro' || t === 'oscuro') document.documentElement.setAttribute('data-tema', t); } catch (e) {}</script>
     <link rel="stylesheet" href="css/estilos.css">
     <script type="module" src="js/administrativo.js"></script>
 </head>

@@ -1,33 +1,41 @@
-// Componente compartido de las páginas con sesión: enlace «Saltar al contenido», panel lateral
-// (marca + botón de menú en celular + <nav> que llena navegacion.js), cabecera con el usuario
-// y «Salir», y el <main>. Se monta una vez por página; así el marcado no se repite en cada HTML.
-// El boceto de John no tiene pie de página: no se agrega.
+// Componente compartido de las páginas con sesión: «Saltar al contenido», panel lateral FIJO
+// (marca enlazada a #inicio con espacio para el logo, botón de menú en celular, <nav> que llena
+// navegacion.js y, al pie, el selector de tema) y el <main>. Sin cabecera superior (John, 30/10):
+// el nombre de la cuenta y «Cerrar sesión» viven en «Cuentas → Mi cuenta» / «Mi perfil».
 import { crear } from '../ui.js';
+import { selectorTema } from './tema.js';
 
-// etiquetaMenu: aria-label del <nav>. textoSalir: texto del botón de salida.
-export function montarEstructura({ etiquetaMenu = 'Módulos', textoSalir = 'Cerrar sesión' } = {}) {
+// Logo oficial: cuando llegue, se guarda en frontend/recursos/ y se pone aquí su ruta
+// (p. ej. 'recursos/logo.png'). Mientras sea null no se pide nada y solo se ve el texto.
+const RUTA_LOGO = null;
+
+export function montarEstructura({ etiquetaMenu = 'Módulos' } = {}) {
     const botonMenu = crear('button', {
         clase: 'boton boton-secundario boton-pequeno boton-menu',
         texto: 'Menú',
         atributos: { type: 'button', id: 'boton-menu', 'aria-expanded': 'false', 'aria-controls': 'cuerpo-menu' },
     });
-    const panel = crear('aside', { clase: 'menu-lateral', atributos: { id: 'menu-lateral' } },
-        crear('div', { clase: 'cabecera-menu' }, crear('p', { clase: 'titulo-sistema', texto: 'HwangHon' }), botonMenu),
-        crear('div', { clase: 'cuerpo-menu', atributos: { id: 'cuerpo-menu' } },
-            crear('nav', { atributos: { id: 'lista-menu', 'aria-label': etiquetaMenu } })));
+    // Espacio previsto para el logo (decorativo: el nombre ya está en el texto del enlace).
+    const logo = RUTA_LOGO
+        ? crear('img', { clase: 'logo-club', atributos: { src: RUTA_LOGO, alt: '' } })
+        : crear('span', { clase: 'espacio-logo', atributos: { 'aria-hidden': 'true', 'data-prueba': 'espacio-logo' } });
+    const marca = crear('a', {
+        clase: 'marca-sistema',
+        atributos: { href: '#inicio', id: 'marca-inicio', 'data-modulo': 'inicio', 'data-prueba': 'marca-inicio', 'aria-label': 'HwangHon, ir al inicio' },
+    }, logo, crear('span', { texto: 'HwangHon' }));
 
-    const cabecera = crear('header', { clase: 'cabecera-perfil' },
-        crear('div', {},
-            crear('p', { clase: 'nombre-perfil', atributos: { id: 'nombre-usuario' } }),
-            crear('p', { clase: 'datos-perfil', atributos: { id: 'datos-perfil' } })),
-        crear('button', { clase: 'boton boton-secundario', texto: textoSalir, atributos: { type: 'button', id: 'boton-salir' } }));
+    const panel = crear('aside', { clase: 'menu-lateral', atributos: { id: 'menu-lateral' } },
+        crear('div', { clase: 'cabecera-menu' }, marca, botonMenu),
+        crear('div', { clase: 'cuerpo-menu', atributos: { id: 'cuerpo-menu' } },
+            crear('nav', { atributos: { id: 'lista-menu', 'aria-label': etiquetaMenu } }),
+            crear('div', { clase: 'pie-menu' }, selectorTema())));
 
     const contenido = crear('main', { clase: 'contenido', atributos: { id: 'contenido', tabindex: '-1' } },
         crear('p', { clase: 'cargando', texto: 'Cargando…', atributos: { role: 'status' } }));
 
     document.body.replaceChildren(
         crear('a', { clase: 'enlace-saltar', texto: 'Saltar al contenido', atributos: { href: '#contenido' } }),
-        crear('div', { clase: 'estructura' }, panel, crear('div', { clase: 'columna-principal' }, cabecera, contenido)),
+        crear('div', { clase: 'estructura' }, panel, crear('div', { clase: 'columna-principal' }, contenido)),
     );
-    return { panel, cabecera, contenido, botonMenu };
+    return { panel, contenido, botonMenu, marca };
 }

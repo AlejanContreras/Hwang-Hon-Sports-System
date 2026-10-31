@@ -5,6 +5,7 @@ import {
     textoDato, textoNumero, textoFecha, textoGrado, textoEstado, textoEstadoRegistro, textoSexo,
     insignia, normalizarTexto, listaDatos, GRADOS,
 } from '../ui.js';
+import { bloqueRecord } from '../componentes/record.js';
 
 // Filtros de la lista: se conservan al ir a una ficha y volver.
 // estado, estado_registro y sede_entrenamiento van a la API; texto y grado se aplican aquí
@@ -407,7 +408,7 @@ export function seccionesFicha(d) {
         ['Registro', textoEstadoRegistro(d.estado_registro)],
         ...(d.validado_por_correo !== undefined ? [['Validado por', d.validado_por_correo]] : []),
         ['Autorización de datos', d.autorizacion_datos],
-        ['Combates ganados / perdidos', `${textoDato(d.combates_ganados)} / ${textoDato(d.combates_perdidos)}`],
+        ['Récord de combates', bloqueRecord(d)],
     ];
     return [
         seccionFicha('Datos personales', [

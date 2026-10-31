@@ -1,15 +1,12 @@
 // Estructura común de las páginas con sesión (administrativa y pública): menú lateral por
-// grupos, menú plegable en celular, «Saltar al contenido», salir y enrutado por «#ruta/parámetro».
-import { exigirSesion, cerrarSesion } from './sesion.js';
+// grupos con iconos, menú plegable en celular, «Saltar al contenido» y enrutado por «#ruta/parámetro».
+// No hay botón «Inicio»: la marca «HwangHon» del panel enlaza a #inicio.
+import { exigirSesion } from './sesion.js';
 import { crear, vaciar } from './ui.js';
 import { montarEstructura } from './componentes/estructura.js';
+import { crear as crearIcono } from './componentes/iconos.js';
 
-// inicio: { texto, ruta, clave } opcional, va arriba y fuera de los grupos.
-export function construirMenu(nav, grupos, inicio = null) {
-    if (inicio) {
-        nav.append(crear('ul', { clase: 'grupo-menu' },
-            crear('li', {}, crear('a', { texto: inicio.texto, atributos: { href: inicio.ruta, 'data-modulo': inicio.clave } }))));
-    }
+export function construirMenu(nav, grupos) {
     grupos.forEach((grupo, indice) => {
         const idTitulo = `grupo-menu-${indice}`;
         nav.append(
@@ -20,17 +17,22 @@ export function construirMenu(nav, grupos, inicio = null) {
     });
 }
 
-// Un módulo sin ruta se muestra deshabilitado con «Próximamente» (sin href: no recibe foco).
+// Icono decorativo primero y luego el nombre (siempre visible). Sin ruta: deshabilitado.
 export function enlaceModulo(modulo, clase = '') {
+    const icono = modulo.icono ? crearIcono(modulo.icono, { tamano: 20 }) : null;
     if (modulo.ruta) {
-        return crear('a', { clase, texto: modulo.texto, atributos: { href: modulo.ruta, 'data-modulo': modulo.clave } });
+        return crear('a', {
+            clase: `${clase} enlace-modulo`.trim(),
+            atributos: { href: modulo.ruta, 'data-modulo': modulo.clave, 'data-prueba': `menu-${modulo.clave}` },
+        }, icono, crear('span', { texto: modulo.texto }));
     }
-    return crear('a', { clase: `${clase} deshabilitado`.trim(), atributos: { role: 'link', 'aria-disabled': 'true' } },
-        modulo.texto, crear('span', { clase: 'proximamente', texto: 'Próximamente' }));
+    return crear('a', { clase: `${clase} enlace-modulo deshabilitado`.trim(), atributos: { role: 'link', 'aria-disabled': 'true' } },
+        icono, crear('span', {}, modulo.texto, crear('span', { clase: 'proximamente', texto: 'Próximamente' })));
 }
 
-function marcarMenu(nav, modulo) {
-    for (const enlace of nav.querySelectorAll('a[data-modulo]')) {
+// aria-current en el enlace del módulo activo (incluida la marca, que representa el inicio).
+function marcarMenu(panel, modulo) {
+    for (const enlace of panel.querySelectorAll('a[data-modulo]')) {
         if (enlace.dataset.modulo === modulo) enlace.setAttribute('aria-current', 'page');
         else enlace.removeAttribute('aria-current');
     }
@@ -52,9 +54,9 @@ function leerRuta() {
 }
 
 // rutas: { nombre: { modulo, mostrar(contenedor, parametro, sesion) } }
-// La estructura (panel, cabecera y <main>) la monta el componente compartido.
-export async function iniciarPagina({ ambito, rutas, rutaInicial, grupos, inicio = null, alIniciar = null, etiquetaMenu, textoSalir }) {
-    const { panel: menuLateral, contenido, botonMenu } = montarEstructura({ etiquetaMenu, textoSalir });
+// grupos: lista o función de la sesión. La estructura la monta el componente compartido.
+export async function iniciarPagina({ ambito, rutas, rutaInicial, grupos, alIniciar = null, etiquetaMenu }) {
+    const { panel: menuLateral, contenido, botonMenu } = montarEstructura({ etiquetaMenu });
     const nav = document.getElementById('lista-menu');
 
     const cerrarMenuMovil = () => {
@@ -70,16 +72,10 @@ export async function iniciarPagina({ ambito, rutas, rutaInicial, grupos, inicio
         evento.preventDefault();
         contenido.focus();
     });
-    document.getElementById('boton-salir').addEventListener('click', (evento) => {
-        evento.currentTarget.disabled = true;
-        cerrarSesion();
-    });
 
     const sesion = await exigirSesion(ambito);
     if (!sesion) return;
-    document.getElementById('nombre-usuario').textContent = sesion.nombre;
-    // grupos puede ser una lista o una función de la sesión (p. ej. para ocultar módulos por permiso).
-    construirMenu(nav, typeof grupos === 'function' ? grupos(sesion) : grupos, inicio);
+    construirMenu(nav, typeof grupos === 'function' ? grupos(sesion) : grupos);
     if (alIniciar) await alIniciar(sesion);
 
     const mostrarRuta = async () => {
@@ -89,7 +85,7 @@ export async function iniciarPagina({ ambito, rutas, rutaInicial, grupos, inicio
             window.location.replace(`#${rutaInicial}`);
             return;
         }
-        marcarMenu(nav, ruta.modulo);
+        marcarMenu(menuLateral, ruta.modulo);
         cerrarMenuMovil();
         vaciar(contenido);
         try {

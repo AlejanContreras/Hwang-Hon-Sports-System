@@ -2,7 +2,15 @@
 // El front se sirve desde el mismo origen que la API (A.4): la cookie de sesión
 // la maneja el navegador y nunca se lee desde aquí.
 
-const URL_API = '../backend/Public/api.php';
+// Carpeta pública del backend, relativa a frontend/: vale igual en XAMPP y en el hosting mientras
+// frontend/ y backend/ sigan siendo hermanas.
+const BASE_API = '../backend/Public/';
+
+// Forma de las URL (Paso 16):
+// - true:  <base>/<recurso>/<accion>?otros   (ruta limpia; necesita mod_rewrite en el servidor)
+// - false: <base>/api.php?recurso=…&accion=…&otros   (forma oficial, funciona siempre)
+// Si el hosting no tiene mod_rewrite, basta con ponerla en false.
+const USAR_RUTA_LIMPIA = true;
 
 export class ErrorApi extends Error {
     constructor(estado, mensaje) {
@@ -19,14 +27,20 @@ export function alVencerSesion(funcion) {
     manejadorSesionVencida = funcion;
 }
 
+// Única función que arma las URL: la usan solicitar() y descargar() (JSON, multipart y archivos).
 function construirUrl(recurso, accion, parametros = {}) {
-    const busqueda = new URLSearchParams({ recurso, accion });
+    const busqueda = USAR_RUTA_LIMPIA ? new URLSearchParams() : new URLSearchParams({ recurso, accion });
     for (const [clave, valor] of Object.entries(parametros)) {
         if (valor !== undefined && valor !== null && valor !== '') {
             busqueda.append(clave, String(valor));
         }
     }
-    return `${URL_API}?${busqueda.toString()}`;
+    const consulta = busqueda.toString();
+    if (USAR_RUTA_LIMPIA) {
+        const ruta = `${BASE_API}${encodeURIComponent(recurso)}/${encodeURIComponent(accion)}`;
+        return consulta ? `${ruta}?${consulta}` : ruta;
+    }
+    return `${BASE_API}api.php?${consulta}`;
 }
 
 async function leerJson(respuesta) {

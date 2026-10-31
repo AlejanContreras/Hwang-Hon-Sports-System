@@ -8,6 +8,10 @@ import {
 import { seccionesFicha } from './deportistas.js';
 import { pintarPorcentaje, campoVentana } from './asistencia.js';
 import { resumenEstado, tablaMeses } from './pagos.js';
+import { cerrarSesion } from '../sesion.js';
+import { crear as crearIcono, crearCinturonDeColor } from '../componentes/iconos.js';
+import { colorDeGrado, nombreDeGrado } from '../componentes/grados.js';
+import { bloqueRecord } from '../componentes/record.js';
 
 // Únicos campos que el público puede editar (catálogo B.3).
 const CAMPOS_EDITABLES = [
@@ -69,8 +73,25 @@ export async function mostrarDatos(contenedor, documento, alActualizar) {
         }
     });
 
+    // Lo que antes iba en la cabecera: grado (con su cinturón), estado y «Cerrar sesión».
+    const salir = crear('button', { clase: 'boton boton-secundario', atributos: { type: 'button', id: 'boton-cerrar-sesion', 'data-prueba': 'cerrar-sesion' } },
+        crearIcono('log-out', { tamano: 18 }), crear('span', { texto: 'Cerrar sesión' }));
+    salir.addEventListener('click', () => {
+        salir.disabled = true;
+        cerrarSesion();
+    });
+    const grado = nombreDeGrado(d.grado_actual);
+    const resumen = crear('section', { clase: 'tarjeta resumen-perfil', atributos: { 'aria-labelledby': 'titulo-resumen-perfil', id: 'resumen-perfil' } },
+        crear('div', { clase: 'resumen-perfil-datos' },
+            crear('h2', { texto: d.nombre, atributos: { id: 'titulo-resumen-perfil' } }),
+            crear('p', { clase: 'ayuda' }, `Documento ${d.documento} · Grado: `, crear('strong', { texto: grado }), ' · ',
+                insignia(d.estado === 'activo' ? 'Activo' : 'Inactivo', d.estado === 'activo' ? 'activo' : 'inactivo')),
+            crear('div', { clase: 'acciones' }, salir)),
+        crear('div', { clase: 'fila-grado' }, bloqueRecord(d, { id: 'record-combates' }), crearCinturonDeColor(colorDeGrado(d.grado_actual).color, { tamano: 44 })));
+
     contenedor.append(
-        crear('div', { clase: 'encabezado-vista' }, crear('h1', { texto: 'Mis datos' })),
+        crear('div', { clase: 'encabezado-vista' }, crear('h1', { texto: 'Mi perfil' })),
+        resumen,
         formulario,
         ...seccionesFicha(d),
     );
