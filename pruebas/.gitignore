@@ -1,0 +1,8 @@
+# Entorno aislado de pruebas (copia de la app, logs y envoltorio de mysql): se rehace en cada corrida
+entorno/
+# Resultados de cada corrida (Newman, pytest, capturas, salidas de las baterías)
+resultados/
+# Archivos que genera ejecutar_newman.py con las fechas del año en curso
+postman/archivos/
+__pycache__/
+.pytest_cache/

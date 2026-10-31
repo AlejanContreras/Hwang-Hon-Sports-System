@@ -11,6 +11,8 @@ declare(strict_types=1);
 // Requiere: esquema v4 + semilla + cuentas_prueba_locales recién cargados.
 
 [$_, $basePhp, $baseApache] = $argv;
+require __DIR__ . '/guardia_apache.php';
+guardiaApache((string) $baseApache);
 date_default_timezone_set('America/Bogota');
 
 $ok = 0; $fallos = []; $crudos = [];

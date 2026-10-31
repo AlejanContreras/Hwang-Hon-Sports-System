@@ -1,0 +1,3 @@
+﻿documento;nombre;fecha_nacimiento;lugar_nacimiento;sexo;estatura;peso;telefono;direccion;correo;discapacidad;experiencia_previa;sede_entrenamiento;autorizacion_datos;grado_actual;fecha_ingreso;estado;acudiente_documento;acudiente_nombre;acudiente_relacion;acudiente_telefono;acudiente_correo
+9000000011;Adulto Carga Ficticio;15/04/1995;Soacha;masculino;1,72;70,5;3000000011;Calle Ficticia 11;adulto.carga@correoficticio.test;;;Club Hwang Hon;si;Amarillo;10/01/2026;activo;;;;;
+9000000012;Menor Carga Ficticia;20/08/2014;Bogotá;femenino;1,40;35;;;;;;Club Hwang Hon;si;;10/01/2026;activo;9000000912;Acudiente Carga Ficticio;madre;3000000912;acudiente.carga@correoficticio.test

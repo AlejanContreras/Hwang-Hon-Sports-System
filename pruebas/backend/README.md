@@ -1,5 +1,7 @@
 # Pruebas automáticas del backend
 
+> **⚠️ PROTEGIDO (31/10/2026): las baterías BORRAN y RECREAN una base de datos y VACÍAN carpetas de `Almacenamiento`. Córrelas SOLO con `python pruebas/ejecutar_baterias_aisladas.py`, que usa la base aparte `hwanghon_pruebas` y una copia aislada de la app. `ejecutar_todo.sh` se niega a correr si no recibe `PRUEBAS_AISLADAS=1`, `DB_NAME=hwanghon_pruebas` y `BACKEND_PRUEBAS` apuntando a la copia aislada (`pruebas/entorno/app/backend`); las secciones «Apache» se niegan a usar el Apache de XAMPP (puerto 80, base `hwanghon`) salvo con `APACHE_REAL=1`.**
+
 Baterías de pruebas del backend de HwangHon Sports System: 21 baterías y **1.790 comprobaciones con `SALTAR_RECUPERACION=1`**, todas en verde al 30/10/2026. La sección F de Auth suma 18 más (**1.808** en total); la última corrida completa con ella fue el 28/10/2026. Usan solo **datos ficticios** y las cuentas de prueba locales de `base_datos/cuentas_prueba_locales.sql` (contraseña de prueba `12345678`, dominio `@hwanghon.local`). No contienen credenciales reales.
 
 Cada batería deja la base modificada: antes de cada una hay que **recargar la semilla**. `ejecutar_todo.sh` lo hace solo.
@@ -49,16 +51,18 @@ ORIGENES_PERMITIDOS="http://front.example:5173" RUTA_PUBLIC="$(pwd -W)/backend/P
 
 ## 3. Ejecutar
 
-Todas a la vez, recargando la base antes de cada una. Imprime el resultado por batería y el total:
+Todas a la vez, recargando la base APARTE antes de cada una. Imprime el resultado por batería y el total:
 
 ```bash
-bash pruebas/backend/ejecutar_todo.sh
+python pruebas/ejecutar_baterias_aisladas.py
 ```
+
+Ese ejecutor rehace la copia aislada, levanta los servidores 8090/8091/8092 (y el aislado 8095 para las secciones «Apache») y llama a `ejecutar_todo.sh` con las variables que exige. Los pasos 1 y 2 de arriba (cargar `hwanghon` y levantar servidores a mano) ya no hacen falta y quedan solo como referencia.
 
 La sección F de Auth (recuperación de contraseña) necesita `backend/Src/Config/correo.php` en modo `archivo` (como `correo.example.php`): lee los correos que quedan en `backend/Almacenamiento/correos/` (Git los ignora; se pueden borrar al terminar). Si `correo.php` está en modo `smtp`, hay que saltar esa sección, para que no se envíen correos reales:
 
 ```bash
-SALTAR_RECUPERACION=1 bash pruebas/backend/ejecutar_todo.sh
+SALTAR_RECUPERACION=1 python pruebas/ejecutar_baterias_aisladas.py   # la copia aislada ya usa correo en modo archivo
 ```
 
 Para ejecutar una sola batería: recargar la base (paso 1) y lanzarla con sus argumentos, por ejemplo:
@@ -98,7 +102,7 @@ Las salidas completas de `ejecutar_todo.sh` quedan en `pruebas/backend/salidas/`
 | `prueba_http_urls_limpias.php` | URLs limpias: cada acción con la forma de consulta y la de ruta (`/<recurso>/<accion>`) da la misma respuesta (200, 401, 403, 404, 405, 415, CSRF, multipart y descargas); bordes de la ruta; carpetas internas sin acceso. En php -S **y** en Apache (mod_rewrite real) | `URL URL_APACHE` | + cuentas | 104 |
 | **Total** | | | | **1.790** con `SALTAR_RECUPERACION=1` (1.808 con la sección F) |
 
-`URL_APACHE` = `http://localhost/HwangHon-Sports-System/backend/Public`.
+`URL_APACHE` = por defecto el servidor aislado `http://127.0.0.1:8095/backend/Public` (imita las reglas de Apache). Para verificar el mod_rewrite REAL de XAMPP hay que hacerlo a propósito, con `APACHE_REAL=1` y `URL_APACHE=http://localhost/HwangHon-Sports-System/backend/Public`. Esas secciones escriben en la base `hwanghon` (30 logins fallidos: bloqueo de 15 min de 1000000101).
 
 ## Catálogo de la API
 

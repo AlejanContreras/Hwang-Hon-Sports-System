@@ -8,6 +8,8 @@ declare(strict_types=1);
 // toda solicitud de recuperacion sobre una cuenta existente se hace con un enlace vigente ya puesto en la BD.
 
 [$_, $base, $baseLista, $baseApache, $backend] = $argv;
+require __DIR__ . '/guardia_apache.php';
+guardiaApache((string) $baseApache);
 date_default_timezone_set('America/Bogota');
 $bd = new PDO('mysql:host=' . (getenv('DB_HOST') ?: 'localhost') . ';port=' . (getenv('DB_PORT') ?: '3306') . ';dbname=' . (getenv('DB_NAME') ?: 'hwanghon') . ';charset=utf8mb4', getenv('DB_USER') ?: 'root', getenv('DB_PASS') ?: '', [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
