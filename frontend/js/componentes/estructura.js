@@ -5,9 +5,8 @@
 import { crear } from '../ui.js';
 import { selectorTema } from './tema.js';
 
-// Logo oficial: cuando llegue, se guarda en frontend/recursos/ y se pone aquí su ruta
-// (p. ej. 'recursos/logo.png'). Mientras sea null no se pide nada y solo se ve el texto.
-const RUTA_LOGO = null;
+// Logo oficial (PNG transparente). Con null no se pide nada y solo se ve el texto.
+const RUTA_LOGO = 'recursos/logo_hwanghon.png';
 
 export function montarEstructura({ etiquetaMenu = 'Módulos' } = {}) {
     const botonMenu = crear('button', {
@@ -15,9 +14,8 @@ export function montarEstructura({ etiquetaMenu = 'Módulos' } = {}) {
         texto: 'Menú',
         atributos: { type: 'button', id: 'boton-menu', 'aria-expanded': 'false', 'aria-controls': 'cuerpo-menu' },
     });
-    // Espacio previsto para el logo (decorativo: el nombre ya está en el texto del enlace).
     const logo = RUTA_LOGO
-        ? crear('img', { clase: 'logo-club', atributos: { src: RUTA_LOGO, alt: '' } })
+        ? crear('img', { clase: 'logo-club', atributos: { src: RUTA_LOGO, alt: 'Club Deportivo de Hapkido Hwang Hon', width: 44, height: 44, 'data-prueba': 'logo-club' } })
         : crear('span', { clase: 'espacio-logo', atributos: { 'aria-hidden': 'true', 'data-prueba': 'espacio-logo' } });
     const marca = crear('a', {
         clase: 'marca-sistema',

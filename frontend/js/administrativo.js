@@ -33,11 +33,13 @@ const rutas = {
     ascenso: { modulo: 'ascensos', mostrar: (c, id) => mostrarSesion(c, id) },
     'ascenso-nuevo': { modulo: 'ascensos', mostrar: (c) => mostrarNuevaSesion(c) },
     exportacion: { modulo: 'exportacion', mostrar: (c) => mostrarExportacion(c) },
-    importar: { modulo: 'importar', mostrar: (c) => mostrarImportacion(c) },
+    importar: { modulo: 'importar', mostrar: (c, origen) => mostrarImportacion(c, { desdeDeportistas: origen === 'deportistas' }) },
     cuentas: { modulo: 'cuentas', mostrar: (c, _p, sesion) => mostrarCuentas(c, sesion) },
     'mi-contrasena': { modulo: 'cuentas', mostrar: (c) => mostrarCambiarContrasena(c) },
     estadisticas: { modulo: 'estadisticas', mostrar: (c, documento) => mostrarEstadisticas(c, { esAdministrativo: true, pestanaInicial: 'graficas', documento }) },
     historial: { modulo: 'historial', mostrar: (c, documento) => mostrarEstadisticas(c, { esAdministrativo: true, pestanaInicial: 'registros', documento }) },
+    'estadisticas-comparar': { modulo: 'estadisticas', mostrar: (c) => mostrarEstadisticas(c, { esAdministrativo: true, pestanaInicial: 'comparar', modulo: 'estadisticas' }) },
+    'historial-comparar': { modulo: 'historial', mostrar: (c) => mostrarEstadisticas(c, { esAdministrativo: true, pestanaInicial: 'comparar', modulo: 'historial' }) },
 };
 
 iniciarPagina({

@@ -12,9 +12,12 @@ const BASE_API = '../backend/Public/';
 // Si el hosting no tiene mod_rewrite, basta con ponerla en false.
 const USAR_RUTA_LIMPIA = true;
 
+// Las fechas AAAA-MM-DD que traen los mensajes del servidor se muestran como DD/MM/AAAA (C2).
+const fechaLegible = (texto) => String(texto).replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, '$3/$2/$1');
+
 export class ErrorApi extends Error {
     constructor(estado, mensaje) {
-        super(mensaje);
+        super(fechaLegible(mensaje));
         this.name = 'ErrorApi';
         this.estado = estado;
     }
@@ -148,6 +151,12 @@ export const auth = {
     // Solo administrativo. La sesión actual sigue; las demás sesiones de la cuenta caen.
     cambiarContrasena: (actual, nueva) =>
         solicitar('POST', 'auth', 'cambiarContrasena', { cuerpo: { contrasena_actual: actual, contrasena_nueva: nueva } }),
+    // Sin sesión. Siempre responde el mismo mensaje, exista o no la cuenta.
+    solicitarRecuperacionContrasena: (correo) =>
+        solicitar('POST', 'auth', 'solicitarRecuperacionContrasena', { cuerpo: { correo }, avisar401: false }),
+    // Sin sesión. token: el del enlace del correo. No inicia sesión.
+    restablecerContrasena: (token, nueva) =>
+        solicitar('POST', 'auth', 'restablecerContrasena', { cuerpo: { token, contrasena_nueva: nueva }, avisar401: false }),
 };
 
 // ---------------------------------------------------------------------------

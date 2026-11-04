@@ -3,7 +3,7 @@
 // franja de avisos, panel «Evento activo» (Torneo / Examen, TOP 3), «Próximas fechas» y los 10
 // accesos rápidos.
 import { asistencia, competencias, pagos, deportistas, historial, evaluaciones, estadisticas } from '../api.js';
-import { crear, vaciar, cargando, textoFecha, textoFechaLarga, hoyBogota, insignia } from '../ui.js';
+import { crear, vaciar, cargando, textoFecha, textoFechaLarga, hoyBogota, insignia, textoConFechas } from '../ui.js';
 import { MODULOS_ACCESO } from '../modulos.js';
 import { proximasFechas } from './calendario.js';
 import { saludo, tarjetaDato, chipGrado, accesosRapidos } from '../componentes/tablero.js';
@@ -47,7 +47,7 @@ async function cargarProximoTorneo(proximo) {
     if (!torneo) return { nodos: [crear('p', { texto: 'No hay torneos próximos.' })] };
     return {
         nodos: [
-            crear('p', { clase: 'dato-destacado', texto: torneo.nombre }),
+            crear('p', { clase: 'dato-destacado' }, ...textoConFechas(torneo.nombre)),
             crear('p', { clase: 'ayuda', texto: `${textoFecha(torneo.fecha)}${torneo.lugar ? ` · ${torneo.lugar}` : ''}` }),
         ],
         enlace: `#torneo/${torneo.evento_id}`,
@@ -125,7 +125,7 @@ async function contenidoTorneo() {
     if (realizado) {
         const t = await estadisticas.torneo(realizado.evento_id);
         const conPuesto = t.participantes.filter((p) => p.puesto).sort((a, b) => a.puesto - b.puesto).slice(0, 3);
-        const encabezado = crear('p', {}, crear('a', { texto: t.nombre, atributos: { href: `#torneo/${t.evento_id}` } }), crear('span', { clase: 'ayuda', texto: ` · ${textoFecha(t.fecha)} · torneo realizado` }));
+        const encabezado = crear('p', {}, crear('a', { atributos: { href: `#torneo/${t.evento_id}` } }, ...textoConFechas(t.nombre)), crear('span', { clase: 'ayuda', texto: ` · ${textoFecha(t.fecha)} · torneo realizado` }));
         if (!conPuesto.length) return [encabezado, crear('p', { texto: 'El torneo aún no tiene puestos registrados.' })];
         return [encabezado, crear('ol', { clase: 'lista-top' }, ...conPuesto.map((p, i) => filaTop(i + 1, p.nombre, grados.get(p.documento),
             [`Puesto ${p.puesto}`, MEDALLAS[p.medalla] ? ` · ${MEDALLAS[p.medalla]}` : ''])))];
@@ -134,7 +134,7 @@ async function contenidoTorneo() {
     if (!proximo) return [crear('p', { texto: 'No hay torneos registrados.' })];
     const detalle = await competencias.consultar(proximo.evento_id);
     return [
-        crear('p', {}, crear('a', { texto: detalle.nombre, atributos: { href: `#torneo/${detalle.evento_id}` } }), crear('span', { clase: 'ayuda', texto: ` · ${textoFecha(detalle.fecha)}` })),
+        crear('p', {}, crear('a', { atributos: { href: `#torneo/${detalle.evento_id}` } }, ...textoConFechas(detalle.nombre)), crear('span', { clase: 'ayuda', texto: ` · ${textoFecha(detalle.fecha)}` })),
         crear('p', { clase: 'ayuda', texto: 'Sin resultados todavía: estos son los inscritos.' }),
         crear('ul', { clase: 'lista-top' }, ...detalle.participantes.slice(0, 3).map((p, i) => filaTop(i + 1, p.nombre, grados.get(p.deportista_documento), p.modalidad.replace('_', ' ')))),
     ];

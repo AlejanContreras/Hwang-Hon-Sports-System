@@ -114,12 +114,23 @@ def limpiar_almacenamiento() -> None:
         shutil.rmtree(almacen / carpeta, ignore_errors=True)
 
 
+def ignorar_privados(carpeta: str, nombres: list[str]) -> set[str]:
+    """Qué NO se copia del backend: los datos de Almacenamiento y Src/Config/correo.php (secretos).
+    Comparación EXACTA de nombres y de carpeta: shutil.ignore_patterns no distingue mayúsculas en
+    Windows y excluía también Src/Utils/Correo.php (código de la app)."""
+    ruta = Path(carpeta)
+    if ruta.name == "Almacenamiento":
+        return {n for n in nombres if n in ("sesiones", "documentos", "generales", "correos")}
+    if ruta.name == "Config" and ruta.parent.name == "Src":
+        return {n for n in nombres if n == "correo.php"}
+    return set()
+
+
 def preparar_copia() -> None:
     """Rehace pruebas/entorno/app con el código actual (sin el Almacenamiento real)."""
     if DIR_APP.exists():
         shutil.rmtree(DIR_APP)
-    ignorar_almacen = shutil.ignore_patterns("sesiones", "documentos", "generales", "correos", "correo.php")
-    shutil.copytree(RAIZ_REPO / "backend", DIR_APP / "backend", ignore=ignorar_almacen)
+    shutil.copytree(RAIZ_REPO / "backend", DIR_APP / "backend", ignore=ignorar_privados)
     shutil.copytree(RAIZ_REPO / "frontend", DIR_APP / "frontend")
     shutil.copytree(RAIZ_REPO / "base_datos", DIR_APP / "base_datos")
     shutil.copytree(RAIZ_REPO / "pruebas" / "backend", DIR_APP / "pruebas" / "backend",
@@ -129,7 +140,7 @@ def preparar_copia() -> None:
     plantilla = re.sub(r"'modo'\s*=>\s*'[^']*'", "'modo' => 'archivo'", plantilla)
     plantilla = re.sub(r"'clave_aplicacion'\s*=>\s*'[^']*'", "'clave_aplicacion' => ''", plantilla)
     plantilla = re.sub(r"'url_restablecimiento'\s*=>\s*'[^']*'",
-                       f"'url_restablecimiento' => '{url_base()}/frontend/index.html'", plantilla)
+                       f"'url_restablecimiento' => '{url_base()}/frontend/recuperar.html'", plantilla)
     (DIR_APP / "backend" / "Src" / "Config" / "correo.php").write_text(plantilla, encoding="utf-8")
     (DIR_APP / "backend" / "Almacenamiento").mkdir(parents=True, exist_ok=True)
 

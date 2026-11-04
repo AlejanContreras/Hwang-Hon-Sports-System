@@ -6,6 +6,7 @@ import {
     insignia, normalizarTexto, listaDatos, GRADOS,
 } from '../ui.js';
 import { bloqueRecord } from '../componentes/record.js';
+import { SEDE_PRINCIPAL, opcionesSede, acudienteSegunEdad } from '../componentes/formulario-deportista.js';
 
 // Filtros de la lista: se conservan al ir a una ficha y volver.
 // estado, estado_registro y sede_entrenamiento van a la API; texto y grado se aplican aquí
@@ -95,7 +96,7 @@ export async function mostrarLista(contenedor, pestana) {
         crear('div', { clase: 'encabezado-vista' },
             crear('h1', { texto: 'Deportistas' }),
             crear('div', { clase: 'acciones', atributos: { style: 'margin: 0' } },
-                crear('a', { clase: 'boton boton-secundario', texto: 'Importar desde CSV', atributos: { href: '#importar' } }),
+                crear('a', { clase: 'boton boton-secundario', texto: 'Importar desde CSV', atributos: { href: '#importar/deportistas' } }),
                 crear('a', { clase: 'boton', texto: 'Nuevo deportista', atributos: { href: '#deportista-nuevo' } })),
         ),
         zonaPestanas,
@@ -135,13 +136,13 @@ function formularioFiltros(recargar) {
         etiqueta: 'Registro', nombre: 'estado_registro', tipo: 'select', valor: filtros.estado_registro,
         opciones: [{ valor: '', texto: 'Todos' }, { valor: 'validado', texto: 'Validado' }, { valor: 'pendiente_validacion', texto: 'Pendiente de validación' }],
     });
-    const idListaSedes = 'lista-sedes';
+    // Sede: las sedes distintas (sin vacíos, ordenadas) de los deportistas que la vista ya cargó.
+    // Se recuerdan entre recargas, así que al filtrar por una sede las demás siguen en la lista.
+    const opcionesSede = () => [{ valor: '', texto: 'Todas' },
+        ...[...sedesConocidas].sort((a, b) => a.localeCompare(b, 'es')).map((s) => ({ valor: s, texto: s }))];
     const sede = campo({
-        etiqueta: 'Sede', nombre: 'sede_entrenamiento', valor: filtros.sede_entrenamiento,
-        ayuda: 'Nombre exacto; Enter para aplicar.', atributos: { list: idListaSedes, autocomplete: 'off' },
+        etiqueta: 'Sede', nombre: 'sede_entrenamiento', tipo: 'select', valor: filtros.sede_entrenamiento, opciones: opcionesSede(),
     });
-    const listaSedes = crear('datalist', { atributos: { id: idListaSedes } },
-        ...[...sedesConocidas].sort().map((s) => crear('option', { atributos: { value: s } })));
     const grado = campo({
         etiqueta: 'Grado', nombre: 'grado', tipo: 'select', valor: filtros.grado,
         opciones: [{ valor: '', texto: 'Todos' }, { valor: 'ingresado', texto: 'Ingresado' },
@@ -151,7 +152,7 @@ function formularioFiltros(recargar) {
 
     const formulario = crear('form', { clase: 'tarjeta', atributos: { role: 'search', 'aria-label': 'Filtrar deportistas' } },
         crear('div', { clase: 'filtros' },
-            texto.envoltura, estado.envoltura, registro.envoltura, sede.envoltura, listaSedes, grado.envoltura,
+            texto.envoltura, estado.envoltura, registro.envoltura, sede.envoltura, grado.envoltura,
             crear('div', { clase: 'campo' }, limpiar),
         ),
     );
@@ -160,7 +161,7 @@ function formularioFiltros(recargar) {
     const alCambiarApi = () => {
         filtros.estado = estado.control.value;
         filtros.estado_registro = registro.control.value;
-        filtros.sede_entrenamiento = sede.control.value.trim();
+        filtros.sede_entrenamiento = sede.control.value;
         recargar();
     };
     estado.control.addEventListener('change', alCambiarApi);
@@ -191,9 +192,15 @@ function formularioFiltros(recargar) {
     formulario.datosEnMemoria = () => datosEnMemoria;
     formulario.guardarDatos = (lista) => {
         datosEnMemoria = lista;
-        for (const d of lista) if (d.sede_entrenamiento) sedesConocidas.add(d.sede_entrenamiento);
-        vaciar(listaSedes);
-        listaSedes.append(...[...sedesConocidas].sort().map((s) => crear('option', { atributos: { value: s } })));
+        for (const d of lista) {
+            const nombreSede = (d.sede_entrenamiento ?? '').trim();
+            if (nombreSede) sedesConocidas.add(nombreSede);
+        }
+        // Se rehacen las opciones conservando la sede elegida.
+        const elegida = sede.control.value;
+        vaciar(sede.control);
+        for (const o of opcionesSede()) sede.control.append(crear('option', { texto: o.texto, atributos: { value: o.valor } }));
+        sede.control.value = elegida;
     };
     return formulario;
 }
@@ -532,7 +539,10 @@ export async function mostrarFormulario(contenedor, documento) {
 
     // --- Club
     const rejillaClub = crear('div', { clase: 'rejilla-campos' });
-    agregar(rejillaClub, { etiqueta: 'Sede de entrenamiento', nombre: 'sede_entrenamiento', valor: valor('sede_entrenamiento'), atributos: { maxlength: 100 } });
+    agregar(rejillaClub, {
+        etiqueta: 'Sede de entrenamiento', nombre: 'sede_entrenamiento', tipo: 'select',
+        valor: esEdicion ? (valor('sede_entrenamiento') ?? '').trim() : SEDE_PRINCIPAL, opciones: opcionesSede(valor('sede_entrenamiento')),
+    });
     const opcionesGrado = [{ valor: '', texto: 'Ingresado' }, ...GRADOS.map((g) => ({ valor: g, texto: g }))];
     // Un grado guardado con otra escritura (p. ej. «amarillo») se muestra con la opción equivalente.
     const gradoGuardado = valor('grado_actual');
@@ -567,6 +577,10 @@ export async function mostrarFormulario(contenedor, documento) {
     agregarAcudiente({ etiqueta: 'Teléfono del acudiente', nombre: 'telefono', tipo: 'tel', valor: va('telefono'), atributos: { maxlength: 20 } });
     agregarAcudiente({ etiqueta: 'Correo del acudiente', nombre: 'correo', tipo: 'email', valor: va('correo'), atributos: { maxlength: 150 } });
 
+    // B1: con menos de 18 años, documento, nombre y relación del acudiente pasan a obligatorios.
+    const notaMenor = crear('p', { clase: 'aviso aviso-advertencia', atributos: { hidden: true, 'data-prueba': 'acudiente-obligatorio' } });
+    const faltaAcudiente = acudienteSegunEdad({ controlFecha: c.fecha_nacimiento, controles: [a.documento, a.nombre, a.relacion], nota: notaMenor });
+
     const ayudaAcudiente = esEdicion
         ? 'Obligatorio si es menor de 18 años. Con el mismo documento se editan los datos del acudiente actual; con otro documento se asigna otro acudiente (si ya existe, se reutiliza). Vaciar todo lo quita (solo mayores de edad).'
         : 'Obligatorio si es menor de 18 años. Si el acudiente ya está registrado (p. ej. por un hermano) basta su documento: se reutiliza sin modificarlo.';
@@ -580,7 +594,7 @@ export async function mostrarFormulario(contenedor, documento) {
         crear('fieldset', { clase: 'tarjeta' }, crear('legend', { texto: 'Club' }), rejillaClub),
         crear('fieldset', { clase: 'tarjeta' }, crear('legend', { texto: 'Salud y experiencia' }), rejillaSalud),
         crear('fieldset', { clase: 'tarjeta' }, crear('legend', { texto: 'Acudiente' }),
-            crear('p', { clase: 'ayuda', texto: ayudaAcudiente }), rejillaAcudiente),
+            crear('p', { clase: 'ayuda', texto: ayudaAcudiente }), notaMenor, rejillaAcudiente),
         crear('div', { clase: 'acciones' },
             botonGuardar,
             crear('a', { clase: 'boton boton-secundario', texto: 'Cancelar', atributos: { href: urlVolver } }),
@@ -590,6 +604,12 @@ export async function mostrarFormulario(contenedor, documento) {
     formulario.addEventListener('submit', async (evento) => {
         evento.preventDefault();
         limpiarAviso(aviso);
+        const falta = faltaAcudiente();
+        if (falta) {
+            mostrarAviso(aviso, 'El deportista es menor de 18 años: completa el documento, el nombre y la relación del acudiente.', 'error');
+            falta.focus();
+            return;
+        }
         const cuerpo = esEdicion ? cambiosEdicion(c, a, original) : datosCreacion(c, a);
         if (esEdicion && Object.keys(cuerpo).length === 0) {
             mostrarAviso(aviso, 'No hay cambios para guardar.', 'info');

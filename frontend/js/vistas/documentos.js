@@ -4,7 +4,7 @@
 import { deportistas, documentos } from '../api.js';
 import {
     crear, vaciar, mostrarAviso, limpiarAviso, notificar, confirmar, campo, conBotonOcupado, cargando,
-    textoFecha, insignia,
+    textoFecha, insignia, normalizarTexto,
 } from '../ui.js';
 import { selectorDeportista } from './comunes.js';
 
@@ -50,9 +50,14 @@ function errorEn(zona, error) {
     zona.append(crear('div', { clase: 'aviso aviso-error', texto: error.message, atributos: { role: 'alert' } }));
 }
 
+// En celular (≤ 800 px) la tabla se apila: cada fila es una tarjeta y cada celda muestra su
+// encabezado (data-etiqueta), así «Fecha» y las acciones nunca quedan fuera de la pantalla.
 export function tabla(titulo, encabezados, filas) {
+    for (const fila of filas) {
+        [...fila.children].forEach((celda, i) => celda.setAttribute('data-etiqueta', encabezados[i] ?? ''));
+    }
     return crear('div', { clase: 'contenedor-tabla' },
-        crear('table', {},
+        crear('table', { clase: 'tabla-apilable' },
             crear('caption', { clase: 'solo-lectores', texto: titulo }),
             crear('thead', {}, crear('tr', {}, ...encabezados.map((t) => crear('th', { texto: t, atributos: { scope: 'col' } })))),
             crear('tbody', {}, ...filas)));
@@ -133,6 +138,16 @@ export function formularioSubida({ tipos, extra = null, textoBoton = 'Subir', al
     if (selectorTipo) selectorTipo.control.addEventListener('change', actualizarAyuda);
     actualizarAyuda();
     entrada.envoltura.append(ayuda);
+    // Con un campo de título vacío, se propone el nombre del archivo sin la extensión (editable).
+    if (extra) {
+        entrada.control.addEventListener('change', () => {
+            const elegido = entrada.control.files[0];
+            if (!elegido || extra.control.value.trim()) return;
+            const sinExtension = elegido.name.replace(/\.[^.]+$/, '').trim();
+            const maximo = Number(extra.control.getAttribute('maxlength')) || 150;
+            extra.control.value = sinExtension.slice(0, maximo);
+        });
+    }
 
     const boton = crear('button', { clase: 'boton', texto: textoBoton, atributos: { type: 'submit' } });
     const formulario = crear('form', { atributos: { novalidate: true } },
@@ -165,48 +180,70 @@ async function seccionGenerales(esAdministrativo) {
         crear('h2', { texto: 'Documentos generales del club', atributos: { id: 'titulo-generales' } }));
     const avisoGenerales = aviso();
     const zona = crear('div');
-    seccion.append(crear('p', { clase: 'ayuda', texto: 'Teorías de ascenso y otros documentos para todos los deportistas.' }), avisoGenerales, zona);
+    // Buscador en vivo por título: desde 2 letras, sin tildes ni mayúsculas (como el de Deportistas).
+    const buscador = campo({
+        etiqueta: 'Buscar por título', nombre: 'buscar_general', tipo: 'search',
+        ayuda: 'Escribe al menos 2 letras.', atributos: { placeholder: 'Ej.: forma amarillo', autocomplete: 'off', 'data-prueba': 'buscar-generales' },
+    });
+    buscador.envoltura.classList.add('buscador-generales');
+    seccion.append(crear('p', { clase: 'ayuda', texto: 'Teorías de ascenso y otros documentos para todos los deportistas.' }), avisoGenerales, buscador.envoltura, zona);
+
+    let lista = [];
+    const pintar = () => {
+        vaciar(zona);
+        if (lista.length === 0) {
+            zona.append(crear('p', { texto: 'No hay documentos generales.' }));
+            return;
+        }
+        const texto = normalizarTexto(buscador.control.value);
+        const visibles = texto.length >= 2 ? lista.filter((g) => normalizarTexto(g.titulo).includes(texto)) : lista;
+        zona.append(crear('p', { clase: 'ayuda', texto: visibles.length === lista.length ? `${lista.length} documento(s).` : `${visibles.length} de ${lista.length} documento(s).`, atributos: { 'aria-live': 'polite' } }));
+        if (visibles.length === 0) {
+            zona.append(crear('p', { texto: 'Ningún título coincide con la búsqueda.' }));
+            return;
+        }
+        zona.append(tabla('Documentos generales', ['Título', 'Archivo', 'Fecha', 'Acciones'], visibles.map((g) => {
+            const acciones = crear('td', { clase: 'acciones-celda' },
+                botonDescargar(g.titulo, () => documentos.descargarGeneral(g.id, g.nombre_original), avisoGenerales));
+            if (esAdministrativo) {
+                acciones.append(
+                    ...botonReemplazar(g.titulo, FORMATOS_GENERALES, avisoGenerales, async (archivo) => {
+                        await documentos.reemplazarGeneral(g.id, archivo);
+                        notificar(`«${g.titulo}» reemplazado.`);
+                        await recargar();
+                    }),
+                    botonEliminar(g.titulo, avisoGenerales, async () => {
+                        await documentos.eliminarGeneral(g.id);
+                        notificar(`«${g.titulo}» eliminado.`);
+                        await recargar();
+                    }),
+                );
+            }
+            return crear('tr', {},
+                crear('td', { texto: g.titulo }),
+                crear('td', { texto: g.nombre_original }),
+                crear('td', { texto: textoFecha(g.fecha_carga) }),
+                acciones);
+        })));
+    };
+    buscador.control.addEventListener('input', pintar);
 
     const recargar = async () => {
         cargando(zona);
-        let lista;
         try {
             lista = await documentos.listarGenerales();
         } catch (error) {
             errorEn(zona, error);
             return;
         }
-        vaciar(zona);
-        if (lista.length === 0) zona.append(crear('p', { texto: 'No hay documentos generales.' }));
-        else {
-            zona.append(tabla('Documentos generales', ['Título', 'Archivo', 'Fecha', 'Acciones'], lista.map((g) => {
-                const acciones = crear('td', { clase: 'acciones-celda' },
-                    botonDescargar(g.titulo, () => documentos.descargarGeneral(g.id, g.nombre_original), avisoGenerales));
-                if (esAdministrativo) {
-                    acciones.append(
-                        ...botonReemplazar(g.titulo, FORMATOS_GENERALES, avisoGenerales, async (archivo) => {
-                            await documentos.reemplazarGeneral(g.id, archivo);
-                            notificar(`«${g.titulo}» reemplazado.`);
-                            await recargar();
-                        }),
-                        botonEliminar(g.titulo, avisoGenerales, async () => {
-                            await documentos.eliminarGeneral(g.id);
-                            notificar(`«${g.titulo}» eliminado.`);
-                            await recargar();
-                        }),
-                    );
-                }
-                return crear('tr', {},
-                    crear('td', { texto: g.titulo }),
-                    crear('td', { texto: g.nombre_original }),
-                    crear('td', { texto: textoFecha(g.fecha_carga) }),
-                    acciones);
-            })));
-        }
+        pintar();
     };
 
     if (esAdministrativo) {
-        const titulo = campo({ etiqueta: 'Título', nombre: 'titulo', atributos: { maxlength: 150 } });
+        const titulo = campo({
+            etiqueta: 'Título', nombre: 'titulo', atributos: { maxlength: 150 },
+            ayuda: 'Recomendación: nombra el archivo así → Tipo (Teoría, Forma, Llave) + Grado (Ingresado, Amarillo, Azul) + número o nombre. Ej.: Forma Ingresado  Cruz 1 · Llave Naranja n°3, Rézame',
+        });
         seccion.append(crear('h3', { texto: 'Subir documento general' }), formularioSubida({
             extra: titulo,
             alSubir: async (archivo, _tipo, textoTitulo) => {

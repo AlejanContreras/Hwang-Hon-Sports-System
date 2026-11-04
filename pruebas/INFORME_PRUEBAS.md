@@ -1,6 +1,8 @@
 # Informe de pruebas — HwangHon-Sports-System
 
-- **Corrida final:** 31/10/2026 (hora de Bogotá): API, front, baterías, humo y comparación de cuentas en la misma corrida.
+- **Última ronda:** final corta del 06/11/2026 (corrida el 04/11 por la tarde, hora de Bogotá), sobre el front final con DEF-02 y OBS-04 corregidos. Ver **§10**.
+- **Ronda anterior:** 04/11/2026, sobre el front final. Ver **§9**.
+- **Corrida anterior:** 31/10/2026 (hora de Bogotá): API, front, baterías, humo y comparación de cuentas en la misma corrida.
 - **Código probado:** commit `b33d53f` (front con panel lateral fijo con iconos, sin cabecera; «Cerrar sesión» en Cuentas / Mi perfil). El backend es el mismo de `5fca1f7`.
 - **Contrato:** `documentacion/api/catalogo_api.md` (95 acciones, 14 recursos).
 - **Entorno:** base aparte `hwanghon_pruebas` (MariaDB 10.11), PHP 8.3 con `php -S` y `router_aislado.php`, Chrome 153 sin interfaz, Newman 6.2, pytest 9 y Selenium 4.52. Todo con datos ficticios. La base `hwanghon` y `backend/Almacenamiento/` del proyecto no se tocaron.
@@ -17,7 +19,9 @@
 | Humo del hosting (`humo_hosting.py`) | Contra el servidor aislado + control negativo | ✅ **16 / 16**; el control negativo detecta sus 4 fallos |
 | Cuenta de desarrollador frente a `maestro@` (`comparar_cuentas.py`) | 215 peticiones × 2 cuentas + 8 llamadas directas | ✅ **sin diferencias** (§6) |
 
-**Conclusión:** la API cumple el catálogo en las 95 acciones, en las dos formas de URL: códigos, formato de respuesta, forma de `datos`, mensajes de error, sesiones por ámbito, CSRF y descargas. Los flujos clave del front funcionan de punta a punta en escritorio y en celular, sin errores de JavaScript y sin desborde horizontal en 390 px. Se encontró **1 defecto del front, de severidad baja** (DEF-01). El riesgo de las baterías (R-01) **quedó mitigado**; hay y **tres observaciones de documentación** (OBS-01 a OBS-03). Ninguno bloquea la entrega.
+**Estado al cierre (ronda final, §10):** DEF-01, DEF-02 (en el front) y OBS-04 cerrados; Selenium **65 / 65**.
+
+**Conclusión (31/10):** la API cumple el catálogo en las 95 acciones, en las dos formas de URL: códigos, formato de respuesta, forma de `datos`, mensajes de error, sesiones por ámbito, CSRF y descargas. Los flujos clave del front funcionan de punta a punta en escritorio y en celular, sin errores de JavaScript y sin desborde horizontal en 390 px. Se encontró **1 defecto del front, de severidad baja** (DEF-01). El riesgo de las baterías (R-01) **quedó mitigado**; hay y **tres observaciones de documentación** (OBS-01 a OBS-03). Ninguno bloquea la entrega.
 
 ## 2. Detalle por parte
 
@@ -84,7 +88,7 @@ Salidas completas: `resultados/baterias/`.
 
 ## 3. Defectos
 
-### DEF-01 · Front · Severidad BAJA · Intermitente — El ingreso muestra «No autenticado…» en vez de «Tu sesión ya no es válida.»
+### DEF-01 · Front · Severidad BAJA · ✅ CORREGIDO (verificado el 04/11, 3 de 3) — El ingreso muestra «No autenticado…» en vez de «Tu sesión ya no es válida.»
 
 - **Dónde:** `frontend/js/sesion.js` (`exigirSesion` → `alVencerSesion` → `volverAlIngreso`) y `frontend/js/api.js` (`solicitar`, rama 401).
 - **Pasos para reproducirlo:**
@@ -97,7 +101,23 @@ Salidas completas: `resultados/baterias/`.
 - **Causa:** la API responde «Tu sesión ya no es válida.» solo a la **primera** petición, y en esa misma petición destruye la sesión; las peticiones paralelas reciben «No autenticado…». Cada 401 llama a `volverAlIngreso(error.message)`, que **sobrescribe** el motivo guardado. Gana el último 401 en llegar.
 - **Impacto:** solo el texto. La persona vuelve al ingreso de todos modos, pero no entiende que la causa fue un cambio de contraseña.
 - **Sugerencia (para el chat de front):** en `sesion.js`, guardar solo el **primer** motivo, por ejemplo con una bandera `saliendo` que ignore los 401 siguientes.
-- **Estado:** se reprodujo el 30/10 con el front anterior. En `b33d53f`, `volverAlIngreso` sigue igual, así que el defecto sigue presente por revisión de código. Este flujo ya no está en la suite de 10, que se acotó el 31/10; se puede repetir a mano con los pasos de arriba.
+- **Estado:** se reprodujo el 30/10 con el front anterior. **Corregido en el árbol de trabajo del 04/11:** `volverAlIngreso` ahora tiene la bandera `saliendo`. La prueba `test_2m_def01_tres_de_tres` dio «Tu sesión ya no es válida.» en 3 de 3 intentos con Asistencia.
+
+### DEF-02 · Backend (se ve en el front) · Severidad BAJA · ✅ CORREGIDO EN EL FRONT (verificado en la ronda final, §10) — Fechas ISO en los nombres de los eventos que crea una sesión de examen
+
+- **Dónde:** `backend/Src/Services/EvaluacionService.php:160-161`: `$nombreExamen = "Exámenes de ascenso {$fecha}"` y `$nombreGrado = "Grado {$fechaGrado}"`.
+- **Pasos para reproducirlo:**
+  1. En Ascensos, crea una sesión de examen (inicio y grado con cualquier fecha).
+  2. Abre el Inicio (administrativo o deportista) o el Calendario.
+- **Resultado esperado:** ninguna fecha visible en formato AAAA-MM-DD (criterio de la ronda; el front muestra DD/MM/AAAA).
+- **Resultado obtenido:**
+  - Inicio, «Próximas fechas»: «Grados: Grado 2026-11-04».
+  - Inicio del deportista, tarjeta «Próximo torneo o ascenso»: «Grado 2026-11-04», que a 390 px además se parte en «2026-11-» / «04».
+  - Calendario: «Exámenes de ascenso 2026-11-01» y «Grado 2026-11-04».
+- **Causa:** el nombre del evento lo arma el backend con la fecha ISO y el front lo muestra tal cual, porque es el nombre guardado.
+- **Sugerencia:** que el backend no ponga la fecha en el nombre (ya va en el campo `fecha`), por ejemplo «Exámenes de ascenso» / «Ceremonia de grados». Otra opción es formatearla DD/MM/AAAA. Los eventos ya creados conservan su nombre, salvo que se editen en Calendario.
+- **Prueba que lo cubre:** `test_vistas.py` marca `xfail` con «DEF-02» mientras aparezca. Cuando se corrija, pasa sola.
+- **Estado (ronda final):** corregido **al mostrar**. `ui.js` agrega `textoConFechas()` / `formatearTextoConFechas()`, que pasan las fechas AAAA-MM-DD de los nombres a DD/MM/AAAA, cada una en un `<span class="fecha-en-texto">` que no se parte. Inicio y Calendario, en los dos ámbitos y los dos dispositivos, ya no muestran fechas ISO, y se ve «Exámenes de ascenso DD/MM/AAAA» (`test_def02_…`, 2/2). `test_vistas.py` ya no da `xfail`. **Queda en el backend:** `EvaluacionService.php:160-161` sigue guardando el nombre con la fecha ISO. No se ve en el front, pero sí sale en la API y en lo que la lea sin pasar por el front (por ejemplo, exportaciones). Se deja anotado; no bloquea.
 
 ## 4. Riesgo encontrado en las baterías existentes
 
@@ -182,3 +202,98 @@ Salidas completas: `resultados/baterias/`.
 10. **Bloqueo por intentos:** se probó 4, como dicen el catálogo y la decisión del 14/10 (antes eran 5 para el público).
 11. **R-01 (31/10):** «que no venga de `ejecutar_baterias_aisladas.py`» se implementa con `PRUEBAS_AISLADAS=1` + `DB_NAME=hwanghon_pruebas` + `BACKEND_PRUEBAS` dentro de `pruebas/entorno/app/backend`. La guarda «Apache» trata como XAMPP cualquier URL sin puerto explícito.
 12. **Commits:** no se hizo ninguno; los archivos quedan en `pruebas/` para que los revises y los subas tú.
+
+## 9. Ronda del 04/11/2026 — front final (bloques A, B y C + buscador de documentos generales)
+
+- **Código probado:** commit `47f772a` más el **árbol de trabajo sin commit** de tu computador al 04/11 (bloques A, B y C del front, `formulario-deportista.js`, `recuperar.html`, `plantilla_importar_eventos.csv`). El backend no cambió.
+- **Entorno:** el de siempre (base aparte `hwanghon_pruebas`, copia aislada, puerto 8095). La copia ahora pone `url_restablecimiento` en `frontend/recuperar.html` (`entorno.py` y `entorno_limpio.py`).
+
+| Parte | Resultado |
+|---|---|
+| Selenium, 10 flujos × escritorio y 390 px | ✅ **20 / 20**. Un solo selector cambió: «Lugar» de la sesión de examen ahora es `<select>` (el flujo 7 elige «Otro lugar…» y escribe en `lugar_otro`). Sede, tarjetas de documentos, formulario compartido y panel lateral no rompieron selectores. |
+| Flujos nuevos 2a–2m (`test_ronda_front_final.py`) | ✅ **14 / 14** (2e corre en escritorio y en 390 px) |
+| Cinturón (marrón franja negra y negro, en inicio y perfil) | ✅ cuerpo `#7a4a24` y nudo/colas `#1a1a1a`; negro puro, todo `#1a1a1a` |
+| Todas las vistas, 2 ámbitos × 2 dispositivos × claro/oscuro (`test_vistas.py`) | ✅ sin errores de JS y sin desborde de página a 390 px · ❌ **DEF-02**, fechas ISO visibles (4 xfail) |
+| Revisión estática (`revision_estatica.py`) | ✅ 0 `innerHTML`/`outerHTML`/`insertAdjacentHTML`/`document.write`, 0 «Juangón». Una sola fecha ISO literal: el ejemplo del formato CSV en Calendario («ej. 2027-03-20 o 20/03/2027»), justificado. |
+| Newman, forma por ruta | ✅ **1.090 / 1.090** (215 peticiones) |
+| Baterías PHP | ✅ **21 / 21, 1.808 / 1.808** |
+
+**Qué verifica cada flujo nuevo (resultado en la API):**
+
+- **2a, Calendario:** crea con los 5 tipos. Al elegir reunión, la visibilidad pasa sola a «solo administrativa» y se bloquea. Al editar se ve el tipo y no hay control para cambiarlo.
+- **2b:** importar `plantilla_importar_eventos.csv` deja los 5 eventos en la API, con sus 5 tipos.
+- **2c, Ascensos:**
+  - «Lugar» es un `<select>` con la sede principal y «Otro lugar…»;
+  - se ve el rótulo «Grado al que asciende:»;
+  - con 2 candidatos, «Guardar todas las notas» guarda las dos notas.
+- **2d, carga masiva con la plantilla PROVISIONAL:** previsualizar no guarda; aplicar crea los 2.
+- **2e, Comparar:** dos selectores con buscador, en Estadísticas y en Historial. En escritorio las columnas van lado a lado y a 390 px apiladas. El público no ve «Comparar».
+- **2f, Estadísticas / Historial:**
+  - el selector muestra el nombre del deportista;
+  - «← Volver a la ficha» aparece solo si se llegó desde la ficha;
+  - el panel resalta Estadísticas o Historial según la pestaña, en los dos ámbitos.
+- **2g, menor sin acudiente:** no se envía y el bloque se marca obligatorio; con mayor de edad vuelve a opcional. Probado en crear, editar y registro público.
+- **2h, sede como `<select>`:** muestra «Club Hwang Hon — sede principal (Ciudad Verde)» y guarda «Club Hwang Hon». Al editar se conserva «Escuela IMRDS». Probado en crear, editar y registro público.
+- **2i, recuperación de contraseña de punta a punta:**
+  - el enlace «¿Olvidaste tu contraseña?» se ve también después del bloqueo (4 fallos → 429);
+  - el `.eml` queda en `Almacenamiento/correos` de la copia, con enlace a `frontend/recuperar.html`;
+  - después de restablecer, la clave vieja da 401 y la nueva entra. No se envía correo real.
+- **2j:** la miga «← Deportistas» aparece solo al llegar desde Deportistas.
+- **2k, documentos generales:**
+  - el buscador filtra desde 2 letras, sin distinguir tildes ni mayúsculas, en los dos ámbitos;
+  - se ve la recomendación de nombre;
+  - el título se propone desde el nombre del archivo.
+- **2l, Torneos:**
+  - la etiqueta dice «Plataforma de inscripción»;
+  - el buscador muestra completo «10 dígitos + ~15 caracteres»;
+  - en la categoría de peso, `45kg` muestra el aviso y `-45` no, y se guarda;
+  - Puesto, Medalla y Resultado tienen ayuda.
+- **2m, DEF-01:** «Tu sesión ya no es válida.» en **3 de 3** intentos → **DEF-01 corregido**.
+
+**Visual (capturas en `resultados/visual/`, fuera de Git): solo lo que se ve mal**
+
+- **DEF-02** (ver §3): «Grado 2026-11-04» y «Exámenes de ascenso 2026-11-01» en el Inicio y el Calendario. A 390 px, en la tarjeta «Próximo torneo o ascenso» del deportista, la fecha se parte en «2026-11-» / «04».
+- **OBS-04 (visual, baja) · ✅ CERRADA en la ronda final (§10):** a 390 px, en el inicio del deportista, la cifra «Datos insuficientes» de la tarjeta Asistencia se sale de su caja (162 px de texto en 137 px). La página no se desborda. Fue el único texto desbordado en todas las vistas. Sugerencia: `overflow-wrap: anywhere` o una fuente más pequeña en `.cifra` cuando el valor es texto.
+- **Contraste (axe-core 4.10, regla color-contrast):** solo marca los títulos de grupo del menú lateral en tema claro y escritorio («GESTIÓN DEPORTIVA»…). Es un **falso positivo**: axe toma el fondo de la página (#f4f5f7) en vez del panel (#153a66). Con el fondo real (blanco al 75 % sobre #153a66), el contraste es de unos **7:1** (AA exige 4,5:1). No hay más problemas de contraste en ninguna vista, ni en claro ni en oscuro.
+
+**Entorno limpio (`entorno_limpio.py`):**
+
+- **URL:** `http://127.0.0.1:8096/frontend/`.
+- **Cuentas:** `aldrin@hwanghon.local` y `desarrollador@hwanghon.local`, con la clave local `Limpia2026Local`.
+- **Correos:** `pruebas/entorno/limpio/app/backend/Almacenamiento/correos/` (modo archivo; el enlace apunta a `frontend/recuperar.html`).
+- No se usó en esta ronda.
+
+## 10. Ronda final corta (06/11/2026) — DEF-02, OBS-04 y últimos cambios del front
+
+- **Código probado:** commit `47f772a` más el **árbol de trabajo sin commit** de tu computador, copiado el 04/11 a las 13:00. Incluye `ui.js`, `inicio.js`, `inicio-deportista.js`, `calendario.js`, `estadisticas.js`, `torneos.js` y `estilos.css` con las correcciones, y el logo y el favicon. Se comparó la huella de los 46 archivos de `frontend/`: la copia probada es idéntica a la de tu computador. El backend no cambió.
+- **Entorno:** el de siempre (base aparte `hwanghon_pruebas`, semilla restablecida antes de cada prueba, puerto 8095, datos ficticios).
+
+| Parte | Resultado |
+|---|---|
+| Selenium, 10 flujos × escritorio y 390 px (`test_flujos.py`) | ✅ **20 / 20**, sin cambios de selectores |
+| Flujos 2a–2m (`test_ronda_front_final.py`) | ✅ **14 / 14**. Un solo ajuste: en 2l, «Categoría de peso» ya no es texto con aviso de formato sino un `<select>`; ahora elige «juvenil» y «-45» y verifica en la API que se guardó |
+| Todas las vistas (`test_vistas.py`) y cinturón | ✅ **5 / 5**, **sin `xfail`**: ya no hay fechas ISO visibles en ninguna vista, ni texto desbordado a 390 px (los 4 `texto_desbordado_*.txt` quedan vacíos) |
+| Comprobaciones de la ronda final (`test_ronda_final_0611.py`, nuevo) | ✅ **26 / 26** (detalle abajo) |
+| **Total Selenium** | ✅ **65 / 65** en 3 min 38 s |
+| Revisión estática | ✅ 0 hallazgos, 0 fechas ISO literales |
+
+**Detalle de `test_ronda_final_0611.py`:**
+
+- **DEF-02 → ✅ cerrado** (escritorio y 390 px): Inicio y Calendario, administrativo y deportista, sin fechas AAAA-MM-DD visibles. El examen se ve como «Exámenes de ascenso DD/MM/AAAA». La única fecha ISO visible es el ejemplo de formato en la ayuda de importar CSV, que está justificado.
+- **OBS-04 → ✅ cerrada** (escritorio y 390 px): «Datos insuficientes» no se sale de su caja en el Inicio y las Estadísticas del deportista, en las Estadísticas de 1000000101 (administrativo) ni en Asistencia. La página no se desborda.
+- **Pestañas de Estadísticas:** caben en una sola fila, a la misma altura y sin scroll de la tira, en los dos ámbitos y los dos dispositivos.
+- **Select de «Categoría de peso»:** las opciones salen de la tabla del catálogo (§A, `categoria_peso`): «-X» cada 5 kg y un «+X» final.
+
+  | Categoría | Masculino | Femenino |
+  |---|---|---|
+  | Infantil | -20 a -35, +35 | -20 a -35, +35 |
+  | Juvenil | -45 a -75, +75 | -43 a -73, +73 |
+  | Mayores | -55 a -85, +85 | -50 a -80, +80 |
+
+  Se probó con 1000000101 (masculino) y 1000000102 (femenino): las tres categorías coinciden en los dos sexos. Un valor guardado que no está en la lista (`-7`) se conserva como opción extra y queda elegido al cambiar de categoría. Guardar otro campo no lo borra (verificado en la API).
+
+  > Nota: al inscribir por la API, la participación guarda la categoría calculada del deportista (1000000101 → `-50`, de Junior). Por eso, en Infantil y Mayores aparece `-50` como opción extra. Es lo esperado, porque es un valor guardado.
+- **Logo y favicon:** `favicon.ico`, `favicon.png`, `logo_hwanghon.png` y `logo_hwanghon_difuminado.png` responden `200` con tipo imagen. Las 5 páginas (`index`, `registro`, `recuperar`, `administrativo`, `publico`) enlazan los dos favicon y los dos cargan. El logo del panel (`data-prueba="logo-club"`) carga (`naturalWidth > 0`).
+- **Fondo de la tarjeta:** en `index`, `registro` y `recuperar`, el `::before` de `main` usa `logo_hwanghon.png`, que carga. A 390 px no hay scroll horizontal en ninguna de las 5 páginas.
+
+**Abierto:** nada del front. Del backend queda solo la nota de DEF-02: el nombre guardado lleva la fecha ISO.

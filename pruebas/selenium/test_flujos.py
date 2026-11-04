@@ -192,7 +192,8 @@ def test_07_sesion_examen_y_calificar(nav, api):
     formulario = nav.formulario_de("fecha_grado")
     nav.rellenar("fecha", (hoy_bogota() - timedelta(days=3)).isoformat(), formulario)
     nav.rellenar("fecha_grado", hoy_bogota().isoformat(), formulario)
-    nav.rellenar("lugar", "Sede de prueba", formulario)
+    nav.rellenar("lugar", "__otro__", formulario)            # «Lugar» es un <select>: «Otro lugar…» + texto libre
+    nav.rellenar("lugar_otro", "Sede de prueba", formulario)
     nav.clic(formulario.find_element(By.CSS_SELECTOR, ".acciones button[type='button']"))  # ver candidatos
     nav.poner(nav.visible(f"#candidato-{PUBLICO_DOC}"), True)
     nav.enviar(formulario)

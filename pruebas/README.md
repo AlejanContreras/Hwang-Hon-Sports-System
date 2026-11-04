@@ -37,7 +37,8 @@ pruebas/
 │   ├── entorno.py                  entorno aislado: copia de la app, base aparte, semilla, servidor
 │   ├── router_aislado.php          router de php -S: front y API en el mismo origen (imita a Apache)
 │   ├── humo_hosting.py             humo de solo lectura para el hosting (§4)
-│   └── comparar_cuentas.py         maestro@ frente a desarrollador@ en las 95 acciones (§5)
+│   ├── comparar_cuentas.py         maestro@ frente a desarrollador@ en las 95 acciones (§5)
+│   └── entorno_limpio.py           sistema «desde cero» para probarlo a mano (§6)
 ├── postman/
 │   ├── HwangHon_API.postman_collection.json     colección v2.1 (215 peticiones, 95/95 acciones)
 │   ├── entorno_aislado.postman_environment.json base_url del servidor aislado (recomendado)
@@ -103,7 +104,8 @@ Si cambia el catálogo: `python pruebas/postman/generar_coleccion.py` (falla si 
 ## 2. Front con Selenium (pytest)
 
 ```bash
-python -m pytest pruebas/selenium                          # 20 pruebas: 10 flujos × escritorio y celular
+python -m pytest pruebas/selenium                          # todo: 10 flujos ×2, ronda del front final y recorrido de vistas
+python -m pytest pruebas/selenium/test_flujos.py           # solo los 10 flujos (escritorio y celular)
 python -m pytest pruebas/selenium --dispositivo celular    # solo celular (viewport 390x844, emulación móvil)
 python -m pytest pruebas/selenium -k pago                  # un flujo
 set SELENIUM_VISIBLE=1  (PowerShell: $env:SELENIUM_VISIBLE=1)   # ver el navegador en vez de headless
@@ -121,6 +123,24 @@ Flujos (`test_flujos.py`, uno por función `test_01` … `test_10`):
 8. exportar un reporte;
 9. carga masiva CSV (previsualizar y aplicar);
 10. Cuentas («Mi cuenta» y «Cuentas del club») y cerrar sesión.
+
+Además:
+
+- **`test_ronda_front_final.py`** (ronda del 04/11, flujos 2a–2m): calendario con los 5 tipos e importación CSV, «Guardar todas las notas», plantilla de carga masiva, Comparar (también a 390 px), Estadísticas/Historial, acudiente obligatorio, sede como `<select>`, recuperación de contraseña de punta a punta (lee el `.eml` de `entorno/app/backend/Almacenamiento/correos`), miga de carga masiva, buscador de documentos generales, torneos y DEF-01. La mayoría corre solo en escritorio (marcador `solo_escritorio`).
+- **`test_ronda_final_0611.py`** (ronda final del 06/11): sin fechas AAAA-MM-DD visibles en Inicio y Calendario (DEF-02), «Datos insuficientes» sin desbordar a 390 px (OBS-04), pestañas de Estadísticas en una fila, select de «Categoría de peso» por edad y sexo (Infantil, Juvenil y Mayores; conserva un valor guardado fuera de la lista), logo y favicon, y fondo de la tarjeta sin scroll horizontal a 390 px.
+- **`test_vistas.py`** recorre todas las vistas de los dos ámbitos, en claro y oscuro:
+  - sin errores de JavaScript;
+  - sin desborde horizontal a 390 px;
+  - sin fechas ISO visibles.
+
+  Deja también, en `resultados/visual/`:
+  - capturas del inicio;
+  - el cinturón marrón franja negra;
+  - el contraste con axe-core (`contraste.json`);
+  - los textos que se salen de su caja (`texto_desbordado_*.txt`).
+
+  Para el contraste, una vez: `cd pruebas/selenium && npm install axe-core@4.10.2`. Sin axe-core, ese paso se salta.
+- **`python pruebas/herramientas/revision_estatica.py`**: busca en `frontend/` `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, «Juangón» y fechas ISO literales.
 
 **Selectores estables:** `id`, el atributo `name` de los campos (es el nombre del dato de la API), `data-prueba` (menú `menu-<clave>`, `cerrar-sesion`, `cambiar-contrasena`) y `aria-label`. No se usan los textos de los botones. El resultado de cada acción se comprueba **contra la API** (lo que quedó guardado), no contra mensajes de pantalla. En cada flujo se revisa además que no haya errores de JavaScript ni desborde horizontal. Si una prueba falla, deja una captura en `resultados/capturas/`.
 
@@ -159,6 +179,29 @@ python pruebas/postman/ejecutar_newman.py --correo-admin desarrollador@hwanghon.
 ```
 
 Corre la colección completa con cada cuenta en la sesión administrativa (`correo_admin`) y compara petición por petición. También llama directo a las acciones administrativas que la colección hace con otra sesión. Resultado en `resultados/comparacion_cuentas.txt`.
+
+## 6. Entorno limpio «desde cero» (para probar a mano)
+
+```bash
+python pruebas/herramientas/entorno_limpio.py crear     # base vacía + cuentas iniciales + servidor
+python pruebas/herramientas/entorno_limpio.py detener      # apaga el servidor, SIN borrar datos
+python pruebas/herramientas/entorno_limpio.py iniciar      # lo vuelve a arrancar (p. ej. tras reiniciar el PC), con el mismo código
+python pruebas/herramientas/entorno_limpio.py actualizar   # tras corregir código: trae backend/frontend nuevos y conserva base y archivos
+python pruebas/herramientas/entorno_limpio.py borrar       # apaga el servidor y elimina la base y la copia
+```
+
+Sirve para usar el sistema como la primera vez real: sin semilla ni datos. **Ojo:** el entorno usa una COPIA del código hecha al crearlo. Después de corregir código, usa `actualizar`; con `iniciar` seguirías probando el código viejo.
+
+- **Base:** `hwanghon_limpia`, creada solo con `esquema_hwanghon_v4.sql`. No toca `hwanghon` ni `hwanghon_pruebas`.
+- **Cuentas iniciales:** las crea `backend/Instalacion/crear_cuentas_iniciales.php` (de la copia):
+  - `aldrin@hwanghon.local`, la fundadora;
+  - `desarrollador@hwanghon.local`.
+- **Contraseña local de prueba:** `Limpia2026Local`, para las dos cuentas. `crear` la imprime al terminar, junto con la URL.
+- **URL:** `http://127.0.0.1:8096/frontend/`.
+
+> **Solo local.** Esos correos y esa contraseña son de prueba y **nunca** van a producción. En el hosting, las cuentas se crean con el instalador, que pide correo y clave reales por consola (o `--sql` para phpMyAdmin).
+
+**Tus archivos quedan separados.** Lo que subas en este entorno (cédula, foto, documentos) queda **solo** en `pruebas/entorno/limpio/app/backend/Almacenamiento/`, una copia propia que Git ignora y que `borrar` elimina. Esa carpeta nunca se mezcla con la base ni con el `Almacenamiento` real del proyecto, ni con los del entorno de pruebas automáticas. El correo de esa copia va en modo `archivo`: nunca envía nada.
 
 ## Variables de entorno (opcionales)
 

@@ -148,7 +148,8 @@ export function crear(nombre, { tamano = 20, grosor = 2, clase = 'icono' } = {})
 
 // Cinturón grande con relleno del color del grado (tarjeta «Grado actual» del deportista).
 // El trazo usa el color del texto para que el cinturón blanco o el negro se vean en los dos temas.
-export function crearCinturonDeColor(color, { tamano = 72, titulo = '' } = {}) {
+// nudo: color del nudo y las puntas (marrón franja negra: cuerpo marrón, nudo y puntas negros).
+export function crearCinturonDeColor(color, { tamano = 72, titulo = '', nudo = null } = {}) {
     const svg = nodoSvg('svg', {
         xmlns: ESPACIO_SVG, width: tamano * 1.6, height: tamano, viewBox: '0 0 40 25', class: 'cinturon-grado',
         ...(titulo ? { role: 'img' } : { 'aria-hidden': 'true' }),
@@ -159,11 +160,12 @@ export function crearCinturonDeColor(color, { tamano = 72, titulo = '' } = {}) {
         svg.append(t);
     }
     const trazo = { fill: color, stroke: 'currentColor', 'stroke-width': 1.2, 'stroke-linejoin': 'round' };
+    const trazoNudo = { ...trazo, fill: nudo || color };
     svg.append(
         nodoSvg('rect', { x: 1, y: 6, width: 38, height: 6, rx: 1.5, ...trazo }),
-        nodoSvg('path', { d: 'M17 12 13 23l4-1 3-10Z', ...trazo }),
-        nodoSvg('path', { d: 'M23 12l4 11-4-1-3-10Z', ...trazo }),
-        nodoSvg('rect', { x: 16, y: 4, width: 8, height: 10, rx: 2.5, ...trazo }),
+        nodoSvg('path', { d: 'M17 12 13 23l4-1 3-10Z', ...trazoNudo, class: 'punta' }),
+        nodoSvg('path', { d: 'M23 12l4 11-4-1-3-10Z', ...trazoNudo, class: 'punta' }),
+        nodoSvg('rect', { x: 16, y: 4, width: 8, height: 10, rx: 2.5, ...trazoNudo, class: 'nudo' }),
     );
     return svg;
 }

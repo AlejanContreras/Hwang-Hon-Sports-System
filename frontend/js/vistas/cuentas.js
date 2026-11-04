@@ -20,18 +20,18 @@ function campoContrasena(etiqueta, nombre, autocompletar = 'new-password') {
 }
 
 // ===========================================================================
-// Cuentas (#cuentas): «Mi cuenta» para cualquier cuenta administrativa y, debajo, «Cuentas del
-// club» solo para la cuenta principal (las demás ni la piden: la API les daría 403).
+// Cuentas (#cuentas): título «Cuentas administrativas» para la cuenta principal y «Mi cuenta» para
+// las demás. «Mi cuenta» para cualquier cuenta administrativa y, debajo, «Cuentas del club» solo para la cuenta principal (las demás ni la piden: la API les daría 403).
 // ===========================================================================
 export async function mostrarCuentas(contenedor, sesion) {
     contenedor.append(
-        crear('div', { clase: 'encabezado-vista' }, crear('h1', { texto: 'Cuentas' })),
+        crear('div', { clase: 'encabezado-vista' }, crear('h1', { texto: sesion.es_administrador_principal ? 'Cuentas administrativas' : 'Mi cuenta' })),
         seccionMiCuenta(sesion));
     if (!sesion.es_administrador_principal) return;
 
     const zona = crear('div', { atributos: { id: 'cuentas-del-club' } });
     contenedor.append(
-        crear('h2', { clase: 'titulo-seccion', texto: 'Cuentas del club' }),
+        crear('h2', { clase: 'titulo-seccion', texto: 'Cuentas del club', atributos: { id: 'titulo-cuentas-del-club' } }),
         crear('p', { clase: 'ayuda', texto: 'Las cuentas nunca se borran: se desactivan. Las cuentas principales no se desactivan desde la aplicación.' }),
         zona);
 
@@ -75,7 +75,8 @@ function seccionMiCuenta(sesion) {
         })),
         crear('div', { clase: 'par' }, crear('dt', { texto: 'Tipo' }), crear('dd', {}, sesion.es_administrador_principal ? insignia('Principal', 'pendiente') : 'No principal')));
     return crear('section', { clase: 'tarjeta', atributos: { 'aria-labelledby': 'titulo-mi-cuenta', id: 'mi-cuenta' } },
-        crear('h2', { texto: 'Mi cuenta', atributos: { id: 'titulo-mi-cuenta' } }),
+        // Sin cuenta principal el título de la pantalla ya es «Mi cuenta»: el de la sección queda para lectores.
+        crear('h2', { clase: sesion.es_administrador_principal ? null : 'solo-lectores', texto: 'Mi cuenta', atributos: { id: 'titulo-mi-cuenta' } }),
         lista,
         crear('div', { clase: 'acciones' },
             crear('a', { clase: 'boton', texto: 'Cambiar mi contraseña', atributos: { href: '#mi-contrasena', 'data-prueba': 'cambiar-contrasena' } }),

@@ -201,6 +201,29 @@ export function textoFecha(fecha) {
     return partes ? `${partes[3]}/${partes[2]}/${partes[1]}` : fecha;
 }
 
+// DEF-02: los nombres de eventos que arma el backend traen fechas AAAA-MM-DD (p. ej. «Grado
+// 2026-11-04»). Al MOSTRARLOS se pasan a DD/MM/AAAA; lo que se envía a la API no cambia.
+const FECHA_ISO_EN_TEXTO = /\b(\d{4})-(\d{2})-(\d{2})\b/g;
+
+export function formatearTextoConFechas(texto) {
+    return String(texto ?? '').replace(FECHA_ISO_EN_TEXTO, '$3/$2/$1');
+}
+
+// Igual, pero como nodos para crear(): cada fecha va en un <span class="fecha-en-texto"> que no se
+// parte en dos líneas. Uso: crear('a', {}, ...textoConFechas(evento.nombre)).
+export function textoConFechas(texto) {
+    const nodos = [];
+    let ultimo = 0;
+    const original = String(texto ?? '');
+    for (const m of original.matchAll(FECHA_ISO_EN_TEXTO)) {
+        if (m.index > ultimo) nodos.push(original.slice(ultimo, m.index));
+        nodos.push(crear('span', { clase: 'fecha-en-texto', texto: `${m[3]}/${m[2]}/${m[1]}` }));
+        ultimo = m.index + m[0].length;
+    }
+    if (ultimo < original.length) nodos.push(original.slice(ultimo));
+    return nodos;
+}
+
 export const GRADOS = ['Blanco', 'Amarillo', 'Naranja', 'Verde', 'Azul', 'Rojo', 'Violeta', 'Marrón', 'Marrón franja negra', 'Negro'];
 
 // grado_actual null = Ingresado (A.7). Se respeta lo guardado, solo se capitaliza.

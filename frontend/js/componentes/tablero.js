@@ -52,9 +52,10 @@ export function tarjetaDato({ id, titulo, icono, cargar }) {
 
 // Chip con el color del cinturón y el nombre del grado.
 export function chipGrado(grado) {
-    const { color } = colorDeGrado(grado);
-    const muestra = crear('span', { clase: 'muestra-grado', atributos: { 'aria-hidden': 'true' } });
+    const { color, nudo } = colorDeGrado(grado);
+    const muestra = crear('span', { clase: nudo ? 'muestra-grado con-nudo' : 'muestra-grado', atributos: { 'aria-hidden': 'true' } });
     muestra.style.setProperty('--color-grado', color);
+    if (nudo) muestra.style.setProperty('--color-nudo', nudo);
     return crear('span', { clase: 'chip-grado' }, muestra, nombreDeGrado(grado));
 }
 

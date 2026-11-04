@@ -5,6 +5,7 @@
 import { autorregistro } from './api.js';
 import { crear, vaciar, mostrarAviso, limpiarAviso, notificar, campo, conBotonOcupado, cargando, textoFecha } from './ui.js';
 import { TIPOS, textoTipo, tabla, formularioSubida, botonReemplazar, botonEliminar } from './vistas/documentos.js';
+import { SEDE_PRINCIPAL, opcionesSede, acudienteSegunEdad } from './componentes/formulario-deportista.js';
 
 const zona = document.getElementById('zona-registro');
 
@@ -50,7 +51,7 @@ function mostrarFormulario() {
             { etiqueta: 'Sexo', nombre: 'sexo', tipo: 'select', obligatorio: true, opciones: [{ valor: '', texto: 'Selecciona…' }, { valor: 'masculino', texto: 'Masculino' }, { valor: 'femenino', texto: 'Femenino' }] },
             { etiqueta: 'Estatura (m)', nombre: 'estatura', tipo: 'number', obligatorio: true, ayuda: 'En metros, p. ej. 1.55', atributos: { step: '0.01', min: '0.01', max: '99.99', inputmode: 'decimal' } },
             { etiqueta: 'Peso (kg)', nombre: 'peso', tipo: 'number', obligatorio: true, atributos: { step: '0.01', min: '0.01', max: '999.99', inputmode: 'decimal' } },
-            { etiqueta: 'Sede de entrenamiento', nombre: 'sede_entrenamiento', atributos: { maxlength: 100 } },
+            { etiqueta: 'Sede de entrenamiento', nombre: 'sede_entrenamiento', tipo: 'select', valor: SEDE_PRINCIPAL, opciones: opcionesSede() },
         ]),
         grupo('Contacto', null, [
             { etiqueta: 'Teléfono', nombre: 'telefono', tipo: 'tel', ayuda: 'Dígitos, espacios y + inicial.', atributos: { maxlength: 20 } },
@@ -61,7 +62,7 @@ function mostrarFormulario() {
             { etiqueta: 'Condición de salud', nombre: 'discapacidad', ancho: true, ayuda: 'Discapacidad o condición que el club debe conocer.', atributos: { maxlength: 255 } },
             { etiqueta: 'Experiencia previa', nombre: 'experiencia_previa', tipo: 'textarea', ancho: true, ayuda: 'Club, maestro, grado alcanzado y año, si practicaste antes.', atributos: { maxlength: 16000 } },
         ]),
-        grupo('Acudiente', 'Obligatorio si el deportista es menor de 18 años: nombre y relación son obligatorios.', [
+        grupo('Acudiente', 'Obligatorio si el deportista es menor de 18 años: documento, nombre y relación.', [
             { etiqueta: 'Documento del acudiente', nombre: 'acudiente_documento', atributos: { maxlength: 20, inputmode: 'numeric', autocomplete: 'off' } },
             { etiqueta: 'Nombre del acudiente', nombre: 'acudiente_nombre', atributos: { maxlength: 150 } },
             { etiqueta: 'Relación', nombre: 'acudiente_relacion', ayuda: 'Madre, padre, tío…', atributos: { maxlength: 30 } },
@@ -69,6 +70,11 @@ function mostrarFormulario() {
             { etiqueta: 'Correo del acudiente', nombre: 'acudiente_correo', tipo: 'email', atributos: { maxlength: 150 } },
         ]),
     );
+
+    // B1: el acudiente pasa a obligatorio según la fecha de nacimiento.
+    const notaMenor = crear('p', { clase: 'aviso aviso-advertencia', atributos: { hidden: true, 'data-prueba': 'acudiente-obligatorio' } });
+    c.acudiente_documento.closest('.rejilla-campos').before(notaMenor);
+    const faltaAcudiente = acudienteSegunEdad({ controlFecha: c.fecha_nacimiento, controles: [c.acudiente_documento, c.acudiente_nombre, c.acudiente_relacion], nota: notaMenor });
 
     // Campo trampa (B.4): oculto, vacío y fuera del orden de tabulación.
     const trampa = crear('input', { atributos: { type: 'text', name: 'sitio_web', tabindex: '-1', autocomplete: 'off' } });
@@ -82,6 +88,12 @@ function mostrarFormulario() {
     formulario.addEventListener('submit', async (evento) => {
         evento.preventDefault();
         limpiarAviso(aviso);
+        const falta = faltaAcudiente();
+        if (falta) {
+            mostrarAviso(aviso, 'El deportista es menor de 18 años: completa el documento, el nombre y la relación del acudiente.', 'error');
+            falta.focus();
+            return;
+        }
         const datos = { autorizacion_datos: autorizacion.control.checked, sitio_web: trampa.value };
         for (const nombre of ['documento', 'nombre', 'fecha_nacimiento', 'lugar_nacimiento', 'sexo', 'sede_entrenamiento', 'telefono', 'correo', 'direccion', 'discapacidad', 'experiencia_previa']) {
             const v = textoONulo(c[nombre]);

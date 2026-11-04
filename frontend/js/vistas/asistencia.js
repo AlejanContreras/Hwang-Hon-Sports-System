@@ -277,7 +277,7 @@ function pintarCorreccion(zona, pantalla) {
                 'Úsalo solo si la fecha se tomó por error. Las reactivaciones no se revierten. No se puede deshacer.'],
             textoAceptar: 'Eliminar la fecha',
             peligroso: true,
-            textoConfirmacion: pantalla.fecha,
+            textoConfirmacion: textoFecha(pantalla.fecha),
         });
         if (!aceptar) return;
         try {

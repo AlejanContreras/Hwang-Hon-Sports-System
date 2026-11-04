@@ -6,3 +6,7 @@ resultados/
 postman/archivos/
 __pycache__/
 .pytest_cache/
+# axe-core para el contraste de test_vistas.py (npm install axe-core en pruebas/selenium)
+selenium/node_modules/
+selenium/package.json
+selenium/package-lock.json

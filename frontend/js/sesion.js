@@ -28,7 +28,13 @@ export function leerMotivoSalida() {
     }
 }
 
+// DEF-01: si varias peticiones paralelas reciben 401, solo cuenta la primera («Tu sesión ya no es
+// válida.»); las siguientes («No autenticado…») no sobrescriben el motivo.
+let saliendo = false;
+
 function volverAlIngreso(mensaje) {
+    if (saliendo) return;
+    saliendo = true;
     if (mensaje) guardarMotivoSalida(mensaje);
     window.location.replace(PAGINA_INGRESO);
 }

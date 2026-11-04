@@ -8,6 +8,7 @@ import {
     crear, vaciar, mostrarAviso, limpiarAviso, notificar, confirmar, campo, conBotonOcupado, cargando,
     textoFecha, textoDato, textoGrado, insignia, GRADOS, normalizarTexto,
 } from '../ui.js';
+import { SEDE_PRINCIPAL, ETIQUETA_SEDE_PRINCIPAL } from '../componentes/formulario-deportista.js';
 
 const MODALIDADES = [
     { valor: 'teorico', texto: 'Teórico' },
@@ -19,6 +20,30 @@ const MODALIDADES = [
 ];
 const textoModalidad = (valor) => MODALIDADES.find((m) => m.valor === valor)?.texto ?? valor;
 const provisional = () => insignia('PROVISIONAL', 'pendiente');
+
+// Lugar de la sesión: la sede principal o «Otro lugar…» con texto libre (B3).
+const OTRO_LUGAR = '__otro__';
+function campoLugar(valorActual = '', obligatorio = false) {
+    const actual = (valorActual ?? '').trim();
+    const esOtro = Boolean(actual) && actual !== SEDE_PRINCIPAL;
+    const eleccion = campo({
+        etiqueta: 'Lugar', nombre: 'lugar', tipo: 'select', obligatorio, valor: esOtro ? OTRO_LUGAR : SEDE_PRINCIPAL,
+        opciones: [{ valor: SEDE_PRINCIPAL, texto: ETIQUETA_SEDE_PRINCIPAL }, { valor: OTRO_LUGAR, texto: 'Otro lugar…' }],
+    });
+    const otro = campo({ etiqueta: '¿Cuál lugar?', nombre: 'lugar_otro', obligatorio: true, valor: esOtro ? actual : '', atributos: { maxlength: 150 } });
+    const mostrarOtro = () => { otro.envoltura.hidden = eleccion.control.value !== OTRO_LUGAR; };
+    eleccion.control.addEventListener('change', () => {
+        mostrarOtro();
+        if (!otro.envoltura.hidden) otro.control.focus();
+    });
+    mostrarOtro();
+    return {
+        envolturas: [eleccion.envoltura, otro.envoltura],
+        // Texto que se envía como «lugar» (vacío → null).
+        valor: () => (eleccion.control.value === OTRO_LUGAR ? otro.control.value.trim() : SEDE_PRINCIPAL) || null,
+        controlOtro: otro.control,
+    };
+}
 
 function avisoNuevo() {
     return crear('div', { atributos: { hidden: true } });
@@ -95,7 +120,8 @@ function listaCandidatos(candidatos, yaInscritos = new Set()) {
     for (const c of candidatos.filter((x) => !yaInscritos.has(x.documento))) {
         const id = `candidato-${c.documento}`;
         const casilla = crear('input', { atributos: { type: 'checkbox', id, value: c.documento } });
-        const grado = crear('select', { atributos: { 'aria-label': `Grado a evaluar de ${c.nombre}` } },
+        const idGrado = `grado-candidato-${c.documento}`;
+        const grado = crear('select', { atributos: { id: idGrado, 'aria-label': `Grado al que asciende ${c.nombre}` } },
             ...opcionesGrado(c.grado_siguiente).map((o) => crear('option', { texto: o.texto, atributos: { value: o.valor } })));
         grado.value = gradoEquivalente(c.grado_siguiente);
         const apto = c.apto === null ? insignia('Sin datos', 'inactivo') : c.apto ? insignia('Apto', 'activo') : insignia('Revisar', 'deuda');
@@ -106,7 +132,7 @@ function listaCandidatos(candidatos, yaInscritos = new Set()) {
             crear('label', { atributos: { for: id } }, crear('strong', { texto: c.nombre }), ` · ${c.documento} `, apto, crear('br'),
                 crear('span', { clase: 'ayuda', texto: detalle }),
                 c.avisos.length ? crear('span', { clase: 'salud', texto: ` ${c.avisos.join(' ')}` }) : null),
-            grado));
+            crear('span', { clase: 'grado-asciende' }, crear('label', { texto: 'Grado al que asciende:', atributos: { for: idGrado } }), grado)));
     }
     const elegidos = () => filas.filter((f) => f.casilla.checked).map((f) => ({ deportista_documento: f.documento, grado_evaluado: f.grado.value }));
     return { nodo: filas.length ? lista : crear('p', { texto: 'No hay candidatos disponibles.' }), elegidos };
@@ -120,8 +146,8 @@ export function mostrarNuevaSesion(contenedor) {
     const c = {
         fecha: campo({ etiqueta: 'Inicio de los exámenes', nombre: 'fecha', tipo: 'date', obligatorio: true }),
         fecha_grado: campo({ etiqueta: 'Fecha de grado', nombre: 'fecha_grado', tipo: 'date', obligatorio: true }),
-        lugar: campo({ etiqueta: 'Lugar', nombre: 'lugar', obligatorio: true, atributos: { maxlength: 150 } }),
     };
+    const lugar = campoLugar('', true);
     const zonaCandidatos = crear('div');
     let seleccion = () => [];
     const botonCandidatos = crear('button', { clase: 'boton boton-secundario', texto: 'Ver candidatos para esa fecha', atributos: { type: 'button' } });
@@ -146,7 +172,7 @@ export function mostrarNuevaSesion(contenedor) {
     const boton = crear('button', { clase: 'boton', texto: 'Crear sesión', atributos: { type: 'submit' } });
     const formulario = crear('form', { clase: 'tarjeta', atributos: { novalidate: true } },
         crear('p', { clase: 'ayuda', texto: 'Crea la sesión y, en el calendario, los eventos públicos de exámenes y de grado. Los participantes se pueden inscribir ahora o después.' }),
-        crear('div', { clase: 'rejilla-campos' }, c.fecha.envoltura, c.fecha_grado.envoltura, c.lugar.envoltura),
+        crear('div', { clase: 'rejilla-campos' }, c.fecha.envoltura, c.fecha_grado.envoltura, ...lugar.envolturas),
         crear('div', { clase: 'acciones' }, botonCandidatos),
         zonaCandidatos,
         aviso,
@@ -154,7 +180,12 @@ export function mostrarNuevaSesion(contenedor) {
     formulario.addEventListener('submit', async (evento) => {
         evento.preventDefault();
         limpiarAviso(aviso);
-        const datos = { fecha: c.fecha.control.value || null, fecha_grado: c.fecha_grado.control.value || null, lugar: c.lugar.control.value.trim() || null };
+        if (!lugar.valor()) {
+            mostrarAviso(aviso, 'Escribe el lugar.', 'error');
+            lugar.controlOtro.focus();
+            return;
+        }
+        const datos = { fecha: c.fecha.control.value || null, fecha_grado: c.fecha_grado.control.value || null, lugar: lugar.valor() };
         const participantes = seleccion();
         if (participantes.length) datos.participantes = participantes;
         try {
@@ -199,6 +230,7 @@ export async function mostrarSesion(contenedor, id) {
         }
     };
 
+    const pendientes = []; // modalidades editables: { etiqueta, cambios(), guardar(cambios) }
     const acciones = crear('div', { clase: 'acciones', atributos: { style: 'margin: 0 0 1rem' } });
     if (abierta) {
         const cerrar = crear('button', { clase: 'boton', texto: 'Cerrar sesión de examen', atributos: { type: 'button' } });
@@ -260,7 +292,8 @@ export async function mostrarSesion(contenedor, id) {
         crear('section', { clase: 'tarjeta', atributos: { 'aria-labelledby': 'titulo-part-examen' } },
             crear('h2', { texto: `Participantes (${s.participantes.length})`, atributos: { id: 'titulo-part-examen' } }),
             crear('p', { clase: 'ayuda' }, 'Resultado ', provisional(), ': promedio de las seis notas, 5 o más aprueba. Cada nota va de 1 a 10.'),
-            ...(s.participantes.length ? s.participantes.map((p) => tarjetaParticipante(s, p, recargar)) : [crear('p', { texto: 'Aún no hay inscritos.' })])),
+            ...(s.participantes.length ? s.participantes.map((p) => tarjetaParticipante(s, p, recargar, pendientes)) : [crear('p', { texto: 'Aún no hay inscritos.' })]),
+            abierta && s.participantes.length ? seccionGuardarTodas(pendientes, recargar) : null),
         abierta ? await seccionInscribir(s, recargar) : crear('span'),
     );
 }
@@ -270,11 +303,11 @@ function seccionEditarSesion(s, recargar) {
     const c = {
         fecha: campo({ etiqueta: 'Inicio', nombre: 'fecha', tipo: 'date', valor: s.fecha }),
         fecha_grado: campo({ etiqueta: 'Fecha de grado', nombre: 'fecha_grado', tipo: 'date', valor: s.fecha_grado }),
-        lugar: campo({ etiqueta: 'Lugar', nombre: 'lugar', valor: s.lugar, atributos: { maxlength: 150 } }),
     };
+    const lugar = campoLugar(s.lugar);
     const boton = crear('button', { clase: 'boton', texto: 'Guardar', atributos: { type: 'submit' } });
     const formulario = crear('form', { atributos: { novalidate: true } }, aviso,
-        crear('div', { clase: 'rejilla-campos' }, c.fecha.envoltura, c.fecha_grado.envoltura, c.lugar.envoltura),
+        crear('div', { clase: 'rejilla-campos' }, c.fecha.envoltura, c.fecha_grado.envoltura, ...lugar.envolturas),
         crear('div', { clase: 'acciones' }, boton));
     formulario.addEventListener('submit', async (evento) => {
         evento.preventDefault();
@@ -284,6 +317,8 @@ function seccionEditarSesion(s, recargar) {
             const v = c[nombre].control.value.trim() || null;
             if (v !== (s[nombre] ?? null)) cambios[nombre] = v;
         }
+        if (!lugar.valor()) return mostrarAviso(aviso, 'Escribe el lugar.', 'error');
+        if (lugar.valor() !== (s.lugar ?? null)) cambios.lugar = lugar.valor();
         if (!Object.keys(cambios).length) return mostrarAviso(aviso, 'No hay cambios para guardar.', 'info');
         try {
             await conBotonOcupado(boton, 'Guardando…', () => evaluaciones.actualizar(s.id, cambios));
@@ -300,7 +335,7 @@ function seccionEditarSesion(s, recargar) {
 // ---------------------------------------------------------------------------
 // Participante: grado a evaluar, seis modalidades, quitar y entrega del cinturón
 // ---------------------------------------------------------------------------
-function tarjetaParticipante(s, p, recargar) {
+function tarjetaParticipante(s, p, recargar, pendientes) {
     const abierta = s.estado === 'abierta';
     const aviso = avisoNuevo();
     const completadas = p.modalidades.filter((m) => m.estado === 'completado').length;
@@ -338,7 +373,7 @@ function tarjetaParticipante(s, p, recargar) {
         cuerpo.append(crear('div', { clase: 'filtros' }, grado.envoltura, crear('div', { clase: 'campo' }, guardarGrado), crear('div', { clase: 'campo' }, quitar)));
     }
 
-    for (const m of p.modalidades) cuerpo.append(modalidad(s, p, m, abierta, aviso, recargar));
+    for (const m of p.modalidades) cuerpo.append(modalidad(s, p, m, abierta, aviso, recargar, pendientes));
 
     cuerpo.append(crear('p', { clase: 'ayuda', texto: textoEntrega(p.entrega) }));
     if (!abierta && r?.aprobado && !p.entrega?.cinturon_entregado) {
@@ -363,7 +398,7 @@ function tarjetaParticipante(s, p, recargar) {
     return crear('details', { clase: 'participante' }, resumen, cuerpo);
 }
 
-function modalidad(s, p, m, abierta, aviso, recargar) {
+function modalidad(s, p, m, abierta, aviso, recargar, pendientes) {
     const encabezado = crear('h3', { clase: 'titulo-modalidad' },
         `${textoModalidad(m.modalidad)} · `, m.estado === 'completado'
             ? `nota ${m.nota} ${m.aprobado ? '(aprueba)' : '(no aprueba)'}${m.fecha_completado ? ` · ${textoFecha(m.fecha_completado)}` : ''}`
@@ -393,15 +428,24 @@ function modalidad(s, p, m, abierta, aviso, recargar) {
         crear('details', {}, crear('summary', { texto: 'Detalle (aspectos, observaciones, recomendaciones, criterios y puntajes)' }),
             crear('div', { clase: 'rejilla-campos' }, ...Object.values(textos).map((x) => x.envoltura))),
         crear('div', { clase: 'acciones' }, boton));
-    formulario.addEventListener('submit', async (evento) => {
-        evento.preventDefault();
-        limpiarAviso(aviso);
+    const leerCambios = () => {
         const cambios = {};
         for (const [nombre, { control }] of Object.entries({ ...c, ...textos })) {
             const v = control.value.trim();
             const nuevo = v === '' ? null : (nombre === 'nota' || nombre === 'valor_medible') ? Number(v) : v;
             if (nuevo !== (m[nombre] ?? null)) cambios[nombre] = nuevo;
         }
+        return cambios;
+    };
+    pendientes.push({
+        etiqueta: `${textoModalidad(m.modalidad)} de ${p.nombre}`,
+        cambios: leerCambios,
+        guardar: (cambios) => evaluaciones.calificar(s.id, p.deportista_documento, m.modalidad, cambios),
+    });
+    formulario.addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+        limpiarAviso(aviso);
+        const cambios = leerCambios();
         if (!Object.keys(cambios).length) return mostrarAviso(aviso, 'No hay cambios en esa modalidad.', 'info');
         try {
             await conBotonOcupado(boton, 'Guardando…', () => evaluaciones.calificar(s.id, p.deportista_documento, m.modalidad, cambios));
@@ -414,6 +458,45 @@ function modalidad(s, p, m, abierta, aviso, recargar) {
         return undefined;
     });
     return formulario;
+}
+
+// Guarda, una por una, las modalidades con cambios de todos los participantes y dice cuáles fallaron.
+function seccionGuardarTodas(pendientes, recargar) {
+    const aviso = avisoNuevo();
+    const boton = crear('button', { clase: 'boton', texto: 'Guardar todas las notas', atributos: { type: 'button', 'data-prueba': 'guardar-todas-notas' } });
+    boton.addEventListener('click', async () => {
+        limpiarAviso(aviso);
+        const conCambios = pendientes.map((x) => ({ ...x, datos: x.cambios() })).filter((x) => Object.keys(x.datos).length);
+        if (!conCambios.length) return mostrarAviso(aviso, 'No hay notas nuevas ni cambios para guardar.', 'info');
+        const fallidas = [];
+        await conBotonOcupado(boton, 'Guardando…', async () => {
+            for (const x of conCambios) {
+                try {
+                    await x.guardar(x.datos);
+                } catch (error) {
+                    fallidas.push(`${x.etiqueta}: ${error.message}`);
+                }
+            }
+        });
+        const guardadas = conCambios.length - fallidas.length;
+        if (!fallidas.length) {
+            notificar(`${guardadas} modalidad(es) guardada(s).`);
+            recargar();
+            return undefined;
+        }
+        // Con fallos no se recarga, para no perder lo escrito en las que fallaron.
+        vaciar(aviso);
+        aviso.hidden = false;
+        aviso.className = 'aviso aviso-error';
+        aviso.setAttribute('role', 'alert');
+        aviso.append(crear('p', { texto: `Se guardaron ${guardadas} de ${conCambios.length}. No se guardaron:` }),
+            crear('ul', {}, ...fallidas.map((texto) => crear('li', { texto }))));
+        aviso.scrollIntoView({ block: 'nearest' });
+        return undefined;
+    });
+    return crear('div', { clase: 'guardar-todas' },
+        crear('p', { clase: 'ayuda', texto: 'Guarda las modalidades con cambios de todos los participantes (también las de tarjetas cerradas).' }),
+        aviso, crear('div', { clase: 'acciones' }, boton));
 }
 
 async function seccionInscribir(s, recargar) {

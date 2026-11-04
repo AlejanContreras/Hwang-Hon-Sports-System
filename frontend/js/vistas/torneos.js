@@ -2,10 +2,10 @@
 // Un torneo es un evento del calendario de tipo «competencia» más tipo_torneo y plataforma.
 // Al editar: plataforma, tipo, fecha, lugar y visibilidad van a competencias.actualizar;
 // nombre y observaciones van a calendario.actualizar.
-import { competencias, calendario } from '../api.js';
+import { competencias, calendario, deportistas } from '../api.js';
 import {
     crear, vaciar, mostrarAviso, limpiarAviso, notificar, confirmar, campo, conBotonOcupado, cargando,
-    textoFecha, textoDato, insignia,
+    textoFecha, textoDato, insignia, textoConFechas, formatearTextoConFechas,
 } from '../ui.js';
 import { selectorDeportista } from './comunes.js';
 
@@ -95,7 +95,7 @@ export async function mostrarTorneos(contenedor) {
     }
     zona.append(tabla('Torneos, del más reciente al más antiguo', ['Torneo', 'Fecha', 'Lugar', 'Tipo', 'Plataforma', 'Inscritos', 'Visibilidad'],
         lista.map((t) => crear('tr', {},
-            crear('td', {}, crear('a', { texto: t.nombre, atributos: { href: `#torneo/${t.evento_id}` } })),
+            crear('td', {}, crear('a', { atributos: { href: `#torneo/${t.evento_id}` } }, ...textoConFechas(t.nombre))),
             crear('td', { texto: textoFecha(t.fecha) }),
             crear('td', { texto: textoDato(t.lugar) }),
             crear('td', { texto: texto(TIPOS_TORNEO, t.tipo_torneo) }),
@@ -114,7 +114,7 @@ function camposTorneo(t = {}) {
         lugar: campo({ etiqueta: 'Lugar', nombre: 'lugar', obligatorio: true, valor: t.lugar, atributos: { maxlength: 150 } }),
         visibilidad: campo({ etiqueta: 'Visibilidad', nombre: 'visibilidad', tipo: 'select', valor: t.visibilidad ?? 'publica', opciones: VISIBILIDADES }),
         tipo_torneo: campo({ etiqueta: 'Tipo de torneo', nombre: 'tipo_torneo', tipo: 'select', obligatorio: true, valor: t.tipo_torneo ?? 'departamental', opciones: TIPOS_TORNEO }),
-        plataforma: campo({ etiqueta: 'Plataforma', nombre: 'plataforma', valor: t.plataforma, ayuda: 'Ej.: Fitofan. Opcional.', atributos: { maxlength: 50 } }),
+        plataforma: campo({ etiqueta: 'Plataforma de inscripción (opcional)', nombre: 'plataforma', valor: t.plataforma, ayuda: 'Ej.: Fitofan.', atributos: { maxlength: 50 } }),
         observaciones: campo({ etiqueta: 'Observaciones', nombre: 'observaciones', tipo: 'textarea', valor: t.observaciones }),
     };
 }
@@ -153,7 +153,7 @@ export function mostrarNuevoTorneo(contenedor) {
         if (plataforma) datos.plataforma = plataforma;
         try {
             const torneo = await conBotonOcupado(boton, 'Creando…', () => competencias.crear(datos));
-            notificar(`Torneo «${torneo.nombre}» creado.`);
+            notificar(`Torneo «${formatearTextoConFechas(torneo.nombre)}» creado.`);
             window.location.assign(`#torneo/${torneo.evento_id}`);
         } catch (error) {
             mostrarAviso(aviso, error.message, 'error');
@@ -185,7 +185,7 @@ export async function mostrarTorneo(contenedor, id) {
         crear('p', { clase: 'miga' }, crear('a', { texto: '← Torneos', atributos: { href: '#torneos' } })),
         crear('div', { clase: 'encabezado-vista' },
             crear('div', {},
-                crear('h1', { texto: t.nombre }),
+                crear('h1', {}, ...textoConFechas(t.nombre)),
                 crear('p', { clase: 'ayuda' },
                     `${textoFecha(t.fecha)} · ${textoDato(t.lugar)} · ${texto(TIPOS_TORNEO, t.tipo_torneo)}`,
                     t.plataforma ? ` · ${t.plataforma}` : '', ' · ',
@@ -264,16 +264,73 @@ function resumenResultado(p) {
     return partes.length ? partes.join(' · ') : 'Sin resultados';
 }
 
+// Cortes de peso del catálogo (tabla de categoria_peso calculada, RN-3.8), por categoría de edad y
+// sexo: «-X» hasta X kg (inclusive) y un solo «+X» con el último corte de esa tabla.
+const CORTES_PESO = {
+    infantil: { masculino: [20, 25, 30, 35], femenino: [20, 25, 30, 35] },
+    junior: { masculino: [40, 45, 50, 55, 60], femenino: [38, 43, 48, 53, 58] },
+    juvenil: { masculino: [45, 50, 55, 60, 65, 70, 75], femenino: [43, 48, 53, 58, 63, 68, 73] },
+    mayores: { masculino: [55, 60, 65, 70, 75, 80, 85], femenino: [50, 55, 60, 65, 70, 75, 80] },
+};
+CORTES_PESO.senior = CORTES_PESO.mayores;
+CORTES_PESO.master = CORTES_PESO.mayores;
+
+function categoriasPeso(categoriaEdad, sexo) {
+    const cortes = CORTES_PESO[categoriaEdad]?.[sexo];
+    return cortes ? [...cortes.map((kg) => `-${kg}`), `+${cortes[cortes.length - 1]}`] : [];
+}
+
+// Sexo y categoría de peso calculada de cada deportista (deportistas.consultar), una vez por documento.
+const fichasPeso = new Map();
+function fichaPeso(documento) {
+    if (!fichasPeso.has(documento)) {
+        fichasPeso.set(documento, deportistas.consultar(documento).catch(() => {
+            fichasPeso.delete(documento);
+            return null;
+        }));
+    }
+    return fichasPeso.get(documento);
+}
+
+// <select> de «Categoría de peso»: las opciones salen de la categoría de edad elegida y del sexo
+// del deportista. Un valor guardado fuera de la lista (p. ej. «-7») se conserva como opción.
+// Preselección: el valor guardado; si no hay, la categoría calculada del deportista si está en la lista.
+function campoCategoriaPeso(p, controlEdad) {
+    const peso = campo({
+        etiqueta: 'Categoría de peso', nombre: 'categoria_peso', tipo: 'select', valor: '',
+        opciones: [{ valor: '', texto: 'Elige…' }], ayuda: 'Categoría de peso en la que compite',
+    });
+    let ficha = null;
+    const pintar = () => {
+        const elegida = peso.control.value || p.categoria_peso || '';
+        const lista = ficha ? categoriasPeso(controlEdad.value, ficha.sexo) : [];
+        const valores = [...lista];
+        if (p.categoria_peso && !valores.includes(p.categoria_peso)) valores.push(p.categoria_peso);
+        vaciar(peso.control);
+        peso.control.append(crear('option', { texto: 'Elige…', atributos: { value: '' } }),
+            ...valores.map((v) => crear('option', { texto: v, atributos: { value: v } })));
+        const sugerida = ficha?.categoria_peso && lista.includes(ficha.categoria_peso) ? ficha.categoria_peso : '';
+        peso.control.value = valores.includes(elegida) ? elegida : sugerida;
+    };
+    pintar();
+    controlEdad.addEventListener('change', pintar);
+    fichaPeso(p.deportista_documento).then((d) => {
+        ficha = d;
+        pintar();
+    });
+    return peso;
+}
+
 function tarjetaParticipante(t, p, aviso, recargar) {
     const combate = esCombate(p.modalidad);
     const c = {
         categoria_edad: campo({ etiqueta: 'Categoría de edad', nombre: 'categoria_edad', tipo: 'select', valor: p.categoria_edad ?? '', opciones: CATEGORIAS_EDAD }),
-        puesto: campo({ etiqueta: 'Puesto', nombre: 'puesto', tipo: 'number', valor: p.puesto, atributos: { min: 1, max: 99 } }),
-        medalla: campo({ etiqueta: 'Medalla', nombre: 'medalla', tipo: 'select', valor: p.medalla ?? '', opciones: MEDALLAS }),
-        resultado: campo({ etiqueta: 'Resultado', nombre: 'resultado', valor: p.resultado, atributos: { maxlength: 255 } }),
+        puesto: campo({ etiqueta: 'Puesto', nombre: 'puesto', tipo: 'number', valor: p.puesto, ayuda: 'Lugar final, de 1 a 99.', atributos: { min: 1, max: 99 } }),
+        medalla: campo({ etiqueta: 'Medalla', nombre: 'medalla', tipo: 'select', valor: p.medalla ?? '', opciones: MEDALLAS, ayuda: 'Oro, plata, bronce o ninguna.' }),
+        resultado: campo({ etiqueta: 'Resultado', nombre: 'resultado', valor: p.resultado, ayuda: 'Texto libre, ej. «eliminado en cuartos».', atributos: { maxlength: 255 } }),
     };
     if (combate) {
-        c.categoria_peso = campo({ etiqueta: 'Categoría de peso', nombre: 'categoria_peso', valor: p.categoria_peso, ayuda: 'Ej.: -45 o +80', atributos: { maxlength: 30 } });
+        c.categoria_peso = campoCategoriaPeso(p, c.categoria_edad.control);
         c.combates_ganados = campo({ etiqueta: 'Combates ganados', nombre: 'combates_ganados', tipo: 'number', valor: p.combates_ganados, atributos: { min: 0, max: 127 } });
         c.combates_perdidos = campo({ etiqueta: 'Combates perdidos', nombre: 'combates_perdidos', tipo: 'number', valor: p.combates_perdidos, atributos: { min: 0, max: 127 } });
     }
@@ -412,7 +469,7 @@ function seccionInscribir(t, recargar) {
         crear('h2', { texto: 'Inscribir participantes', atributos: { id: 'titulo-inscribir' } }),
         crear('p', { clase: 'ayuda', texto: 'Elige la modalidad y agrega deportistas a la lista (hasta 50). Las categorías se completan con la sugerencia de la API; se ajustan después en los resultados. Es todo o nada.' }),
         aviso,
-        crear('div', { clase: 'filtros' }, modalidad.envoltura, selectorDeportista({ textoBoton: 'Agregar a la lista', alElegir: agregar })),
+        crear('div', { clase: 'filtros filtros-inscribir' }, modalidad.envoltura, selectorDeportista({ textoBoton: 'Agregar a la lista', alElegir: agregar })),
         lista,
         crear('div', { clase: 'acciones' }, botonInscribir));
 }

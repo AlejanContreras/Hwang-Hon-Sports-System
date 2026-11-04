@@ -38,6 +38,8 @@ def pytest_addoption(parser):
 def pytest_generate_tests(metafunc):
     if "dispositivo" in metafunc.fixturenames:
         elegidos = metafunc.config.getoption("dispositivo") or list(DISPOSITIVOS)
+        if metafunc.definition.get_closest_marker("solo_escritorio"):
+            elegidos = [d for d in elegidos if d == "escritorio"]
         metafunc.parametrize("dispositivo", elegidos, scope="function")
 
 

@@ -43,7 +43,8 @@ function detalleFila(f) {
     return partes.length ? partes : ['—'];
 }
 
-export function mostrarImportacion(contenedor) {
+// desdeDeportistas: se llegó con «Importar desde CSV» de Deportistas (muestra la miga de vuelta).
+export function mostrarImportacion(contenedor, { desdeDeportistas = false } = {}) {
     // Estado: archivo elegido y la previsualización que le corresponde.
     let archivoActual = null;
     let previsualizado = false;
@@ -167,8 +168,8 @@ export function mostrarImportacion(contenedor) {
         zonaResultado.scrollIntoView({ block: 'start' });
     }
 
-    contenedor.append(
-        crear('p', { clase: 'miga' }, crear('a', { texto: '← Deportistas', atributos: { href: '#deportistas' } })),
+    contenedor.append(...[
+        desdeDeportistas ? crear('p', { clase: 'miga' }, crear('a', { texto: '← Deportistas', atributos: { href: '#deportistas' } })) : null,
         crear('div', { clase: 'encabezado-vista' }, crear('h1', { texto: 'Carga masiva de deportistas' })),
         crear('section', { clase: 'tarjeta', atributos: { 'aria-labelledby': 'titulo-elegir-csv' } },
             crear('h2', { texto: '1. Elegir el archivo', atributos: { id: 'titulo-elegir-csv' } }),
@@ -178,5 +179,5 @@ export function mostrarImportacion(contenedor) {
             aviso,
             formulario),
         zonaPrevia,
-        zonaResultado);
+        zonaResultado].filter(Boolean));
 }

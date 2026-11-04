@@ -1,5 +1,6 @@
 // Color del cinturón por grado (la lista de grados es la de ui.js). Un grado sin color definido
 // (o «Ingresado») usa un neutro. claro: el color es muy claro y necesita contorno para leerse.
+// nudo: color del nudo y las dos puntas cuando no son del color del cuerpo (marrón franja negra).
 import { GRADOS, normalizarTexto, textoGrado } from '../ui.js';
 
 const COLORES = {
@@ -11,7 +12,7 @@ const COLORES = {
     rojo: { color: '#c62828', claro: false },
     violeta: { color: '#7b3fb3', claro: false },
     marron: { color: '#7a4a24', claro: false },
-    'marron franja negra': { color: '#7a4a24', claro: false },
+    'marron franja negra': { color: '#7a4a24', claro: false, nudo: '#1a1a1a' },
     negro: { color: '#1a1a1a', claro: false, oscuro: true },
 };
 const NEUTRO = { color: '#9aa3ad', claro: false };

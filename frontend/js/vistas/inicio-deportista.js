@@ -4,7 +4,7 @@
 // accesos rápidos a sus módulos.
 // Solo datos que la API pública entrega (todo es «lo suyo»).
 import { deportistas, asistencia, pagos, calendario, evaluaciones, estadisticas } from '../api.js';
-import { crear, vaciar, cargando, textoFecha, hoyBogota, sumarDias, nombreMes, insignia, textoGrado } from '../ui.js';
+import { crear, vaciar, cargando, textoFecha, hoyBogota, sumarDias, nombreMes, insignia, textoGrado, textoConFechas } from '../ui.js';
 import { GRUPOS_PUBLICOS } from '../modulos.js';
 import { calendarioLateral } from './inicio.js';
 import { saludo, tarjetaDato, accesosRapidos } from '../componentes/tablero.js';
@@ -43,7 +43,7 @@ export function mostrarInicioDeportista(contenedor, sesion) {
 // estadisticas.deportista y solo se muestra, pequeño, si la API lo trae (es null sin combates).
 async function cargarGrado(ficha, resumen) {
     const d = await ficha;
-    const { color, claro, oscuro } = colorDeGrado(d.grado_actual);
+    const { color, claro, oscuro, nudo } = colorDeGrado(d.grado_actual);
     const nombre = crear('p', { clase: `nombre-grado${claro ? ' grado-claro' : ''}${oscuro ? ' grado-oscuro' : ''}`, texto: nombreDeGrado(d.grado_actual) });
     nombre.style.setProperty('--color-grado', color);
     let porcentaje = null;
@@ -54,7 +54,7 @@ async function cargarGrado(ficha, resumen) {
     }
     const record = bloqueRecord(d, { porcentaje, id: 'record-combates' });
     return {
-        nodos: [nombre, crear('div', { clase: 'fila-grado' }, record, crearCinturonDeColor(color, { tamano: 34 }))],
+        nodos: [nombre, crear('div', { clase: 'fila-grado' }, record, crearCinturonDeColor(color, { tamano: 34, nudo }))],
         enlace: '#ascensos',
     };
 }
@@ -73,7 +73,7 @@ async function cargarProximoEvento() {
     if (!primero) return { nodos: [crear('p', { texto: 'No hay torneos ni ascensos próximos.' })], enlace: '#calendario' };
     return {
         nodos: [
-            crear('p', { clase: 'dato-destacado', texto: primero.texto }),
+            crear('p', { clase: 'dato-destacado' }, ...textoConFechas(primero.texto)),
             crear('p', { clase: 'ayuda', texto: `${primero.tipo} · ${textoFecha(primero.fecha)}` }),
         ],
         enlace: '#calendario',
@@ -84,7 +84,9 @@ async function cargarAsistencia() {
     const p = await asistencia.porcentaje(null, '30');
     return {
         nodos: [
-            crear('p', { clase: 'cifra', texto: p.datos_incompletos || p.porcentaje === null ? 'Datos insuficientes' : `${Number(p.porcentaje).toLocaleString('es-CO')} %` }),
+            p.datos_incompletos || p.porcentaje === null
+                ? crear('p', { clase: 'cifra cifra-texto', texto: 'Datos insuficientes' })
+                : crear('p', { clase: 'cifra', texto: `${Number(p.porcentaje).toLocaleString('es-CO')} %` }),
             crear('p', { clase: 'ayuda', texto: `Últimos 30 días: ${p.presentes} de ${p.sesiones} sesión(es)` }),
         ],
         enlace: '#asistencia',
@@ -116,7 +118,7 @@ async function proximasFechasDeportista() {
     if (!items.length) return [crear('p', { texto: 'Nada en los próximos 30 días.' }), crear('p', {}, crear('a', { texto: 'Ver calendario', atributos: { href: '#calendario' } }))];
     return [
         crear('ul', { clase: 'lista-proximas' }, ...items.slice(0, 8).map((i) => crear('li', {},
-            crear('span', { clase: 'fecha-proxima', texto: textoFecha(i.fecha).slice(0, 5) }), crear('span', { texto: i.texto })))),
+            crear('span', { clase: 'fecha-proxima', texto: textoFecha(i.fecha).slice(0, 5) }), crear('span', {}, ...textoConFechas(i.texto))))),
         crear('p', {}, crear('a', { texto: 'Ver calendario', atributos: { href: '#calendario' } })),
     ];
 }
@@ -188,7 +190,7 @@ function panelEstadisticas(documento, resumen) {
         cuerpo.append(crear('ul', { clase: 'lista-estadisticas' }, ...claves.map((c) => disponibles.find((i) => i.clave === c)).map((i) => crear('li', { atributos: { 'data-prueba': `estadistica-${i.clave}` } },
             crear('span', { clase: 'ayuda' }, i.titulo, i.provisional ? ' ' : null, i.provisional ? insignia('PROVISIONAL', 'pendiente') : null),
             crear('strong', { clase: 'valor-estadistica', texto: i.valor }),
-            crear('span', { clase: 'ayuda', texto: i.detalle })))));
+            crear('span', { clase: 'ayuda' }, ...textoConFechas(i.detalle))))));
     };
 
     const formularioElegir = () => {

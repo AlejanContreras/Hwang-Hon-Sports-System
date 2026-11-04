@@ -855,3 +855,117 @@ a.acceso:hover .icono-fondo { opacity: 0.22; }
 .resumen-perfil .fila-grado { gap: 1.25rem; }
 /* En la ficha el título del dato ya dice «Récord de combates». */
 .lista-datos .etiqueta-record { display: none; }
+
+/* Administrativo en celular (John, 31/10): «Próximas fechas» se ve en su lugar (entre las tarjetas y
+   los accesos rápidos, como en escritorio); solo se oculta el panel «Evento activo / TOP 3». */
+@media (max-width: 800px) {
+    .rejilla-inicio:not(.rejilla-inicio-deportista) { display: grid; grid-template-columns: 1fr; }
+    .rejilla-inicio:not(.rejilla-inicio-deportista) > .panel-central { display: none; }
+}
+
+/* Tablas apilables (documentos): en celular cada fila es una tarjeta con «etiqueta: valor». */
+@media (max-width: 800px) {
+    .tabla-apilable thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+    .tabla-apilable, .tabla-apilable tbody, .tabla-apilable tr, .tabla-apilable td { display: block; width: 100%; }
+    .tabla-apilable tr {
+        border: 1px solid var(--color-borde);
+        border-radius: var(--radio);
+        margin-bottom: 0.75rem;
+        padding: 0.35rem 0.75rem;
+        background: var(--color-superficie);
+    }
+    .tabla-apilable td {
+        display: grid;
+        grid-template-columns: 6.5rem 1fr;
+        gap: 0.5rem;
+        border: 0;
+        padding: 0.35rem 0;
+        overflow-wrap: anywhere;
+    }
+    .tabla-apilable td::before { content: attr(data-etiqueta); font-weight: 600; font-size: 0.85rem; color: var(--color-texto-suave); }
+    .tabla-apilable td.acciones-celda { white-space: normal; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .tabla-apilable td.acciones-celda::before { flex-basis: 100%; }
+    .tabla-apilable td.acciones-celda .boton { margin-right: 0; }
+}
+
+/* ---------- Comparar deportistas (A1) ---------- */
+.rejilla-comparar { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+.columna-comparar { min-width: 0; }
+.columna-comparar > .tarjeta:first-child { margin-bottom: 1rem; }
+@media (max-width: 800px) { .rejilla-comparar { grid-template-columns: 1fr; } }
+.grafico .linea.serie-1 { stroke: var(--color-exito); stroke-dasharray: 6 4; }
+.grafico .punto.serie-1 { fill: var(--color-exito); }
+.deportista-consultado { margin: 0; }
+
+/* ---------- Ascensos: grado al que asciende y «Guardar todas las notas» (B3) ---------- */
+.grado-asciende { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; }
+.grado-asciende label { font-weight: 600; }
+.guardar-todas { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-borde); }
+.guardar-todas .aviso ul { margin: 0.25rem 0 0; padding-left: 1.25rem; }
+.lista-marcas li.fila-pago:has(.grado-asciende) { grid-template-columns: auto 1fr minmax(12rem, auto); }
+@media (max-width: 800px) {
+    .lista-marcas li.fila-pago:has(.grado-asciende) { grid-template-columns: auto 1fr; }
+    .lista-marcas li.fila-pago .grado-asciende { grid-column: 2; }
+}
+
+/* ---------- Calendario: ayuda de importación (B4) ---------- */
+.ayuda-importar { color: var(--color-texto-suave); font-size: 0.92rem; border: 1px dashed var(--color-borde); border-radius: 8px; padding: 0.6rem 0.8rem; margin-bottom: 0.75rem; }
+.ayuda-importar p, .ayuda-importar ul { margin: 0.25rem 0; }
+.ayuda-importar ul { padding-left: 1.2rem; }
+.ayuda-importar code { overflow-wrap: anywhere; }
+
+/* ---------- Torneos: buscador ancho al inscribir y categoría de peso (B5) ---------- */
+.filtros-inscribir { grid-template-columns: minmax(11rem, 14rem) minmax(0, 1fr); }
+.filtros-inscribir input[type="search"] { min-width: min(30ch, 100%); }
+@media (max-width: 800px) {
+    .filtros-inscribir { grid-template-columns: 1fr; }
+    /* En celular el botón baja: el campo usa todo el ancho (10 dígitos + ~15 letras del nombre). */
+    .filtros-inscribir .formulario-en-linea { grid-template-columns: 1fr; }
+    .filtros-inscribir .formulario-en-linea .campo:last-child { padding-top: 0; }
+}
+
+/* ---------- Marrón franja negra: nudo y puntas negros (C1) ---------- */
+.muestra-grado.con-nudo { background: linear-gradient(90deg, var(--color-grado) 0 38%, var(--color-nudo) 38% 62%, var(--color-grado) 62% 100%); }
+
+/* ---------- Documentos generales: buscador por título (06/11) ---------- */
+.buscador-generales { max-width: 28rem; margin-bottom: 0.75rem; }
+
+/* ---------- Logo del club (04/11) ---------- */
+.logo-club { width: 44px; height: 44px; max-height: none; object-fit: contain; flex: none; }
+@media (max-width: 800px) { .logo-club { width: 36px; height: 36px; } }
+
+/* Logo difuminado fijo y centrado detrás de la tarjeta (ingreso, registro y recuperar).
+   John (04/11): la mitad del difuminado de logo_hwanghon_difuminado.png (≈14 px de desenfoque
+   sobre 600 px). Se usa el logo nítido con blur de 7 px por cada 600 px del tamaño mostrado. */
+.pagina-ingreso, .pagina-registro { position: relative; isolation: isolate; --tamano-fondo-logo: min(90vw, 90vh, 640px); }
+.pagina-ingreso::before, .pagina-registro::before {
+    content: '';
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: var(--tamano-fondo-logo);
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    background: url('../recursos/logo_hwanghon.png') center / contain no-repeat;
+    filter: blur(calc(var(--tamano-fondo-logo) * 7 / 600));
+    opacity: 0.22;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* ---------- Pestañas en una sola fila (04/11) ---------- */
+.pestanas { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.pestanas-vista { display: flex; width: max-content; max-width: 100%; overflow-x: auto; }
+.pestanas-vista .pestana { flex: none; padding-inline: 1rem; white-space: nowrap; }
+@media (max-width: 800px) { .pestanas-vista .pestana { padding-inline: 0.7rem; } }
+
+/* ---------- DEF-02: fechas dentro de nombres de eventos, sin partir ---------- */
+.fecha-en-texto { white-space: nowrap; }
+
+/* ---------- OBS-04: tarjetas del tablero con textos largos a 390 px ---------- */
+.lista-estadisticas { grid-template-columns: repeat(auto-fill, minmax(min(12rem, 100%), 1fr)); }
+.lista-estadisticas li, .tarjeta-dato, .tarjeta-dato .cuerpo-tarjeta { min-width: 0; }
+.valor-estadistica, .tarjeta-dato .dato-destacado, .tarjeta-dato .cifra, .lista-proximas li { overflow-wrap: break-word; }
+@media (max-width: 800px) { .valor-estadistica { font-size: 1.15rem; } }
+.cifra.cifra-texto { font-size: 1.25rem; line-height: 1.25; overflow-wrap: normal; hyphens: manual; }
+@media (max-width: 800px) { .cifra.cifra-texto { font-size: 1.1rem; } }

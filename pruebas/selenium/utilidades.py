@@ -103,10 +103,11 @@ class Navegador:
 
     def campo(self, nombre: str, dentro: WebElement | None = None) -> WebElement:
         """Campo por su atributo name (estable: es el nombre del dato de la API)."""
-        controles = (dentro or self.driver).find_elements(By.CSS_SELECTOR, f"[name='{nombre}']")
-        visibles = [c for c in controles if c.is_displayed() or c.get_attribute("type") in ("file", "checkbox")]
-        assert visibles, f"No hay un campo name={nombre}"
-        return visibles[0]
+        def buscar(_):
+            controles = (dentro or self.driver).find_elements(By.CSS_SELECTOR, f"[name='{nombre}']")
+            visibles = [c for c in controles if c.is_displayed() or c.get_attribute("type") in ("file", "checkbox")]
+            return visibles[0] if visibles else False
+        return self.esperar(buscar, mensaje=f"No hay un campo name={nombre}")
 
     def formulario_de(self, nombre_campo: str, dentro: WebElement | None = None) -> WebElement:
         return self.campo(nombre_campo, dentro).find_element(By.XPATH, "./ancestor::form[1]")

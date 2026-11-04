@@ -4,7 +4,7 @@
 import { calendario, competencias } from '../api.js';
 import {
     crear, vaciar, mostrarAviso, limpiarAviso, notificar, campo, conBotonOcupado, cargando,
-    textoFecha, textoFechaLarga, textoDato, hoyBogota, sumarDias, nombreMes, insignia,
+    textoFecha, textoFechaLarga, textoDato, hoyBogota, sumarDias, nombreMes, insignia, textoConFechas, formatearTextoConFechas,
 } from '../ui.js';
 
 export const TIPOS_EVENTO = [
@@ -14,8 +14,9 @@ export const TIPOS_EVENTO = [
     { valor: 'reunion_administrativa', texto: 'Reunión administrativa' },
     { valor: 'evento_extra', texto: 'Evento' },
 ];
-// Exámenes y grados los crea Evaluaciones; aquí solo estos.
-const TIPOS_CREABLES = ['competencia', 'reunion_administrativa', 'evento_extra'];
+// Se pueden crear los cinco tipos. Evaluación y Grados creados aquí son eventos sueltos del
+// calendario; las sesiones de examen (con sus dos eventos) se crean en Ascensos.
+const TIPOS_CREABLES = TIPOS_EVENTO.map((t) => t.valor);
 const VISIBILIDADES = [{ valor: 'publica', texto: 'Pública' }, { valor: 'administrativa', texto: 'Solo administrativa' }];
 const textoTipoEvento = (valor) => TIPOS_EVENTO.find((t) => t.valor === valor)?.texto ?? valor;
 
@@ -156,7 +157,7 @@ function pintarMes(zona, vista, esAdministrativo, recargar) {
 // Detalle desplegable de un evento; el administrativo puede editarlo aquí.
 function detalleEvento(e, esAdministrativo, recargar) {
     const detalle = crear('details', { clase: 'item-calendario evento-calendario' },
-        crear('summary', {}, insignia(textoTipoEvento(e.tipo), e.tipo === 'competencia' ? 'pendiente' : 'inactivo'), ` ${e.nombre}`),
+        crear('summary', {}, insignia(textoTipoEvento(e.tipo), e.tipo === 'competencia' ? 'pendiente' : 'inactivo'), ' ', ...textoConFechas(e.nombre)),
         crear('p', { clase: 'ayuda', texto: `${textoDato(e.lugar)} · ${e.visibilidad === 'publica' ? 'Pública' : 'Solo administrativa'}` }),
         e.observaciones ? crear('p', { clase: 'texto-largo', texto: e.observaciones }) : null);
     if (esAdministrativo && e.tipo === 'competencia') {
@@ -182,7 +183,12 @@ function formularioEditar(e, recargar) {
         visibilidad: campo({ etiqueta: 'Visibilidad', nombre: 'visibilidad', tipo: 'select', valor: e.visibilidad, opciones: VISIBILIDADES }),
         observaciones: campo({ etiqueta: 'Observaciones', nombre: 'observaciones', tipo: 'textarea', valor: e.observaciones }),
     };
-    const rejilla = crear('div', { clase: 'rejilla-campos' });
+    if (e.tipo === 'reunion_administrativa') bloquearVisibilidad(c.visibilidad);
+    const rejilla = crear('div', { clase: 'rejilla-campos' },
+        crear('div', { clase: 'campo' },
+            crear('span', { clase: 'ayuda', texto: 'Tipo' }),
+            crear('strong', { texto: textoTipoEvento(e.tipo), atributos: { 'data-prueba': 'tipo-evento' } }),
+            crear('small', { clase: 'ayuda', texto: 'El tipo no se puede cambiar.' })));
     for (const [nombre, { envoltura }] of Object.entries(c)) {
         if (nombre === 'observaciones') envoltura.classList.add('campo-ancho');
         rejilla.append(envoltura);
@@ -198,6 +204,7 @@ function formularioEditar(e, recargar) {
         limpiarAviso(aviso);
         const cambios = {};
         for (const [nombre, { control }] of Object.entries(c)) {
+            if (control.disabled) continue;
             const v = control.value.trim();
             const nuevo = v === '' ? null : v;
             if (nuevo !== (e[nombre] ?? null)) cambios[nombre] = nuevo;
@@ -225,6 +232,24 @@ function formularioEditar(e, recargar) {
 // ===========================================================================
 // Crear evento e importar CSV (administrativo)
 // ===========================================================================
+// Reunión administrativa: visibilidad fija «Solo administrativa» (la API la guarda así siempre).
+function bloquearVisibilidad(visibilidad) {
+    visibilidad.control.value = 'administrativa';
+    visibilidad.control.disabled = true;
+    let nota = visibilidad.envoltura.querySelector('.nota-visibilidad');
+    if (!nota) {
+        nota = crear('small', { clase: 'ayuda nota-visibilidad', texto: 'Una reunión administrativa siempre es solo administrativa.' });
+        visibilidad.envoltura.append(nota);
+    }
+}
+
+function desbloquearVisibilidad(visibilidad) {
+    if (!visibilidad.control.disabled) return;
+    visibilidad.control.disabled = false;
+    visibilidad.control.value = 'publica';
+    visibilidad.envoltura.querySelector('.nota-visibilidad')?.remove();
+}
+
 function seccionCrear(recargar) {
     const aviso = crear('div', { atributos: { hidden: true } });
     const c = {
@@ -232,7 +257,7 @@ function seccionCrear(recargar) {
         tipo: campo({
             etiqueta: 'Tipo', nombre: 'tipo', tipo: 'select', obligatorio: true, valor: 'evento_extra',
             opciones: TIPOS_EVENTO.filter((t) => TIPOS_CREABLES.includes(t.valor)),
-            ayuda: 'Exámenes y grados se crean en Ascensos. Un torneo creado aquí se completa en Torneos.',
+            ayuda: 'Un torneo creado aquí se completa en Torneos. Evaluación y Grados quedan como eventos sueltos: las sesiones de examen se crean en Ascensos.',
         }),
         fecha: campo({ etiqueta: 'Fecha', nombre: 'fecha', tipo: 'date', obligatorio: true }),
         lugar: campo({ etiqueta: 'Lugar', nombre: 'lugar', obligatorio: true, atributos: { maxlength: 150 } }),
@@ -243,7 +268,8 @@ function seccionCrear(recargar) {
     const actualizarTipo = () => {
         const reunion = c.tipo.control.value === 'reunion_administrativa';
         confidencial.envoltura.hidden = !reunion;
-        c.visibilidad.envoltura.hidden = reunion;
+        if (reunion) bloquearVisibilidad(c.visibilidad);
+        else desbloquearVisibilidad(c.visibilidad);
     };
     c.tipo.control.addEventListener('change', actualizarTipo);
     actualizarTipo();
@@ -273,7 +299,7 @@ function seccionCrear(recargar) {
         }
         try {
             const creado = await conBotonOcupado(boton, 'Creando…', () => calendario.crear(datos));
-            notificar(`Evento «${creado.nombre}» creado.`);
+            notificar(`Evento «${formatearTextoConFechas(creado.nombre)}» creado.`);
             formulario.reset();
             actualizarTipo();
             mesElegido = creado.fecha.slice(0, 7);
@@ -291,7 +317,17 @@ function seccionImportar(recargar) {
     const archivo = campo({ etiqueta: 'Archivo CSV', nombre: 'archivo', tipo: 'file', atributos: { accept: '.csv' } });
     const boton = crear('button', { clase: 'boton', texto: 'Importar', atributos: { type: 'submit' } });
     const formulario = crear('form', { atributos: { novalidate: true } },
-        crear('p', { clase: 'ayuda', texto: 'CSV en UTF-8 con las columnas nombre;tipo;fecha;lugar;visibilidad;observaciones (fecha AAAA-MM-DD o DD/MM/AAAA). Máximo 500 filas.' }),
+        crear('div', { clase: 'ayuda-importar', atributos: { 'data-prueba': 'ayuda-importar-eventos' } },
+            crear('p', {}, 'CSV en UTF-8 (separador ; o ,) con las columnas ', crear('code', { texto: 'nombre;tipo;fecha;lugar;visibilidad;observaciones' }), '. Máximo 500 filas.'),
+            crear('ul', {},
+                crear('li', {}, crear('strong', { texto: 'tipo: ' }), ...TIPOS_EVENTO.flatMap((t, i) => [i ? ', ' : '', crear('code', { texto: t.valor }), ` (${t.texto})`])),
+                crear('li', {}, crear('strong', { texto: 'visibilidad: ' }), crear('code', { texto: 'publica' }), ' o ', crear('code', { texto: 'administrativa' }),
+                    '. La reunión administrativa queda siempre administrativa.'),
+                crear('li', {}, crear('strong', { texto: 'fecha: ' }), crear('code', { texto: 'AAAA-MM-DD' }), ' o ', crear('code', { texto: 'DD/MM/AAAA' }), ' (ej. 2027-03-20 o 20/03/2027).')),
+            crear('p', {}, crear('a', {
+                texto: 'Descargar plantilla', clase: 'boton boton-secundario boton-pequeno',
+                atributos: { href: 'recursos/plantilla_importar_eventos.csv', download: 'plantilla_importar_eventos.csv', 'data-prueba': 'plantilla-eventos' },
+            }), ' Trae un ejemplo de cada uno de los cinco tipos.')),
         aviso, archivo.envoltura, crear('div', { clase: 'acciones' }, boton), resultado);
     formulario.addEventListener('submit', async (evento) => {
         evento.preventDefault();
@@ -340,7 +376,7 @@ export async function proximasFechas(limite = 8) {
     if (items.length === 0) return [crear('p', { texto: 'Nada en los próximos 30 días.' })];
     const lista = crear('ul', { clase: 'lista-proximas' }, ...items.slice(0, limite).map((i) => crear('li', {},
         crear('span', { clase: 'fecha-proxima', texto: textoFecha(i.fecha).slice(0, 5) }),
-        i.enlace ? crear('a', { texto: i.texto, atributos: { href: i.enlace } }) : crear('span', { texto: i.texto }))));
+        i.enlace ? crear('a', { atributos: { href: i.enlace } }, ...textoConFechas(i.texto)) : crear('span', {}, ...textoConFechas(i.texto)))));
     const resto = items.length > limite ? crear('p', { clase: 'ayuda', texto: `y ${items.length - limite} más.` }) : null;
     return [lista, resto, crear('p', {}, crear('a', { texto: 'Ver calendario', atributos: { href: '#calendario' } }))].filter(Boolean);
 }

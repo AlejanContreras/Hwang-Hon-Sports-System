@@ -1,0 +1,6 @@
+﻿nombre;tipo;fecha;lugar;visibilidad;observaciones
+Copa Ficticia de Primavera 2027;competencia;2027-03-20;Coliseo Ficticio Municipal;publica;Torneo de ejemplo: completarlo luego en Torneos
+Evaluación ficticia de mitad de año;evaluacion;15/06/2027;Club Hwang Hon;publica;Evento suelto del calendario (las sesiones de examen se crean en Ascensos)
+Ceremonia ficticia de grados;grado;2027-06-19;Club Hwang Hon;publica;Ejemplo con fecha AAAA-MM-DD
+Reunión ficticia de padres y club;reunion_administrativa;05/02/2027;Club Hwang Hon;administrativa;Siempre queda solo administrativa
+Jornada ficticia de integración;evento_extra;2027-08-14;Parque Ficticio Central;publica;Traer uniforme

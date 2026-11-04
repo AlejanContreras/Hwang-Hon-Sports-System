@@ -87,7 +87,7 @@ export async function mostrarDatos(contenedor, documento, alActualizar) {
             crear('p', { clase: 'ayuda' }, `Documento ${d.documento} · Grado: `, crear('strong', { texto: grado }), ' · ',
                 insignia(d.estado === 'activo' ? 'Activo' : 'Inactivo', d.estado === 'activo' ? 'activo' : 'inactivo')),
             crear('div', { clase: 'acciones' }, salir)),
-        crear('div', { clase: 'fila-grado' }, bloqueRecord(d, { id: 'record-combates' }), crearCinturonDeColor(colorDeGrado(d.grado_actual).color, { tamano: 44 })));
+        crear('div', { clase: 'fila-grado' }, bloqueRecord(d, { id: 'record-combates' }), crearCinturonDeColor(colorDeGrado(d.grado_actual).color, { tamano: 44, nudo: colorDeGrado(d.grado_actual).nudo })));
 
     contenedor.append(
         crear('div', { clase: 'encabezado-vista' }, crear('h1', { texto: 'Mi perfil' })),
