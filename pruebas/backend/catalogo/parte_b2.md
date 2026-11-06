@@ -404,7 +404,7 @@ Fecha, lugar y visibilidad:
   - `422` «La fecha de grado no puede ser anterior a la fecha de inicio de los exámenes.»;
   - `409` «Ya hay en el calendario un evento de exámenes o de grado con ese nombre y fecha.»;
   - `400` «No hay grado siguiente sugerido para X: envía grado_evaluado.».
-- **Notas:** crea en la misma transacción **dos eventos públicos del calendario** (exámenes y grado) y, por participante, las seis modalidades pendientes y su fila de entrega.
+- **Notas:** crea en la misma transacción **dos eventos públicos del calendario** (exámenes y grado) y, por participante, las seis modalidades pendientes y su fila de entrega. El `nombre` de esos dos eventos incluye la fecha en formato `AAAA-MM-DD` (ej. «Exámenes de ascenso 2026-11-01», «Grado 2026-11-04»): el front la muestra como `DD/MM/AAAA`, pero la API (y cualquier exportación que lea el nombre guardado) devuelve el texto tal como quedó, con la fecha ISO incluida — no es un valor aparte que se pueda reformatear sin tocar el texto completo.
 
 #### `evaluaciones.inscribir` — POST · administrativo
 

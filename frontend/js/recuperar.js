@@ -2,6 +2,7 @@
 // sin token → auth.solicitarRecuperacionContrasena; con ?token= (enlace del correo) → auth.restablecerContrasena.
 import { auth } from './api.js';
 import { mostrarAviso, limpiarAviso, conBotonOcupado } from './ui.js';
+import { prepararCamposContrasena } from './componentes/ver-contrasena.js';
 
 const aviso = document.getElementById('aviso-recuperar');
 const zonaSolicitar = document.getElementById('zona-solicitar');
@@ -10,6 +11,7 @@ const formularioSolicitar = document.getElementById('formulario-solicitar');
 const formularioRestablecer = document.getElementById('formulario-restablecer');
 
 const token = new URLSearchParams(window.location.search).get('token');
+prepararCamposContrasena();
 
 formularioSolicitar.addEventListener('submit', async (evento) => {
     evento.preventDefault();
@@ -23,7 +25,10 @@ formularioSolicitar.addEventListener('submit', async (evento) => {
     limpiarAviso(aviso);
     try {
         const datos = await conBotonOcupado(boton, 'Enviando…', () => auth.solicitarRecuperacionContrasena(correo.value.trim()));
-        mostrarAviso(aviso, datos.mensaje, 'exito');
+        // El correo de recuperación puede caer en spam: se avisa aquí, sin tocar el mensaje del servidor.
+        const mensaje = String(datos.mensaje || '').trim();
+        const separador = /[.!?]$/.test(mensaje) ? ' ' : '. ';
+        mostrarAviso(aviso, mensaje + separador + 'Si no lo ves en tu bandeja de entrada, revisa tu carpeta de spam o correo no deseado.', 'exito');
     } catch (error) {
         mostrarAviso(aviso, error.message, 'error');
     }

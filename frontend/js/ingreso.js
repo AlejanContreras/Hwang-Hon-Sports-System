@@ -2,6 +2,9 @@
 import { auth } from './api.js';
 import { mostrarAviso, limpiarAviso, conBotonOcupado } from './ui.js';
 import { paginaDeAmbito, leerMotivoSalida } from './sesion.js';
+import { prepararCamposContrasena } from './componentes/ver-contrasena.js';
+import { validarCampo, primerCampoInvalido } from './componentes/validacion.js';
+import { prepararFechaEnListas } from './componentes/fecha-en-listas.js';
 
 const verificando = document.getElementById('verificando');
 const zonaIngreso = document.getElementById('zona-ingreso');
@@ -14,6 +17,15 @@ const pestanas = {
 
 const formularioAdministrativo = document.getElementById('formulario-administrativo');
 const formularioPublico = document.getElementById('formulario-publico');
+prepararCamposContrasena();
+validarCampo(formularioPublico.documento, 'documento');
+const revisarFecha = prepararFechaEnListas({
+    dia: document.getElementById('fecha-dia'),
+    mes: document.getElementById('fecha-mes'),
+    anio: document.getElementById('fecha-anio'),
+    oculto: formularioPublico.fecha_nacimiento,
+    leida: document.getElementById('fecha-leida'),
+});
 
 // ---------------------------------------------------------------------------
 // Pestañas (con flechas del teclado)
@@ -100,9 +112,19 @@ formularioPublico.addEventListener('submit', async (evento) => {
     evento.preventDefault();
     const documento = formularioPublico.documento;
     const fecha = formularioPublico.fecha_nacimiento;
-    if (!documento.value.trim() || !fecha.value) {
-        mostrarAviso(aviso, 'Escribe el documento y la fecha de nacimiento del deportista.', 'error');
-        (documento.value.trim() ? fecha : documento).focus();
+    if (!documento.value.trim()) {
+        mostrarAviso(aviso, 'Escribe el documento del deportista.', 'error');
+        documento.focus();
+        return;
+    }
+    if (primerCampoInvalido([documento])) {
+        mostrarAviso(aviso, 'El documento debe tener entre 7 y 10 números.', 'error');
+        return;
+    }
+    const problemaFecha = revisarFecha();
+    if (problemaFecha) {
+        mostrarAviso(aviso, problemaFecha.mensaje, 'error');
+        problemaFecha.control.focus();
         return;
     }
 

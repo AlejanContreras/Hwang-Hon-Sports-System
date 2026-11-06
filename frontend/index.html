@@ -50,12 +50,29 @@
                             <p class="ayuda">Ingresa con los datos <strong>del deportista</strong>, también si eres su acudiente.</p>
                             <div class="campo">
                                 <label for="documento">Documento del deportista</label>
-                                <input type="text" id="documento" name="documento" inputmode="numeric" autocomplete="off" required maxlength="20">
+                                <input type="text" id="documento" name="documento" inputmode="numeric" autocomplete="off" required maxlength="10" pattern="\d{7,10}">
                             </div>
-                            <div class="campo">
-                                <label for="fecha-nacimiento">Fecha de nacimiento del deportista</label>
-                                <input type="date" id="fecha-nacimiento" name="fecha_nacimiento" required>
-                            </div>
+                            <!-- D3: siempre día / mes / año. El valor que va a la API (AAAA-MM-DD) queda en el
+                                 campo oculto #fecha-nacimiento, que las listas mantienen al día. -->
+                            <fieldset class="campo campo-fecha-listas" id="grupo-fecha-nacimiento">
+                                <legend>Fecha de nacimiento del deportista</legend>
+                                <div class="fecha-listas">
+                                    <div class="campo">
+                                        <label for="fecha-dia">Día</label>
+                                        <select id="fecha-dia" name="fecha_dia" data-prueba="fecha-dia" aria-describedby="fecha-leida"></select>
+                                    </div>
+                                    <div class="campo">
+                                        <label for="fecha-mes">Mes</label>
+                                        <select id="fecha-mes" name="fecha_mes" data-prueba="fecha-mes" aria-describedby="fecha-leida"></select>
+                                    </div>
+                                    <div class="campo">
+                                        <label for="fecha-anio">Año</label>
+                                        <select id="fecha-anio" name="fecha_anio" data-prueba="fecha-anio" aria-describedby="fecha-leida"></select>
+                                    </div>
+                                </div>
+                                <p class="ayuda fecha-leida" id="fecha-leida" aria-live="polite" data-prueba="fecha-leida"></p>
+                                <input type="date" id="fecha-nacimiento" name="fecha_nacimiento" hidden tabindex="-1" aria-hidden="true">
+                            </fieldset>
                             <button type="submit" class="boton">Ingresar</button>
                         </form>
                     </section>

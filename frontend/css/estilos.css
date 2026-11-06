@@ -969,3 +969,42 @@ a.acceso:hover .icono-fondo { opacity: 0.22; }
 @media (max-width: 800px) { .valor-estadistica { font-size: 1.15rem; } }
 .cifra.cifra-texto { font-size: 1.25rem; line-height: 1.25; overflow-wrap: normal; hyphens: manual; }
 @media (max-width: 800px) { .cifra.cifra-texto { font-size: 1.1rem; } }
+
+/* ---------- D1/E1: ojo para ver la contraseña ---------- */
+.campo-contrasena { position: relative; display: block; width: 100%; }
+.campo-contrasena input { padding-right: 3rem; }
+.boton-ver-contrasena {
+    position: absolute;
+    top: 50%;
+    right: 2px;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;   /* 44 × 40 px: área táctil cómoda en celular */
+    height: 2.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radio);
+    background: transparent;
+    color: var(--color-texto-suave);
+    cursor: pointer;
+}
+.boton-ver-contrasena:hover { color: var(--color-primario); }
+.boton-ver-contrasena:focus-visible { outline: 2px solid var(--color-primario); outline-offset: -3px; color: var(--color-primario); }
+.boton-ver-contrasena[aria-pressed="true"] { color: var(--color-primario); }
+
+/* ---------- D2: mensajes de validación junto al campo ---------- */
+.mensaje-campo { display: block; font-size: 0.85rem; margin-top: 0.15rem; }
+.mensaje-campo.mensaje-error { color: var(--color-peligro); font-weight: 600; }
+.mensaje-campo.mensaje-advertencia { color: var(--color-advertencia); }
+input[aria-invalid="true"] { border-color: var(--color-peligro); box-shadow: 0 0 0 1px var(--color-peligro); }
+
+/* ---------- D3: fecha de nacimiento del ingreso público en tres listas ---------- */
+.campo-fecha-listas { border: 0; margin: 0; padding: 0; min-width: 0; }
+.campo-fecha-listas legend { font-weight: 600; padding: 0; margin-bottom: 0.35rem; }
+.fecha-listas { display: grid; grid-template-columns: 1fr 1.7fr 1.3fr; gap: 0.5rem; }
+.fecha-listas .campo { margin: 0; min-width: 0; }
+.fecha-listas label { font-weight: normal; font-size: 0.85rem; }
+.fecha-leida { min-height: 1.2em; margin: 0.35rem 0 0; }
+.fecha-leida.fecha-leida-error { color: var(--color-peligro); font-weight: 600; }

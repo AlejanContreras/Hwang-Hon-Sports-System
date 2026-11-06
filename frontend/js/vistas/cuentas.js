@@ -4,6 +4,7 @@ import { usuariosAdministrativos, auth } from '../api.js';
 import { crear, vaciar, mostrarAviso, limpiarAviso, notificar, confirmar, campo, conBotonOcupado, cargando, textoDato, insignia } from '../ui.js';
 import { cerrarSesion } from '../sesion.js';
 import { crear as crearIcono } from '../componentes/iconos.js';
+import { agregarVerContrasena } from '../componentes/ver-contrasena.js';
 
 const MINIMO_CONTRASENA = 8;
 
@@ -12,11 +13,13 @@ function avisoNuevo() {
 }
 
 function campoContrasena(etiqueta, nombre, autocompletar = 'new-password') {
-    return campo({
+    const resultado = campo({
         etiqueta, nombre, tipo: 'password',
         ayuda: autocompletar === 'new-password' ? `Mínimo ${MINIMO_CONTRASENA} caracteres.` : '',
         atributos: { autocomplete: autocompletar, minlength: MINIMO_CONTRASENA },
     });
+    agregarVerContrasena(resultado.control);
+    return resultado;
 }
 
 // ===========================================================================

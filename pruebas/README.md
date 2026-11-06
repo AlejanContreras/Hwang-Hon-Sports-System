@@ -203,6 +203,21 @@ Sirve para usar el sistema como la primera vez real: sin semilla ni datos. **Ojo
 
 **Tus archivos quedan separados.** Lo que subas en este entorno (cédula, foto, documentos) queda **solo** en `pruebas/entorno/limpio/app/backend/Almacenamiento/`, una copia propia que Git ignora y que `borrar` elimina. Esa carpeta nunca se mezcla con la base ni con el `Almacenamiento` real del proyecto, ni con los del entorno de pruebas automáticas. El correo de esa copia va en modo `archivo`: nunca envía nada.
 
+## 7. Capturas para el manual de usuario
+
+```bash
+python pruebas/herramientas/capturas_manual.py                 # las 33 capturas
+python pruebas/herramientas/capturas_manual.py --solo 01,23    # solo algunas
+python pruebas/herramientas/capturas_manual.py --escala 2      # el doble de nítidas
+```
+
+- **Entorno:** usa la copia aislada y la base `hwanghon_pruebas`. Restablece la semilla y le suma datos de ejemplo **ficticios**: más deportistas, asistencia desde junio, pagos, un torneo con resultados, eventos del mes y documentos.
+- **Navegador:** Chromium sin interfaz, tema claro y en español, sin barra del navegador.
+- **Tamaños:**
+  - administrativo: 1366×768;
+  - deportista / familias: 390×844.
+- **Salida:** `recursos/documentos_cliente/manual/capturas/`, ignorada por Git, con `INDICE.md`. Si una pantalla no se puede capturar, el índice dice por qué.
+
 ## Variables de entorno (opcionales)
 
 | Variable | Por defecto | Para qué |

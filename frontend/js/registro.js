@@ -6,6 +6,7 @@ import { autorregistro } from './api.js';
 import { crear, vaciar, mostrarAviso, limpiarAviso, notificar, campo, conBotonOcupado, cargando, textoFecha } from './ui.js';
 import { TIPOS, textoTipo, tabla, formularioSubida, botonReemplazar, botonEliminar } from './vistas/documentos.js';
 import { SEDE_PRINCIPAL, opcionesSede, acudienteSegunEdad } from './componentes/formulario-deportista.js';
+import { validarCampo, primerCampoInvalido } from './componentes/validacion.js';
 
 const zona = document.getElementById('zona-registro');
 
@@ -54,7 +55,7 @@ function mostrarFormulario() {
             { etiqueta: 'Sede de entrenamiento', nombre: 'sede_entrenamiento', tipo: 'select', valor: SEDE_PRINCIPAL, opciones: opcionesSede() },
         ]),
         grupo('Contacto', null, [
-            { etiqueta: 'Teléfono', nombre: 'telefono', tipo: 'tel', ayuda: 'Dígitos, espacios y + inicial.', atributos: { maxlength: 20 } },
+            { etiqueta: 'Teléfono', nombre: 'telefono', tipo: 'tel', ayuda: 'Solo números, de 7 a 10.', atributos: { maxlength: 20 } },
             { etiqueta: 'Correo', nombre: 'correo', tipo: 'email', atributos: { maxlength: 150 } },
             { etiqueta: 'Dirección', nombre: 'direccion', ancho: true, atributos: { maxlength: 150 } },
         ]),
@@ -70,6 +71,12 @@ function mostrarFormulario() {
             { etiqueta: 'Correo del acudiente', nombre: 'acudiente_correo', tipo: 'email', atributos: { maxlength: 150 } },
         ]),
     );
+
+    // D2: documento, nombre y teléfono del deportista y del acudiente.
+    const aValidar = [
+        validarCampo(c.documento, 'documento'), validarCampo(c.nombre, 'nombre'), validarCampo(c.telefono, 'telefono'),
+        validarCampo(c.acudiente_documento, 'documento'), validarCampo(c.acudiente_nombre, 'nombre'), validarCampo(c.acudiente_telefono, 'telefono'),
+    ];
 
     // B1: el acudiente pasa a obligatorio según la fecha de nacimiento.
     const notaMenor = crear('p', { clase: 'aviso aviso-advertencia', atributos: { hidden: true, 'data-prueba': 'acudiente-obligatorio' } });
@@ -88,6 +95,10 @@ function mostrarFormulario() {
     formulario.addEventListener('submit', async (evento) => {
         evento.preventDefault();
         limpiarAviso(aviso);
+        if (primerCampoInvalido(aValidar)) {
+            mostrarAviso(aviso, 'Revisa los campos marcados en rojo.', 'error');
+            return;
+        }
         const falta = faltaAcudiente();
         if (falta) {
             mostrarAviso(aviso, 'El deportista es menor de 18 años: completa el documento, el nombre y la relación del acudiente.', 'error');

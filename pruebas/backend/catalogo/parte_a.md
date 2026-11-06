@@ -46,7 +46,7 @@ Guía para escribir el front **sin leer el backend**. Documenta lo que existe ho
 - **Zona horaria:** todo «hoy», «futuro», «vencido» o «sábado» se calcula con la hora de **America/Bogota**, no con la del navegador ni la del servidor.
 - **Números:** decimales como número JSON. Un `5.0` sale como `5`; el front no debe depender de que traiga decimales.
 - **Booleanos y nulos:** booleanos JSON reales (`true`/`false`). `null` significa «sin dato»; en las acciones de actualización parcial, enviar `null` en un campo opcional lo borra.
-- **Campos desconocidos:** en altas y actualizaciones, un campo que la acción no reconoce responde `400` nombrándolo (ej. «Campos no reconocidos: x.»). No se ignoran en silencio.
+- **Campos desconocidos:** en altas y actualizaciones, un campo que la acción no reconoce responde `400` nombrándolo (ej. «Campos no reconocidos: x.»). No se ignoran en silencio. **El texto exacto varía por acción:** la mayoría dice «Campos no reconocidos: x.», pero `usuarios-administrativos.crear`, `calendario.crear`/`actualizar` y `pagos.registrar` dicen «Campos no permitidos: x.» — mismo significado, un campo que esa acción no admite.
 
 ### A.3 Autenticación y sesión
 
@@ -80,10 +80,10 @@ Guía para escribir el front **sin leer el backend**. Documenta lo que existe ho
 | Código | Cuándo sale | Mensaje (ejemplos reales) |
 |---|---|---|
 | 200 | Éxito de una lectura, una actualización o una acción. | — |
-| 201 | Éxito de un alta (crear, registrar, subir, inscribir, tomar asistencia). | — |
+| 201 | Éxito de un alta (crear, registrar, subir, inscribir, tomar asistencia). **Excepción:** `autorregistro.registrar` responde `200` a propósito, para no revelar si un documento ya está inscrito (ver B.4). | — |
 | 400 | Dato inválido: falta un campo, formato o rango incorrecto, campo no reconocido, parámetro en lista o con UTF-8 inválido, JSON mal formado. | «El campo "fecha_nacimiento" es obligatorio.», «Cuerpo de la solicitud inválido: se esperaba JSON.» |
 | 401 | Sin sesión, sesión vencida o invalidada, credenciales erradas. | «No autenticado. Inicie sesión para continuar.», «Tu sesión ya no es válida.», «Correo o contraseña incorrectos.» |
-| 403 | El ámbito no tiene permiso, registro pendiente, regla CSRF, permiso de autorregistro ausente o vencido. | «Acceso restringido al ámbito administrativo.», «Solo las cuentas principales pueden gestionar las cuentas administrativas.» |
+| 403 | El ámbito no tiene permiso, registro pendiente, regla CSRF, permiso de autorregistro ausente o vencido. | «Acceso restringido al ámbito administrativo.», «Solo las cuentas principales pueden gestionar las cuentas administrativas.», «Solo el ámbito administrativo puede …» (familia con mensaje propio por acción, ej. `deportistas.buscar`: «Solo el ámbito administrativo puede buscar deportistas.»; `asistencia.tomar`: «Solo el ámbito administrativo puede tomar asistencia.»; `pagos.deudores`: «Solo el ámbito administrativo puede ver la lista de deudores.») |
 | 404 | No existe, o no es visible para esa sesión (el público nunca sabe si existe algo ajeno). | «No encontrado.», «Deportista no encontrado.» |
 | 405 | Método HTTP distinto del que exige la acción. | «Método no permitido. Se esperaba POST.» |
 | 409 | Conflicto con el estado actual: duplicado, ya hecho, sesión cerrada, evento de otro módulo. | «Ya existe un deportista con el documento X.» |

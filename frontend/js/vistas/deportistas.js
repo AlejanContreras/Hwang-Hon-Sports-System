@@ -7,6 +7,7 @@ import {
 } from '../ui.js';
 import { bloqueRecord } from '../componentes/record.js';
 import { SEDE_PRINCIPAL, opcionesSede, acudienteSegunEdad } from '../componentes/formulario-deportista.js';
+import { validarCampo, primerCampoInvalido } from '../componentes/validacion.js';
 
 // Filtros de la lista: se conservan al ir a una ficha y volver.
 // estado, estado_registro y sede_entrenamiento van a la API; texto y grado se aplican aquí
@@ -533,7 +534,7 @@ export async function mostrarFormulario(contenedor, documento) {
 
     // --- Contacto
     const rejillaContacto = crear('div', { clase: 'rejilla-campos' });
-    agregar(rejillaContacto, { etiqueta: 'Teléfono', nombre: 'telefono', tipo: 'tel', valor: valor('telefono'), ayuda: 'Dígitos, espacios y + inicial.', atributos: { maxlength: 20 } });
+    agregar(rejillaContacto, { etiqueta: 'Teléfono', nombre: 'telefono', tipo: 'tel', valor: valor('telefono'), ayuda: 'Solo números, de 7 a 10.', atributos: { maxlength: 20 } });
     agregar(rejillaContacto, { etiqueta: 'Correo', nombre: 'correo', tipo: 'email', valor: valor('correo'), atributos: { maxlength: 150 } });
     agregar(rejillaContacto, { etiqueta: 'Dirección', nombre: 'direccion', valor: valor('direccion'), atributos: { maxlength: 150 } }, true);
 
@@ -578,6 +579,17 @@ export async function mostrarFormulario(contenedor, documento) {
     agregarAcudiente({ etiqueta: 'Correo del acudiente', nombre: 'correo', tipo: 'email', valor: va('correo'), atributos: { maxlength: 150 } });
 
     // B1: con menos de 18 años, documento, nombre y relación del acudiente pasan a obligatorios.
+    // D2: documento, nombre y teléfono (del deportista y del acudiente). En edición, un dato viejo que
+    // no cumple solo advierte mientras no se toque.
+    const aValidar = [
+        c.documento && validarCampo(c.documento, 'documento'),
+        validarCampo(c.nombre, 'nombre', { original: valor('nombre') }),
+        validarCampo(c.telefono, 'telefono', { original: valor('telefono') }),
+        validarCampo(a.documento, 'documento', { original: acudienteOriginal?.documento }),
+        validarCampo(a.nombre, 'nombre', { original: acudienteOriginal?.nombre }),
+        validarCampo(a.telefono, 'telefono', { original: acudienteOriginal?.telefono }),
+    ];
+
     const notaMenor = crear('p', { clase: 'aviso aviso-advertencia', atributos: { hidden: true, 'data-prueba': 'acudiente-obligatorio' } });
     const faltaAcudiente = acudienteSegunEdad({ controlFecha: c.fecha_nacimiento, controles: [a.documento, a.nombre, a.relacion], nota: notaMenor });
 
@@ -604,6 +616,10 @@ export async function mostrarFormulario(contenedor, documento) {
     formulario.addEventListener('submit', async (evento) => {
         evento.preventDefault();
         limpiarAviso(aviso);
+        if (primerCampoInvalido(aValidar)) {
+            mostrarAviso(aviso, 'Revisa los campos marcados en rojo.', 'error');
+            return;
+        }
         const falta = faltaAcudiente();
         if (falta) {
             mostrarAviso(aviso, 'El deportista es menor de 18 años: completa el documento, el nombre y la relación del acudiente.', 'error');
